@@ -32,3 +32,19 @@ export class RegisterMovementUseCase {
     return this.repository.registerMovement(assetId, movement);
   }
 }
+
+export class AddCertificateUseCase {
+  constructor(private repository: ITrazabilidadRepository) {}
+
+  async execute(assetId: string, certificate: any): Promise<void> {
+    return this.repository.addCertificate(assetId, certificate);
+  }
+}
+
+export class RegisterAssetUseCase {
+  constructor(private repository: ITrazabilidadRepository) {}
+
+  async execute(asset: Partial<Asset>): Promise<void> {
+    return this.repository.registerAsset(asset);
+  }
+}

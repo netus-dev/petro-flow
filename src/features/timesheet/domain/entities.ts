@@ -1,24 +1,56 @@
-export type OvertimeStatus = "approved" | "pending" | "rejected";
+export type DayCategory =
+  | "Jornada normal"
+  | "Tiempo extra"
+  | "Día festivo"
+  | "Capacitación";
+export type ApprovalStatus =
+  | "Borrador"
+  | "Pendiente Supervisor"
+  | "Pendiente Gerente"
+  | "Aprobada"
+  | "Rechazada";
 
-export interface OvertimeRecord {
-  id: string;
-  worker: string;
-  workerRole: string;
-  platform: string;
+export interface TimesheetDay {
   date: string;
-  hoursRegular: number;
-  hoursOvertime: number;
-  reason: string;
-  authorizedBy: string | null;
-  authorizedDate: string | null;
-  completedDate: string | null;
-  status: OvertimeStatus;
+  category: DayCategory;
+  hoursExtra: number;
+}
+
+export interface TimesheetRequest {
+  id: string;
+  folio: string;
+  workerId: string;
+  workerName: string;
+  role: "Técnico" | "Supervisor" | "Gerente";
+  rig: string;
+  periodStart: string;
+  periodEnd: string;
+  days: TimesheetDay[];
+  totalExtraHours: number;
+  totalNormalDays: number;
+  totalHolidayDays: number;
+  totalTrainingDays: number;
+  status: ApprovalStatus;
+  submittedAt: string | null;
+  comments: {
+    worker?: string;
+    supervisor?: string;
+    manager?: string;
+  };
 }
 
 export interface TimesheetStats {
-  totalOvertime: number;
-  approved: number;
-  pending: number;
-  rejected: number;
-  totalWorkers: number;
+  totalRequests: number;
+  pendingRequests: number;
+  approvedRequests: number;
+  rejectedRequests: number;
+  totalExtraHours: number;
+  estimatedPayment?: number; // Mock calculation
+  recentActivity: {
+    id: string;
+    actor: string;
+    type: "submission" | "approval" | "rejection";
+    message: string;
+    timestamp: string;
+  }[];
 }

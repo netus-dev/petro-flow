@@ -39,6 +39,14 @@ const assets: Asset[] = [
         responsible: "Maria Lopez",
       },
     ],
+    certificates: [
+      {
+        id: "CERT-001",
+        name: "Certificado de Inspección VAM",
+        uploadDate: "2026-01-15",
+        fileUrl: "/certificates/tub-702-001-insp.pdf",
+      },
+    ],
   },
   {
     id: "AST-002",
@@ -75,6 +83,14 @@ const assets: Asset[] = [
         status: "in-progress",
         notes: "Enviado a RIG 703",
         responsible: "Pedro Garcia",
+      },
+    ],
+    certificates: [
+      {
+        id: "CERT-002",
+        name: "Calibración MWD-01",
+        uploadDate: "2026-02-05",
+        fileUrl: "/certificates/her-703-042-cal.pdf",
       },
     ],
   },
@@ -115,6 +131,7 @@ const assets: Asset[] = [
         responsible: "Ing. Manuel Sosa",
       },
     ],
+    certificates: [],
   },
 ];
 
@@ -184,5 +201,52 @@ export class MockTrazabilidadRepository implements ITrazabilidadRepository {
         responsible: movement.responsible,
       });
     }
+  }
+
+  async addCertificate(
+    assetId: string,
+    certificate: Partial<any>,
+  ): Promise<void> {
+    const asset = assets.find((a) => a.id === assetId);
+    if (asset) {
+      asset.certificates.push({
+        id: `CERT-${Date.now()}`,
+        name: certificate.name || "Nuevo Certificado",
+        uploadDate: new Date().toISOString().split("T")[0],
+        fileUrl: certificate.fileUrl || "/certificates/placeholder.pdf",
+      });
+    }
+  }
+
+  async registerAsset(asset: Partial<Asset>): Promise<void> {
+    const newAsset: Asset = {
+      id: `AST-${Date.now()}`,
+      code: asset.code || "NEW-ASSET",
+      functionalPrinciple: asset.functionalPrinciple || "Tubular",
+      brand: asset.brand || "",
+      model: asset.model || "",
+      serialNumber: asset.serialNumber || "",
+      currentLocation: asset.currentLocation || "Base Proveedor",
+      position: asset.position || "N/A",
+      status: asset.status || "Operativo",
+      lastMovementDate: new Date().toISOString().split("T")[0],
+      name: asset.name || "",
+      type: asset.type || "",
+      journey: [
+        {
+          id: "M1",
+          provider: "Alta de Activo",
+          location: asset.currentLocation || "Base Proveedor",
+          service: "Alta",
+          dateIn: new Date().toISOString().split("T")[0],
+          dateOut: null,
+          status: "completed",
+          notes: "Registro inicial del activo",
+          responsible: "Sistema",
+        },
+      ],
+      certificates: [],
+    };
+    assets.push(newAsset);
   }
 }

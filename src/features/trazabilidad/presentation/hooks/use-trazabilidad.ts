@@ -2,9 +2,11 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { Asset, TrazabilidadStats } from "../../domain/entities";
 import { MockTrazabilidadRepository } from "../../infrastructure/repository";
 import {
+  AddCertificateUseCase,
   GetAssetListUseCase,
   GetDashboardStatsUseCase,
   RegisterMovementUseCase,
+  RegisterAssetUseCase,
 } from "../../application/use-cases";
 
 export type TrazabilidadView = "dashboard" | "list" | "detail";
@@ -36,6 +38,16 @@ export function useTrazabilidad() {
 
   const registerMovementUseCase = useMemo(
     () => new RegisterMovementUseCase(repository),
+    [repository],
+  );
+
+  const addCertificateUseCase = useMemo(
+    () => new AddCertificateUseCase(repository),
+    [repository],
+  );
+
+  const registerAssetUseCase = useMemo(
+    () => new RegisterAssetUseCase(repository),
     [repository],
   );
 
@@ -86,6 +98,20 @@ export function useTrazabilidad() {
     }
   };
 
+  const handleAddCertificate = async (assetId: string, certificate: any) => {
+    await addCertificateUseCase.execute(assetId, certificate);
+    await fetchData(); // Refresh data
+    if (selectedAsset?.id === assetId) {
+      const updated = await repository.getAssetById(assetId);
+      if (updated) setSelectedAsset(updated);
+    }
+  };
+
+  const handleRegisterAsset = async (asset: Partial<Asset>) => {
+    await registerAssetUseCase.execute(asset);
+    await fetchData(); // Refresh data
+  };
+
   const navigateToDetail = (asset: Asset) => {
     setSelectedAsset(asset);
     setView("detail");
@@ -109,6 +135,8 @@ export function useTrazabilidad() {
     stats,
     loading,
     handleRegisterMovement,
+    handleAddCertificate,
+    handleRegisterAsset,
     navigateToDetail,
     refresh: fetchData,
   };

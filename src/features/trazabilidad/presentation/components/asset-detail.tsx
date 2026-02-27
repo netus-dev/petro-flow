@@ -23,18 +23,27 @@ import {
   User,
   MessageSquare,
   MapPin,
+  FileText,
+  Plus,
 } from "lucide-react";
 import { Asset } from "../../domain/entities";
 import { EquipmentJourneyMap } from "./equipment-journey-map";
 import { RegisterMovementModal } from "./register-movement-modal";
+import { AddCertificateModal } from "./add-certificate-modal";
 
 interface Props {
   asset: Asset;
   onBack: () => void;
   onRegisterMovement: (assetId: string, movement: any) => Promise<void>;
+  onAddCertificate: (assetId: string, certificate: any) => Promise<void>;
 }
 
-export function AssetDetail({ asset, onBack, onRegisterMovement }: Props) {
+export function AssetDetail({
+  asset,
+  onBack,
+  onRegisterMovement,
+  onAddCertificate,
+}: Props) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Operativo":
@@ -94,27 +103,34 @@ export function AssetDetail({ asset, onBack, onRegisterMovement }: Props) {
 
       {/* Tabs */}
       <Tabs defaultValue="general" className="w-full">
-        <TabsList className="bg-secondary/30 p-1 border border-border mb-6">
+        <TabsList className="bg-transparent h-12 w-full justify-start gap-8 border-b border-border p-0 mb-8 rounded-none">
           <TabsTrigger
             value="general"
-            className="gap-2 data-[state=active]:bg-card"
+            className="relative h-12 rounded-none border-b-2 border-transparent bg-transparent px-1 pb-4 pt-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground transition-all shadow-none data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent focus-visible:ring-0 gap-2"
           >
             <Info className="size-4" />
             Información General
           </TabsTrigger>
           <TabsTrigger
             value="history"
-            className="gap-2 data-[state=active]:bg-card"
+            className="relative h-12 rounded-none border-b-2 border-transparent bg-transparent px-1 pb-4 pt-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground transition-all shadow-none data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent focus-visible:ring-0 gap-2"
           >
             <History className="size-4" />
             Historial de Movimientos
           </TabsTrigger>
           <TabsTrigger
             value="map"
-            className="gap-2 data-[state=active]:bg-card"
+            className="relative h-12 rounded-none border-b-2 border-transparent bg-transparent px-1 pb-4 pt-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground transition-all shadow-none data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent focus-visible:ring-0 gap-2"
           >
             <MapIcon className="size-4" />
             Ubicación en Mapa
+          </TabsTrigger>
+          <TabsTrigger
+            value="certificates"
+            className="relative h-12 rounded-none border-b-2 border-transparent bg-transparent px-1 pb-4 pt-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground transition-all shadow-none data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent focus-visible:ring-0 gap-2"
+          >
+            <FileText className="size-4" />
+            Certificados
           </TabsTrigger>
         </TabsList>
 
@@ -261,6 +277,81 @@ export function AssetDetail({ asset, onBack, onRegisterMovement }: Props) {
                     )}
                   </div>
                 ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="certificates">
+          <Card className="border-border bg-card">
+            <CardHeader className="flex flex-row items-center justify-between border-b border-border bg-secondary/10 py-4">
+              <CardTitle className="text-lg font-mono">
+                Historial de Certificados
+              </CardTitle>
+              <AddCertificateModal asset={asset} onAdd={onAddCertificate} />
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead className="bg-secondary/30 border-b border-border">
+                    <tr>
+                      <th className="px-6 py-3 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                        ID
+                      </th>
+                      <th className="px-6 py-3 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                        Nombre
+                      </th>
+                      <th className="px-6 py-3 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                        Fecha Carga
+                      </th>
+                      <th className="px-6 py-3 font-mono text-[10px] uppercase tracking-wider text-muted-foreground text-right">
+                        Acción
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {asset.certificates &&
+                      asset.certificates.map((cert) => (
+                        <tr
+                          key={cert.id}
+                          className="hover:bg-secondary/10 transition-colors"
+                        >
+                          <td className="px-6 py-4 font-mono text-xs text-foreground">
+                            {cert.id}
+                          </td>
+                          <td className="px-6 py-4 text-xs font-medium text-foreground">
+                            {cert.name}
+                          </td>
+                          <td className="px-6 py-4 text-xs text-muted-foreground">
+                            {cert.uploadDate}
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-[10px] font-bold uppercase border-border hover:bg-primary/10 hover:text-primary transition-colors"
+                              onClick={() =>
+                                window.open(cert.fileUrl, "_blank")
+                              }
+                            >
+                              <FileText className="size-3 mr-1" />
+                              Ver PDF
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    {(!asset.certificates ||
+                      asset.certificates.length === 0) && (
+                      <tr>
+                        <td
+                          colSpan={4}
+                          className="px-6 py-12 text-center text-sm text-muted-foreground"
+                        >
+                          No hay certificados registrados para este activo.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
             </CardContent>
           </Card>

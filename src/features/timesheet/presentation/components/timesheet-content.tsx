@@ -3,25 +3,24 @@
 import { useState } from "react";
 import {
   Clock,
+  User,
+  LayoutDashboard,
+  List,
+  PlusCircle,
+  ChevronRight,
+  ChevronDown,
+  LogOut,
+  Bell,
   Search,
   Filter,
-  CheckCircle2,
-  XCircle,
-  AlertCircle,
-  User,
-  ChevronDown,
-  ChevronUp,
-  Shield,
 } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/src/core/presentation/components/ui/card";
-import { Badge } from "@/src/core/presentation/components/ui/badge";
-import { Input } from "@/src/core/presentation/components/ui/input";
 import { Button } from "@/src/core/presentation/components/ui/button";
+import { Badge } from "@/src/core/presentation/components/ui/badge";
+import { useTimesheet } from "../hooks/use-timesheet";
+import { TimesheetDashboard } from "./timesheet-dashboard";
+import { TimesheetTable } from "./timesheet-table";
+import { TimesheetDetailView } from "./timesheet-detail-view";
+import { RegisterTimesheetForm } from "./register-timesheet-form";
 import {
   Select,
   SelectContent,
@@ -29,210 +28,46 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/core/presentation/components/ui/select";
-import { useTimesheet } from "../hooks/use-timesheet";
-import { OvertimeRecord, OvertimeStatus } from "../../domain/entities";
-
-function StatusBadge({ status }: { status: OvertimeStatus }) {
-  if (status === "approved")
-    return (
-      <Badge
-        variant="outline"
-        className="border-emerald-500/30 text-emerald-500 text-[9px] tracking-wider uppercase"
-      >
-        Aprobado
-      </Badge>
-    );
-  if (status === "pending")
-    return (
-      <Badge
-        variant="outline"
-        className="border-primary/30 text-primary text-[9px] tracking-wider uppercase"
-      >
-        Pendiente
-      </Badge>
-    );
-  return (
-    <Badge
-      variant="outline"
-      className="border-red-400/30 text-red-400 text-[9px] tracking-wider uppercase"
-    >
-      Rechazado
-    </Badge>
-  );
-}
-
-function RecordRow({
-  record,
-  expanded,
-  onToggle,
-}: {
-  record: OvertimeRecord;
-  expanded: boolean;
-  onToggle: () => void;
-}) {
-  return (
-    <div
-      className={`border rounded-lg transition-all ${
-        expanded ? "border-primary/20 bg-primary/5" : "border-border bg-card"
-      }`}
-    >
-      {/* Main row */}
-      <button
-        onClick={onToggle}
-        className="flex items-center gap-4 p-4 w-full text-left"
-      >
-        <div className="flex items-center justify-center size-9 rounded-lg bg-secondary/50 shrink-0">
-          <User className="size-4 text-muted-foreground" />
-        </div>
-        <div className="flex flex-col flex-1 min-w-0">
-          <span className="text-xs font-semibold text-foreground">
-            {record.worker}
-          </span>
-          <span className="text-[10px] text-muted-foreground truncate">
-            {record.workerRole} — {record.platform}
-          </span>
-        </div>
-        <div className="hidden sm:flex flex-col items-end shrink-0">
-          <span className="text-sm font-bold font-mono tabular-nums text-primary">
-            +{record.hoursOvertime}h
-          </span>
-          <span className="text-[10px] text-muted-foreground">extras</span>
-        </div>
-        <div className="hidden md:flex flex-col items-end shrink-0">
-          <span className="text-[11px] font-mono text-foreground">
-            {record.date}
-          </span>
-        </div>
-        <StatusBadge status={record.status} />
-        {expanded ? (
-          <ChevronUp className="size-4 text-muted-foreground shrink-0" />
-        ) : (
-          <ChevronDown className="size-4 text-muted-foreground shrink-0" />
-        )}
-      </button>
-
-      {/* Expanded details */}
-      {expanded && (
-        <div className="border-t border-border/50 px-4 py-3 flex flex-col gap-3">
-          {/* Reason */}
-          <div className="flex flex-col gap-1">
-            <span className="text-[9px] tracking-wider uppercase text-muted-foreground">
-              Motivo
-            </span>
-            <p className="text-xs text-foreground leading-relaxed">
-              {record.reason}
-            </p>
-          </div>
-
-          {/* Details grid */}
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <div className="flex flex-col gap-0.5 rounded-md bg-secondary/30 p-2.5">
-              <span className="text-[9px] tracking-wider uppercase text-muted-foreground">
-                Horas Regulares
-              </span>
-              <span className="text-sm font-bold font-mono text-foreground">
-                {record.hoursRegular}h
-              </span>
-            </div>
-            <div className="flex flex-col gap-0.5 rounded-md bg-primary/5 border border-primary/10 p-2.5">
-              <span className="text-[9px] tracking-wider uppercase text-muted-foreground">
-                Horas Extra
-              </span>
-              <span className="text-sm font-bold font-mono text-primary">
-                {record.hoursOvertime}h
-              </span>
-            </div>
-            <div className="flex flex-col gap-0.5 rounded-md bg-secondary/30 p-2.5">
-              <span className="text-[9px] tracking-wider uppercase text-muted-foreground">
-                Total Jornada
-              </span>
-              <span className="text-sm font-bold font-mono text-foreground">
-                {record.hoursRegular + record.hoursOvertime}h
-              </span>
-            </div>
-            <div className="flex flex-col gap-0.5 rounded-md bg-secondary/30 p-2.5">
-              <span className="text-[9px] tracking-wider uppercase text-muted-foreground">
-                Plataforma
-              </span>
-              <span className="text-[11px] font-medium text-foreground">
-                {record.platform}
-              </span>
-            </div>
-          </div>
-
-          {/* Authorization info */}
-          <div className="flex items-center gap-4 rounded-md border border-border/50 bg-secondary/20 p-3">
-            <Shield className="size-4 text-muted-foreground shrink-0" />
-            <div className="flex flex-col gap-0.5 flex-1">
-              <span className="text-[9px] tracking-wider uppercase text-muted-foreground">
-                Autorizacion
-              </span>
-              {record.authorizedBy ? (
-                <span className="text-xs text-foreground">
-                  Autorizado por{" "}
-                  <span className="font-semibold">{record.authorizedBy}</span>{" "}
-                  el {record.authorizedDate}
-                </span>
-              ) : (
-                <span className="text-xs text-muted-foreground italic">
-                  Pendiente de autorizacion
-                </span>
-              )}
-            </div>
-            {record.completedDate && (
-              <div className="flex flex-col items-end shrink-0">
-                <span className="text-[9px] tracking-wider uppercase text-muted-foreground">
-                  Completado
-                </span>
-                <span className="text-[11px] font-mono text-emerald-500">
-                  {record.completedDate}
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* Actions for pending */}
-          {record.status === "pending" && (
-            <div className="flex items-center gap-2 justify-end">
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-7 text-[11px] border-red-400/30 text-red-400 hover:bg-red-400/10 hover:text-red-400"
-              >
-                <XCircle className="size-3 mr-1" />
-                Rechazar
-              </Button>
-              <Button
-                size="sm"
-                className="h-7 text-[11px] bg-emerald-600 text-emerald-50 hover:bg-emerald-700"
-              >
-                <CheckCircle2 className="size-3 mr-1" />
-                Aprobar
-              </Button>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/src/core/presentation/components/ui/avatar";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/src/core/presentation/components/ui/tabs";
 
 export function TimesheetContent() {
-  const { records, stats, loading } = useTimesheet();
-  const [search, setSearch] = useState("");
-  const [filterStatus, setFilterStatus] = useState<string>("all");
-  const [expandedId, setExpandedId] = useState<string | null>("OT-001");
+  const {
+    view,
+    setView,
+    role,
+    setRole,
+    userId,
+    filteredRequests,
+    requests,
+    selectedRequest,
+    search,
+    setSearch,
+    filterStatus,
+    setFilterStatus,
+    filterRig,
+    setFilterRig,
+    stats,
+    loading,
+    handleSave,
+    handleUpdateStatus,
+    navigateToDetail,
+  } = useTimesheet();
 
-  const filtered = records.filter((r) => {
-    const matchSearch =
-      r.worker.toLowerCase().includes(search.toLowerCase()) ||
-      r.id.toLowerCase().includes(search.toLowerCase()) ||
-      r.platform.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = filterStatus === "all" || r.status === filterStatus;
-    return matchSearch && matchStatus;
-  });
+  const [activeTab, setActiveTab] = useState("all_requests");
 
-  if (loading || !stats) {
+  const isAutorizador = role === "Supervisor" || role === "Gerente";
+
+  if (loading && !stats) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Clock className="size-8 text-primary animate-spin" />
@@ -241,122 +76,211 @@ export function TimesheetContent() {
   }
 
   return (
-    <div className="flex flex-col gap-6 p-6">
-      {/* Header */}
-      <div className="flex flex-col gap-1">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center size-9 rounded-lg bg-primary/10 border border-primary/20">
-            <Clock className="size-5 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground font-mono tracking-tight">
-              Timesheet
+    <div className="flex flex-col min-h-screen bg-background">
+      {/* Module Header */}
+      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-30">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 md:px-6">
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
+              <span>Inicio</span>
+              <ChevronRight className="size-3" />
+              <span className="text-primary">TimeSheet</span>
+            </div>
+            <h1 className="text-xl font-bold font-mono tracking-tighter text-foreground flex items-center gap-2">
+              <Clock className="size-5 text-primary" />
+              TIMESHEET
             </h1>
-            <p className="text-sm text-muted-foreground">
-              Registro y control de horas extras — Semana 9, 2026
-            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <Select defaultValue="feb_1">
+              <SelectTrigger className="h-9 w-40 text-xs bg-secondary/50 border-border">
+                <SelectValue placeholder="Quincena" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="feb_1">Feb 1ra (01-15)</SelectItem>
+                <SelectItem value="feb_2">Feb 2da (16-28)</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select defaultValue="all">
+              <SelectTrigger className="h-9 w-32 text-xs bg-secondary/50 border-border">
+                <SelectValue placeholder="RIG" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos (RIG)</SelectItem>
+                <SelectItem value="702">RIG 702</SelectItem>
+                <SelectItem value="703">RIG 703</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <div className="h-8 w-px bg-border mx-2" />
+
+            <div className="flex items-center gap-3 pl-2 border-l border-border/50">
+              <div className="flex flex-col items-end">
+                <span className="text-xs font-bold text-foreground leading-tight">
+                  {userId === "USR-103" ? "Carlos Méndez" : "Juan Pérez"}
+                </span>
+                <Badge
+                  variant="outline"
+                  className="text-[8px] h-4 px-1.5 font-bold uppercase bg-primary/10 text-primary border-primary/20"
+                >
+                  {role}
+                </Badge>
+              </div>
+              <Avatar className="size-9 border border-border">
+                <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
+                  CM
+                </AvatarFallback>
+              </Avatar>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-        {[
-          {
-            label: "Total H. Extra",
-            value: `${stats.totalOvertime}h`,
-            icon: Clock,
-            color: "text-primary",
-          },
-          {
-            label: "Aprobadas",
-            value: stats.approved,
-            icon: CheckCircle2,
-            color: "text-emerald-500",
-          },
-          {
-            label: "Pendientes",
-            value: stats.pending,
-            icon: AlertCircle,
-            color: "text-primary",
-          },
-          {
-            label: "Rechazadas",
-            value: stats.rejected,
-            icon: XCircle,
-            color: "text-red-400",
-          },
-          {
-            label: "Trabajadores",
-            value: stats.totalWorkers,
-            icon: User,
-            color: "text-foreground",
-          },
-        ].map((stat) => (
-          <Card key={stat.label} className="border-border bg-card">
-            <CardContent className="flex items-center gap-3 p-4">
-              <div className="flex items-center justify-center size-8 rounded-md bg-secondary/50">
-                <stat.icon className={`size-4 ${stat.color}`} />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-lg font-bold font-mono tabular-nums text-foreground">
-                  {stat.value}
-                </span>
-                <span className="text-[9px] tracking-wider uppercase text-muted-foreground">
-                  {stat.label}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Filters */}
-      <div className="flex flex-col gap-2 sm:flex-row">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
-          <Input
-            placeholder="Buscar trabajador, ID o plataforma..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="h-9 pl-9 text-xs bg-secondary/50 border-border"
-          />
-        </div>
-        <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="h-9 text-xs w-full sm:w-48 bg-secondary/50 border-border">
-            <Filter className="size-3 mr-1.5" />
-            <SelectValue placeholder="Estado" />
-          </SelectTrigger>
-          <SelectContent className="bg-card border-border">
-            <SelectItem value="all">Todos</SelectItem>
-            <SelectItem value="approved">Aprobados</SelectItem>
-            <SelectItem value="pending">Pendientes</SelectItem>
-            <SelectItem value="rejected">Rechazados</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Records List */}
-      <div className="flex flex-col gap-2">
-        <span className="text-xs font-medium tracking-[0.2em] uppercase text-muted-foreground">
-          Registros ({filtered.length})
-        </span>
-        {filtered.map((record) => (
-          <RecordRow
-            key={record.id}
-            record={record}
-            expanded={expandedId === record.id}
-            onToggle={() =>
-              setExpandedId(expandedId === record.id ? null : record.id)
-            }
-          />
-        ))}
-        {filtered.length === 0 && (
-          <div className="text-center py-12 text-sm text-muted-foreground">
-            No se encontraron registros
+        {/* Sub-nav */}
+        {view !== "create" && (
+          <div className="flex items-center gap-6 px-6 h-12 bg-secondary/20">
+            <button
+              onClick={() => setView("dashboard")}
+              className={`flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest transition-colors h-full border-b-2 px-1 ${
+                view === "dashboard"
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <LayoutDashboard className="size-3.5" />
+              Dashboard
+            </button>
+            <button
+              onClick={() => setView("list")}
+              className={`flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest transition-colors h-full border-b-2 px-1 ${
+                view === "list" || view === "detail"
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <List className="size-3.5" />
+              Listado
+            </button>
+            <div className="flex-1" />
+            <Button
+              size="sm"
+              className="h-8 bg-primary hover:bg-primary/90 text-white gap-2 text-[10px] font-bold uppercase tracking-wider"
+              onClick={() => setView("create")}
+            >
+              <PlusCircle className="size-3.5" />
+              Registrar TimeSheet
+            </Button>
           </div>
         )}
-      </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="flex-1 p-6 max-w-[1600px] mx-auto w-full">
+        {view === "dashboard" && (
+          <TimesheetDashboard
+            role={role}
+            stats={stats}
+            recentRequests={requests}
+            onViewDetail={navigateToDetail}
+          />
+        )}
+
+        {view === "list" && (
+          <div className="flex flex-col gap-6">
+            {isAutorizador ? (
+              <Tabs
+                value={activeTab}
+                onValueChange={setActiveTab}
+                className="w-full"
+              >
+                <TabsList className="mb-4 bg-secondary/50 p-1">
+                  <TabsTrigger
+                    value="all_requests"
+                    className="text-xs uppercase font-bold tracking-wider px-6"
+                  >
+                    Solicitudes por autorizar
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="my_requests"
+                    className="text-xs uppercase font-bold tracking-wider px-6"
+                  >
+                    Mis Solicitudes
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="all_requests">
+                  <TimesheetTable
+                    role={role}
+                    requests={filteredRequests}
+                    onViewDetail={navigateToDetail}
+                    search={search}
+                    setSearch={setSearch}
+                    statusFilter={filterStatus}
+                    setStatusFilter={setFilterStatus}
+                    rigFilter={filterRig}
+                    setRigFilter={setFilterRig}
+                  />
+                </TabsContent>
+                <TabsContent value="my_requests">
+                  <TimesheetTable
+                    role={role}
+                    requests={filteredRequests.filter(
+                      (r) => r.workerId === userId,
+                    )}
+                    onViewDetail={navigateToDetail}
+                    search={search}
+                    setSearch={setSearch}
+                    statusFilter={filterStatus}
+                    setStatusFilter={setFilterStatus}
+                    rigFilter={filterRig}
+                    setRigFilter={setFilterRig}
+                  />
+                </TabsContent>
+              </Tabs>
+            ) : (
+              <TimesheetTable
+                role={role}
+                requests={filteredRequests}
+                onViewDetail={navigateToDetail}
+                search={search}
+                setSearch={setSearch}
+                statusFilter={filterStatus}
+                setStatusFilter={setFilterStatus}
+                rigFilter={filterRig}
+                setRigFilter={setFilterRig}
+              />
+            )}
+          </div>
+        )}
+
+        {view === "detail" && selectedRequest && (
+          <TimesheetDetailView
+            role={role}
+            request={selectedRequest}
+            onBack={() => setView("list")}
+            onUpdateStatus={handleUpdateStatus}
+          />
+        )}
+
+        {view === "create" && (
+          <RegisterTimesheetForm
+            role={role}
+            userId={userId}
+            workerName={userId === "USR-103" ? "Carlos Méndez" : "Juan Pérez"}
+            onSave={handleSave}
+            onCancel={() => setView("dashboard")}
+          />
+        )}
+      </main>
+
+      {/* Footer */}
+      <footer className="border-t border-border p-6 mt-12 bg-card/30">
+        <div className="flex items-center justify-between text-[10px] uppercase font-bold tracking-widest text-muted-foreground font-mono">
+          <span>Petro Flow — Industrial Field Management System</span>
+          <span>Unidad Operativa: RIG-702/703</span>
+          <span>V1.4.2</span>
+        </div>
+      </footer>
     </div>
   );
 }

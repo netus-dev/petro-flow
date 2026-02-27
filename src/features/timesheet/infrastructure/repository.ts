@@ -1,136 +1,178 @@
-import { OvertimeRecord, TimesheetStats } from "../domain/entities";
+import {
+  TimesheetRequest,
+  TimesheetStats,
+  DayCategory,
+  ApprovalStatus,
+} from "../domain/entities";
 import { ITimesheetRepository } from "../domain/repository";
 
-const overtimeRecords: OvertimeRecord[] = [
+const generateDays = (
+  start: string,
+  end: string,
+  category: DayCategory = "Jornada normal",
+): any[] => {
+  const days = [];
+  let current = new Date(start);
+  const finish = new Date(end);
+  while (current <= finish) {
+    days.push({
+      date: current.toISOString().split("T")[0],
+      category: category,
+      hoursExtra: 0,
+    });
+    current.setDate(current.getDate() + 1);
+  }
+  return days;
+};
+
+const mockTimesheets: TimesheetRequest[] = [
   {
-    id: "OT-001",
-    worker: "Luis Martinez",
-    workerRole: "Operador de Plataforma",
-    platform: "Plataforma Norte",
-    date: "2026-02-25",
-    hoursRegular: 8,
-    hoursOvertime: 4,
-    reason: "Mantenimiento de emergencia en bomba BC-12",
-    authorizedBy: "Carlos Mendez",
-    authorizedDate: "2026-02-25",
-    completedDate: "2026-02-25",
-    status: "approved",
+    id: "TS-2026-001",
+    folio: "FMS-TS-22940",
+    workerId: "USR-101",
+    workerName: "Juan Pérez",
+    role: "Técnico",
+    rig: "702",
+    periodStart: "2026-01-01",
+    periodEnd: "2026-01-15",
+    days: [
+      { date: "2026-01-01", category: "Jornada normal", hoursExtra: 0 },
+      { date: "2026-01-02", category: "Tiempo extra", hoursExtra: 4 },
+      { date: "2026-01-03", category: "Tiempo extra", hoursExtra: 4 },
+      { date: "2026-01-04", category: "Jornada normal", hoursExtra: 0 },
+      { date: "2026-01-05", category: "Día festivo", hoursExtra: 8 },
+      ...generateDays("2026-01-06", "2026-01-15"),
+    ],
+    totalExtraHours: 16,
+    totalNormalDays: 14,
+    totalHolidayDays: 1,
+    totalTrainingDays: 0,
+    status: "Pendiente Supervisor",
+    submittedAt: "2026-01-16T10:00:00Z",
+    comments: {
+      worker: "Mantenimiento preventivo extendido en subestructura.",
+    },
   },
   {
-    id: "OT-002",
-    worker: "Ana Rodriguez",
-    workerRole: "Ingeniera de Produccion",
-    platform: "Plataforma Sur",
-    date: "2026-02-25",
-    hoursRegular: 8,
-    hoursOvertime: 3,
-    reason: "Supervision de pruebas de presion en Pozo PF-042",
-    authorizedBy: "Carlos Mendez",
-    authorizedDate: "2026-02-25",
-    completedDate: "2026-02-26",
-    status: "approved",
+    id: "TS-2026-002",
+    folio: "FMS-TS-22941",
+    workerId: "USR-102",
+    workerName: "Andrés García",
+    role: "Técnico",
+    rig: "703",
+    periodStart: "2026-01-01",
+    periodEnd: "2026-01-15",
+    days: generateDays("2026-01-01", "2026-01-15", "Jornada normal"),
+    totalExtraHours: 0,
+    totalNormalDays: 15,
+    totalHolidayDays: 0,
+    totalTrainingDays: 0,
+    status: "Aprobada",
+    submittedAt: "2026-01-15T18:00:00Z",
+    comments: {
+      worker: "Quincena sin novedades.",
+      supervisor: "Validado.",
+      manager: "Aprobación final.",
+    },
   },
   {
-    id: "OT-003",
-    worker: "Pedro Gonzalez",
-    workerRole: "Tecnico de Instrumentacion",
-    platform: "Plataforma Este",
-    date: "2026-02-24",
-    hoursRegular: 8,
-    hoursOvertime: 6,
-    reason: "Calibracion de sensores de flujo (programada)",
-    authorizedBy: null,
-    authorizedDate: null,
-    completedDate: null,
-    status: "pending",
-  },
-  {
-    id: "OT-004",
-    worker: "Maria Fernandez",
-    workerRole: "Ingeniera de Seguridad",
-    platform: "Plataforma Norte",
-    date: "2026-02-24",
-    hoursRegular: 8,
-    hoursOvertime: 2,
-    reason: "Inspeccion de seguridad post-incidente menor",
-    authorizedBy: "Jorge Ramirez",
-    authorizedDate: "2026-02-24",
-    completedDate: "2026-02-24",
-    status: "approved",
-  },
-  {
-    id: "OT-005",
-    worker: "Roberto Silva",
-    workerRole: "Soldador Certificado",
-    platform: "Plataforma Sur",
-    date: "2026-02-23",
-    hoursRegular: 8,
-    hoursOvertime: 5,
-    reason: "Reparacion de tuberia de alta presion",
-    authorizedBy: "Carlos Mendez",
-    authorizedDate: "2026-02-23",
-    completedDate: "2026-02-23",
-    status: "approved",
-  },
-  {
-    id: "OT-006",
-    worker: "Diana Lopez",
-    workerRole: "Operadora de Consola",
-    platform: "Plataforma Norte",
-    date: "2026-02-23",
-    hoursRegular: 8,
-    hoursOvertime: 4,
-    reason: "Cobertura de turno por ausencia de personal",
-    authorizedBy: null,
-    authorizedDate: null,
-    completedDate: null,
-    status: "pending",
-  },
-  {
-    id: "OT-007",
-    worker: "Enrique Morales",
-    workerRole: "Electricista Industrial",
-    platform: "Plataforma Este",
-    date: "2026-02-22",
-    hoursRegular: 8,
-    hoursOvertime: 3,
-    reason: "Revision de tablero electrico principal",
-    authorizedBy: "Jorge Ramirez",
-    authorizedDate: "2026-02-23",
-    completedDate: null,
-    status: "rejected",
-  },
-  {
-    id: "OT-008",
-    worker: "Carmen Herrera",
-    workerRole: "Tecnico de Laboratorio",
-    platform: "Plataforma Sur",
-    date: "2026-02-22",
-    hoursRegular: 8,
-    hoursOvertime: 2,
-    reason: "Analisis urgente de muestras de crudo",
-    authorizedBy: "Carlos Mendez",
-    authorizedDate: "2026-02-22",
-    completedDate: "2026-02-22",
-    status: "approved",
+    id: "TS-2026-003",
+    folio: "FMS-TS-22942",
+    workerId: "USR-103",
+    workerName: "Carlos Méndez",
+    role: "Supervisor",
+    rig: "702",
+    periodStart: "2026-01-01",
+    periodEnd: "2026-01-15",
+    days: generateDays("2026-01-01", "2026-01-15"),
+    totalExtraHours: 8,
+    totalNormalDays: 15,
+    totalHolidayDays: 0,
+    totalTrainingDays: 0,
+    status: "Pendiente Gerente",
+    submittedAt: "2026-01-16T09:00:00Z",
+    comments: {
+      worker: "Supervisión de cambio de lodos.",
+      supervisor: "Solicitud propia validada por flujo.",
+    },
   },
 ];
 
 export class MockTimesheetRepository implements ITimesheetRepository {
-  async getOvertimeRecords(): Promise<OvertimeRecord[]> {
-    return overtimeRecords;
+  async getTimesheetList(
+    role: string,
+    userId: string,
+  ): Promise<TimesheetRequest[]> {
+    // Simulate network delay
+    await new Promise((r) => setTimeout(r, 800));
+
+    if (role === "Técnico") {
+      return mockTimesheets.filter((ts) => ts.workerId === userId);
+    }
+
+    // For Supervisor or Manager, show all relevant to them
+    return mockTimesheets;
   }
 
-  async getWeeklyStats(): Promise<TimesheetStats> {
-    return {
-      totalOvertime: overtimeRecords.reduce(
-        (acc, r) => acc + r.hoursOvertime,
+  async getTimesheetById(id: string): Promise<TimesheetRequest | undefined> {
+    return mockTimesheets.find((ts) => ts.id === id);
+  }
+
+  async getStats(role: string, userId: string): Promise<TimesheetStats> {
+    const list = await this.getTimesheetList(role, userId);
+
+    const stats: TimesheetStats = {
+      totalRequests: list.length,
+      pendingRequests: list.filter((ts) => ts.status.startsWith("Pendiente"))
+        .length,
+      approvedRequests: list.filter((ts) => ts.status === "Aprobada").length,
+      rejectedRequests: list.filter((ts) => ts.status === "Rechazada").length,
+      totalExtraHours: list.reduce((acc, ts) => acc + ts.totalExtraHours, 0),
+      estimatedPayment: list.reduce(
+        (acc, ts) => acc + ts.totalExtraHours * 45.5,
         0,
       ),
-      approved: overtimeRecords.filter((r) => r.status === "approved").length,
-      pending: overtimeRecords.filter((r) => r.status === "pending").length,
-      rejected: overtimeRecords.filter((r) => r.status === "rejected").length,
-      totalWorkers: new Set(overtimeRecords.map((r) => r.worker)).size,
+      recentActivity: [
+        {
+          id: "act-1",
+          actor: "Juan Pérez",
+          type: "submission",
+          message: "Solicitud enviada - RIG 702",
+          timestamp: "Hace 2 horas",
+        },
+        {
+          id: "act-2",
+          actor: "Andrés García",
+          type: "approval",
+          message: "Solicitud aprobada final",
+          timestamp: "Hace 1 día",
+        },
+      ],
     };
+
+    return stats;
+  }
+
+  async saveTimesheet(timesheet: TimesheetRequest): Promise<void> {
+    const index = mockTimesheets.findIndex((ts) => ts.id === timesheet.id);
+    if (index >= 0) {
+      mockTimesheets[index] = timesheet;
+    } else {
+      mockTimesheets.push(timesheet);
+    }
+  }
+
+  async updateTimesheetStatus(
+    id: string,
+    status: ApprovalStatus,
+    role: string,
+    comment: string,
+  ): Promise<void> {
+    const ts = mockTimesheets.find((t) => t.id === id);
+    if (ts) {
+      ts.status = status;
+      if (role === "Supervisor") ts.comments.supervisor = comment;
+      if (role === "Gerente") ts.comments.manager = comment;
+    }
   }
 }

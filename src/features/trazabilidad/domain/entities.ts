@@ -14,6 +14,13 @@ export interface JourneyStop {
   responsible?: string;
 }
 
+export interface AssetCertificate {
+  id: string;
+  name: string;
+  uploadDate: string;
+  fileUrl: string;
+}
+
 export interface Asset {
   id: string;
   code: string;
@@ -28,6 +35,7 @@ export interface Asset {
   name: string; // Keep for compatibility
   type: string; // Keep for compatibility
   journey: JourneyStop[];
+  certificates: AssetCertificate[];
 }
 
 export interface TrazabilidadStats {

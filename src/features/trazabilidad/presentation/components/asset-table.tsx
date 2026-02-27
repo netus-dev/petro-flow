@@ -19,7 +19,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/core/presentation/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/src/core/presentation/components/ui/dropdown-menu";
 import { Asset } from "../../domain/entities";
+import { FileText } from "lucide-react";
 
 interface Props {
   assets: Asset[];
@@ -187,13 +196,55 @@ export function AssetTable({
                     >
                       <Eye className="size-4" />
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="size-8 text-muted-foreground"
-                    >
-                      <MoreVertical className="size-4" />
-                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-8 text-muted-foreground"
+                        >
+                          <MoreVertical className="size-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="end"
+                        className="w-48 bg-card border-border"
+                      >
+                        <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-muted-foreground font-mono">
+                          Acciones
+                        </DropdownMenuLabel>
+                        <DropdownMenuSeparator className="bg-border" />
+                        <DropdownMenuItem
+                          className="gap-2 text-xs focus:bg-secondary cursor-pointer"
+                          onClick={() => onViewDetail(asset)}
+                        >
+                          <Eye className="size-3.5" /> Ver Detalles
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="gap-2 text-xs focus:bg-secondary cursor-pointer"
+                          onClick={() => {
+                            if (
+                              asset.certificates &&
+                              asset.certificates.length > 0
+                            ) {
+                              window.open(
+                                asset.certificates[0].fileUrl,
+                                "_blank",
+                              );
+                            } else {
+                              alert(
+                                "No hay certificados disponibles para este activo.",
+                              );
+                            }
+                          }}
+                        >
+                          <FileText className="size-3.5" /> Ver Certificado
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="gap-2 text-xs focus:bg-secondary cursor-pointer">
+                          <Download className="size-3.5" /> Descargar QR
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </TableCell>
               </TableRow>

@@ -13,6 +13,7 @@ import { useTrazabilidad } from "../hooks/use-trazabilidad";
 import { TrazabilidadDashboard } from "./trazabilidad-dashboard";
 import { AssetTable } from "./asset-table";
 import { AssetDetail } from "./asset-detail";
+import { RegisterAssetModal } from "./register-asset-modal";
 import {
   Select,
   SelectContent,
@@ -44,7 +45,9 @@ export function TrazabilidadContent() {
     setFilterStatus,
     stats,
     loading,
+    handleRegisterAsset,
     handleRegisterMovement,
+    handleAddCertificate,
     navigateToDetail,
   } = useTrazabilidad();
 
@@ -101,14 +104,7 @@ export function TrazabilidadContent() {
             </SelectContent>
           </Select>
 
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-9 gap-2 border-border border-dashed font-mono uppercase text-[10px] tracking-wider"
-          >
-            <Plus className="size-3.5" />
-            Registrar Activo
-          </Button>
+          <RegisterAssetModal onRegister={handleRegisterAsset} />
         </div>
       </div>
 
@@ -158,6 +154,7 @@ export function TrazabilidadContent() {
             asset={selectedAsset}
             onBack={() => setView("list")}
             onRegisterMovement={handleRegisterMovement}
+            onAddCertificate={handleAddCertificate}
           />
         )}
       </div>
