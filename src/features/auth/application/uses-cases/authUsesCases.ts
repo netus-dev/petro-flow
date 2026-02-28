@@ -59,3 +59,11 @@ export class UpdateUserUseCase {
     return this.repository.updateUser(data);
   }
 }
+
+export class GetProfileUseCase {
+  constructor(private repository: IAuthRepository) {}
+
+  async execute(): Promise<any> {
+    return this.repository.getProfile();
+  }
+}
