@@ -11,17 +11,18 @@ import { useAuth } from "../hooks/use-auth";
 import { useEffect } from "react";
 
 export function LoginForm() {
-  const { login, isLoading, error, user } = useAuth();
+  const { login, isLoading, error, user, getProfile, profile } = useAuth();
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("cjuan2921@gmail.com");
+  const [password, setPassword] = useState("Ghx35put-");
 
   useEffect(() => {
     if (user) {
+      getProfile();
       router.push("/dashboard");
     }
-  }, [user, router]);
+  }, [user, router, getProfile]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

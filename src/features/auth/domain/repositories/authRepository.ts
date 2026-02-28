@@ -11,4 +11,5 @@ export interface IAuthRepository {
   getCurrentUser(): Promise<AuthResponse | null>;
   resetPassword(email: string): Promise<void>;
   updateUser(data: any): Promise<void>;
+  getProfile(): Promise<any>;
 }

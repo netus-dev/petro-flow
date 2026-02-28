@@ -40,10 +40,12 @@ import {
   AvatarFallback,
 } from "@/src/core/presentation/components/ui/avatar";
 import { useApp } from "@/src/core/presentation/providers/providers";
+import { useAuth } from "@/src/features/auth/presentation/hooks/use-auth";
 
 export function AppSidebar() {
   const pathname = usePathname();
   const { t } = useApp();
+  const { logout } = useAuth();
 
   const mainModules = [
     {
@@ -104,6 +106,10 @@ export function AppSidebar() {
       href: "/dashboard/soporte",
     },
   ];
+
+  const handleLogout = async () => {
+    await logout();
+  };
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
@@ -245,7 +251,7 @@ export function AppSidebar() {
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild className="text-sm text-destructive">
-                  <Link href="/">
+                  <Link href="/" onClick={handleLogout}>
                     <LogOut className="mr-2 size-4" />
                     {t("sidebar.logout")}
                   </Link>
