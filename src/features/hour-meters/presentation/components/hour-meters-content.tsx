@@ -73,18 +73,18 @@ export function HourMeterContent() {
   };
 
   return (
-    <div className="h-screen w-full bg-background flex flex-col p-4 md:p-6 lg:p-8 overflow-hidden">
-      {/* Top Header Panel */}
-      <header className="shrink-0 mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/40 pb-4">
+    <div className="flex flex-col h-screen max-h-screen w-full bg-background overflow-hidden p-4 md:p-6 lg:p-8">
+      {/* Top Header Panel (Fixed Height) */}
+      <header className="shrink-0 mb-4 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/40 pb-4">
         <div className="flex items-center gap-4">
           <div className="flex size-12 items-center justify-center rounded-xl bg-primary/10 border border-primary/20 shadow-inner">
             <Clock className="size-6 text-primary" />
           </div>
           <div>
-            <h1 className="text-3xl md:text-4xl font-black tracking-tight text-foreground font-mono uppercase">
+            <h1 className="text-2xl md:text-3xl font-black tracking-tight text-foreground font-mono uppercase">
               Dashboard de Horómetros
             </h1>
-            <p className="text-sm md:text-base font-medium tracking-widest text-muted-foreground uppercase mt-1">
+            <p className="text-xs md:text-sm font-medium tracking-widest text-muted-foreground uppercase mt-1">
               RIG 702 / 703
             </p>
           </div>
@@ -97,47 +97,47 @@ export function HourMeterContent() {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex size-3 rounded-full bg-emerald-500"></span>
               </span>
-              <span className="font-mono text-sm tracking-wider text-emerald-500 uppercase font-semibold">
+              <span className="font-mono text-xs tracking-wider text-emerald-500 uppercase font-semibold">
                 Conectado
               </span>
             </div>
-            <span className="font-mono text-xs text-muted-foreground mt-1">
+            <span className="font-mono text-[10px] text-muted-foreground mt-1">
               Actualizado {lastSync}
             </span>
           </div>
         </div>
       </header>
 
-      {/* Mini Stats Summary Row */}
-      <div className="shrink-0 grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 lg:mb-6">
-        <div className="flex flex-col bg-card/60 backdrop-blur-sm border border-border/50 rounded-lg p-4">
-          <span className="text-[10px] sm:text-xs font-mono uppercase tracking-widest text-muted-foreground mb-1">
+      {/* Mini Stats Summary Row (Fixed Height) */}
+      <div className="shrink-0 grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+        <div className="flex flex-col bg-card/60 backdrop-blur-sm border border-border/50 rounded-lg p-3">
+          <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1">
             Activos
           </span>
-          <span className="text-2xl sm:text-3xl font-bold font-mono text-foreground">{stats.total}</span>
+          <span className="text-xl font-bold font-mono text-foreground">{stats.total}</span>
         </div>
-        <div className="flex flex-col bg-card/60 backdrop-blur-sm border border-border/50 rounded-lg p-4">
-          <span className="text-[10px] sm:text-xs font-mono uppercase tracking-widest text-orange-500/80 mb-1">
+        <div className="flex flex-col bg-card/60 backdrop-blur-sm border border-border/50 rounded-lg p-3">
+          <span className="text-[10px] font-mono uppercase tracking-widest text-orange-500/80 mb-1">
             Críticos (&lt; 250h)
           </span>
-          <span className="text-2xl sm:text-3xl font-bold font-mono text-orange-500">{stats.criticalCount}</span>
+          <span className="text-xl font-bold font-mono text-orange-500">{stats.criticalCount}</span>
         </div>
-        <div className="flex flex-col bg-card/60 backdrop-blur-sm border border-border/50 rounded-lg p-4">
-          <span className="text-[10px] sm:text-xs font-mono uppercase tracking-widest text-amber-500/80 mb-1">
+        <div className="flex flex-col bg-card/60 backdrop-blur-sm border border-border/50 rounded-lg p-3">
+          <span className="text-[10px] font-mono uppercase tracking-widest text-amber-500/80 mb-1">
             Próximos (&lt; 500h)
           </span>
-          <span className="text-2xl sm:text-3xl font-bold font-mono text-amber-500">{stats.warningCount}</span>
+          <span className="text-xl font-bold font-mono text-amber-500">{stats.warningCount}</span>
         </div>
-        <div className="flex flex-col bg-card/60 backdrop-blur-sm border border-border/50 rounded-lg p-4">
-          <span className="text-[10px] sm:text-xs font-mono uppercase tracking-widest text-primary/80 mb-1">
+        <div className="flex flex-col bg-card/60 backdrop-blur-sm border border-border/50 rounded-lg p-3">
+          <span className="text-[10px] font-mono uppercase tracking-widest text-primary/80 mb-1">
             Uso Promedio
           </span>
-          <span className="text-2xl sm:text-3xl font-bold font-mono text-primary">{stats.avgUsage}%</span>
+          <span className="text-xl font-bold font-mono text-primary">{stats.avgUsage}%</span>
         </div>
       </div>
 
-      {/* Main Grid - TV Display Size */}
-      <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 lg:gap-6">
+      {/* Main Grid - Fills remaining space dynamically */}
+      <div className="flex-1 min-h-0 min-w-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-3 md:gap-4 overflow-hidden">
         {enhancedRecords.map((record) => {
           let cardBg = "bg-card border-border/50 hover:border-border";
           let textColor = "text-foreground";
@@ -145,14 +145,12 @@ export function HourMeterContent() {
           let progressIndicatorColor = "bg-primary";
 
           if (record.isCritical) {
-            // Under 250 hours remaining -> Soft orange/red critical tone
-            cardBg = "bg-orange-950/20 border-orange-500/30 hover:border-orange-500/50 shadow-[0_0_15px_rgba(249,115,22,0.05)]";
+            cardBg = "bg-orange-950/20 border-orange-500/30 shadow-[0_0_15px_rgba(249,115,22,0.05)]";
             textColor = "text-orange-500";
             badgeText = "Mantenimiento Crítico";
             progressIndicatorColor = "bg-orange-500";
           } else if (record.isWarning) {
-            // Under 500 hours remaining -> Soft yellow tone
-            cardBg = "bg-amber-950/20 border-amber-500/30 hover:border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.05)]";
+            cardBg = "bg-amber-950/20 border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.05)]";
             textColor = "text-amber-500";
             badgeText = "Próximo a Mantenimiento";
             progressIndicatorColor = "bg-amber-500";
@@ -161,60 +159,57 @@ export function HourMeterContent() {
           return (
             <Card
               key={record.id}
-              className={`transition-all duration-500 translate-y-0 hover:-translate-y-1 hover:shadow-xl ${cardBg} h-full flex flex-col`}
+              className={`transition-colors duration-500 ${cardBg} h-full overflow-hidden flex flex-col`}
             >
-              <CardContent className="p-6 flex flex-col h-full grow">
+              <CardContent className="p-4 md:p-5 flex flex-col h-full grow">
                 {/* Upper Section */}
-                <div className="flex flex-col items-start mb-2 lg:mb-4 gap-2">
-                  <div className="flex flex-col pr-2">
-                    <h3 className="text-lg lg:text-xl font-bold tracking-tight text-foreground line-clamp-2 leading-tight">
-                      {record.equipment}
-                    </h3>
-                    <p className="text-[10px] sm:text-xs font-mono mt-1 opacity-70 tracking-widest uppercase">
+                <div className="flex flex-col items-start gap-1 pb-2 border-b border-border/40">
+                  <h3 className="text-base md:text-lg font-bold tracking-tight text-foreground line-clamp-1">
+                    {record.equipment}
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    <p className="text-[10px] font-mono opacity-70 tracking-widest uppercase">
                       {record.id}
                     </p>
-                  </div>
-                  <div className="shrink-0">
                     {record.isWarning ? (
-                      <Badge variant="outline" className="border-amber-500/50 text-amber-500 bg-amber-500/10 text-[9px] sm:text-[10px] tracking-wider uppercase">
+                      <span className="text-amber-500 text-[9px] font-medium tracking-wider uppercase bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
                         {badgeText}
-                      </Badge>
+                      </span>
                     ) : record.isCritical ? (
-                      <Badge variant="outline" className="border-orange-500/50 text-orange-500 bg-orange-500/10 text-[9px] sm:text-[10px] tracking-wider uppercase animate-pulse">
+                      <span className="text-orange-500 text-[9px] font-medium tracking-wider uppercase bg-orange-500/10 px-1.5 py-0.5 rounded border border-orange-500/20 animate-pulse">
                         {badgeText}
-                      </Badge>
+                      </span>
                     ) : (
-                      <Badge variant="outline" className="border-emerald-500/30 text-emerald-500 bg-emerald-500/10 text-[9px] sm:text-[10px] tracking-wider uppercase">
+                      <span className="text-emerald-500 text-[9px] font-medium tracking-wider uppercase bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
                         {badgeText}
-                      </Badge>
+                      </span>
                     )}
                   </div>
                 </div>
 
                 {/* Main Focus */}
-                <div className="flex-grow flex flex-col justify-center my-2 lg:my-6">
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-4xl lg:text-5xl xl:text-6xl 2xl:text-7xl font-black font-mono tabular-nums tracking-tighter text-foreground drop-shadow-sm">
+                <div className="flex-1 flex flex-col justify-center min-h-0">
+                  <div className="flex items-baseline gap-1.5 justify-center py-2">
+                    <span className="text-4xl md:text-5xl lg:text-6xl font-black font-mono tabular-nums tracking-tighter text-foreground drop-shadow-sm leading-none">
                       {record.currentReading.toLocaleString()}
                     </span>
-                    <span className="text-xl xl:text-2xl font-mono text-muted-foreground font-bold">
+                    <span className="text-lg md:text-xl font-mono text-muted-foreground font-bold">
                       h
                     </span>
                   </div>
                 </div>
 
                 {/* Lower Section */}
-                <div className="mt-auto">
-                  <p className={`text-sm lg:text-[15px] font-medium mb-4 ${textColor}`}>
-                    Faltan <span className="font-bold font-mono text-lg">{record.remainingHours.toLocaleString()}</span> horas para mantenimiento de {record.maxThreshold.toLocaleString()} h
+                <div className="mt-auto shrink-0 pt-3 border-t border-border/40">
+                  <p className={`text-xs md:text-sm font-medium mb-3 ${textColor}`}>
+                    Faltan <span className="font-bold font-mono text-base">{record.remainingHours.toLocaleString()}</span> hrs para límite de {record.maxThreshold.toLocaleString()}h
                   </p>
 
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-[10px] font-mono font-medium tracking-widest text-muted-foreground uppercase">
-                      <span>{record.currentReading.toLocaleString()} h</span>
-                      <span>{record.maxThreshold.toLocaleString()} h</span>
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between text-[9px] font-mono font-medium tracking-widest text-muted-foreground uppercase">
+                      <span>{record.currentReading.toLocaleString()}h</span>
+                      <span>{record.maxThreshold.toLocaleString()}h</span>
                     </div>
-                    {/* Native progress bar equivalent with custom coloring inside */}
                     <div className="h-1.5 w-full bg-secondary/60 overflow-hidden rounded-full">
                       <div
                         className={`h-full rounded-full transition-all duration-1000 ease-out ${progressIndicatorColor}`}

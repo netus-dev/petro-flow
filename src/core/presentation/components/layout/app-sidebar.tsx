@@ -65,6 +65,12 @@ export function AppSidebar() {
       href: "/dashboard/timesheet",
     },
     {
+      titleKey: "sidebar.requisitions",
+      label: t("requisitions"),
+      icon: Clock,
+      href: "/dashboard/requisitions",
+    },
+    {
       titleKey: "sidebar.elearning",
       label: t("sidebar.elearning"),
       icon: GraduationCap,
