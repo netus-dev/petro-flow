@@ -1,41 +1,43 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { MockAuthRepository } from "../../infrastructure/repository";
-import { LoginUseCase } from "../../application/use-cases";
-import { AuthCredentials } from "../../domain/entities";
+import { useAuthStore } from "../store/auth-store";
+import { AuthCredentials } from "../../domain/entities/authEntities";
 
 export function useAuth() {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const repository = useMemo(() => new MockAuthRepository(), []);
-  const loginUseCase = useMemo(
-    () => new LoginUseCase(repository),
-    [repository],
-  );
+  const {
+    user,
+    isLoading,
+    error,
+    login: storeLogin,
+    logout: storeLogout,
+    checkSession,
+    clearError,
+  } = useAuthStore();
 
   const login = useCallback(
     async (credentials: AuthCredentials) => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        await loginUseCase.execute(credentials);
-        router.push("/dashboard");
-      } catch (err: any) {
-        setError(err.message || "Error al iniciar sesion");
-      } finally {
-        setIsLoading(false);
-      }
+      await storeLogin(credentials);
+      // We check if there's no error after login attempt
+      // The store updates both 'user' and 'error'
     },
-    [loginUseCase, router],
+    [storeLogin],
   );
 
+  const logout = useCallback(async () => {
+    await storeLogout();
+    router.push("/auth/login");
+  }, [storeLogout, router]);
+
   return {
+    user,
     login,
+    logout,
+    checkSession,
     isLoading,
     error,
+    clearError,
   };
 }

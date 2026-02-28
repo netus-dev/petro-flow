@@ -8,12 +8,20 @@ import { Label } from "@/src/core/presentation/components/ui/label";
 import { Button } from "@/src/core/presentation/components/ui/button";
 
 import { useAuth } from "../hooks/use-auth";
+import { useEffect } from "react";
 
 export function LoginForm() {
-  const { login, isLoading, error } = useAuth();
+  const { login, isLoading, error, user } = useAuth();
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  useEffect(() => {
+    if (user) {
+      router.push("/dashboard");
+    }
+  }, [user, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
