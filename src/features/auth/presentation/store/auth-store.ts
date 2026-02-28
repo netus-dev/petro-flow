@@ -13,6 +13,7 @@ import {
   GetCurrentUserUseCase,
   ResetPasswordUseCase,
   UpdateUserUseCase,
+  GetProfileUseCase,
 } from "../../application/uses-cases/authUsesCases";
 
 // Dependency Injection / Singleton Pattern for Use Cases
@@ -20,6 +21,7 @@ const dataSource = new AuthDataSource();
 const repository = new AuthRepositoryImpl(dataSource);
 
 const loginUseCase = new LoginUseCase(repository);
+const getProfileUseCase = new GetProfileUseCase(repository);
 const registerUseCase = new RegisterUseCase(repository);
 const logoutUseCase = new LogoutUseCase(repository);
 const getCurrentUserUseCase = new GetCurrentUserUseCase(repository);
@@ -28,10 +30,12 @@ const updateUserUseCase = new UpdateUserUseCase(repository);
 
 interface AuthState {
   user: User | null;
+  profile: any;
   isLoading: boolean;
   error: string | null;
 
   login: (credentials: AuthCredentials) => Promise<void>;
+  getProfile: () => Promise<void>;
   register: (credentials: RegisterCredentials) => Promise<void>;
   logout: () => Promise<void>;
   checkSession: () => Promise<void>;
@@ -44,6 +48,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   isLoading: false,
   error: null,
+  profile: null,
 
   login: async (credentials) => {
     set({ isLoading: true, error: null });
@@ -53,6 +58,21 @@ export const useAuthStore = create<AuthState>((set) => ({
         set({ error: response.error, isLoading: false });
       } else {
         set({ user: response.user, isLoading: false });
+      }
+    } catch (err: any) {
+      set({ error: err.message, isLoading: false });
+    }
+  },
+
+  getProfile: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await getProfileUseCase.execute();
+      if (response.error) {
+        set({ error: response.error, isLoading: false });
+      } else {
+        set({ profile: response.data, isLoading: false });
+        console.log(response.data);
       }
     } catch (err: any) {
       set({ error: err.message, isLoading: false });

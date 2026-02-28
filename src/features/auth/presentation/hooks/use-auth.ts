@@ -9,9 +9,11 @@ export function useAuth() {
   const router = useRouter();
   const {
     user,
+    profile,
     isLoading,
     error,
     login: storeLogin,
+    getProfile: storeGetProfile,
     logout: storeLogout,
     checkSession,
     clearError,
@@ -26,6 +28,10 @@ export function useAuth() {
     [storeLogin],
   );
 
+  const getProfile = useCallback(async () => {
+    await storeGetProfile();
+  }, [storeGetProfile]);
+
   const logout = useCallback(async () => {
     await storeLogout();
     router.push("/auth/login");
@@ -33,7 +39,9 @@ export function useAuth() {
 
   return {
     user,
+    profile,
     login,
+    getProfile,
     logout,
     checkSession,
     isLoading,

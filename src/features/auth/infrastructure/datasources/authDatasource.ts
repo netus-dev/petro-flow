@@ -52,4 +52,28 @@ export class AuthDataSource {
     const { data: userData, error } = await this.supabase.auth.updateUser(data);
     return { data: userData, error };
   }
+
+  async getProfile() {
+    // 1. Obtener el ID del usuario actual de la sesión de Supabase
+    const {
+      data: { user },
+      error: authError,
+    } = await this.supabase.auth.getUser();
+
+    if (authError || !user) {
+      console.error("No se pudo obtener el usuario de la sesión");
+      return { data: null, error: authError };
+    }
+
+    // 2. Llamar a la función pasando el nombre de parámetro idéntico al SQL
+    const { data, error } = await this.supabase.rpc("get_user_profile", {
+      p_user_id: user.id,
+    });
+
+    if (error) {
+      console.error("Error en RPC:", error.message, error.details);
+    }
+
+    return { data, error };
+  }
 }

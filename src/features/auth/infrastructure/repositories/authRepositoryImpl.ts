@@ -13,6 +13,9 @@ export class AuthRepositoryImpl implements IAuthRepository {
   constructor(dataSource: AuthDataSource) {
     this.dataSource = dataSource;
   }
+  async getProfile(): Promise<any> {
+    const { data, error } = await this.dataSource.getProfile();
+  }
 
   async login(credentials: AuthCredentials): Promise<AuthResponse> {
     const { data, error } = await this.dataSource.signIn(credentials);
