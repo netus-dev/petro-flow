@@ -1,8 +1,5 @@
 import { RequisitionsList } from '@/src/features/requisitions/presentation/components/requisitions-list';
-import { RequisitionRepositoryImpl } from '@/src/features/requisitions/infrastructure/repositories/requisition.repository.impl';
 import Link from 'next/link';
-
-const repository = new RequisitionRepositoryImpl();
 
 export default function RequisitionsListPage() {
     // Mock current user para la demo de "Mis Solicitudes"
@@ -17,7 +14,7 @@ export default function RequisitionsListPage() {
                     <Link href="/dashboard/requisitions/list" className="px-3 py-1 bg-background shadow-sm rounded-md text-sm font-medium">Listado</Link>
                 </div>
             </div>
-            <RequisitionsList repository={repository} currentUserId={currentUser.id} />
+            <RequisitionsList currentUserId={currentUser.id} />
         </div>
     );
 }

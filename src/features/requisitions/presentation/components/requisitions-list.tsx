@@ -8,16 +8,15 @@ import { Button } from '@/src/core/presentation/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/src/core/presentation/components/ui/table';
 import { Search, Download, Eye, Loader2 } from 'lucide-react';
 import { Requisition } from '../../domain/entities/requisition';
-import { RequisitionRepository } from '../../domain/repositories/requisition.repository';
 import { RequisitionBadge } from './requisition-badge';
 import Link from 'next/link';
+import { requisitionRepository } from '../../infrastructure/repositories/requisition.repository.impl';
 
 interface RequisitionsListProps {
-    repository: RequisitionRepository;
     currentUserId: string; // To filter "Mis Solicitudes"
 }
 
-export const RequisitionsList: React.FC<RequisitionsListProps> = ({ repository, currentUserId }) => {
+export const RequisitionsList: React.FC<RequisitionsListProps> = ({ currentUserId }) => {
     const [data, setData] = useState<Requisition[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -25,7 +24,7 @@ export const RequisitionsList: React.FC<RequisitionsListProps> = ({ repository, 
     const loadData = async (userIdFilter?: string) => {
         setLoading(true);
         const filters = { search: searchTerm, solicitanteId: userIdFilter };
-        const reqs = await repository.getRequisitions(filters);
+        const reqs = await requisitionRepository.getRequisitions(filters);
         setData(reqs);
         setLoading(false);
     };

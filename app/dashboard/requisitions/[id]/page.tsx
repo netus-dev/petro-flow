@@ -1,11 +1,11 @@
 import { RequisitionDetail } from '@/src/features/requisitions/presentation/components/requisition-detail';
-import { RequisitionRepositoryImpl } from '@/src/features/requisitions/infrastructure/repositories/requisition.repository.impl';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 
-const repository = new RequisitionRepositoryImpl();
+export default async function RequisitionDetailPage({ params }: { params: Promise<{ id: string }> }) {
+    // Await params for Next.js 15+
+    const { id } = await params;
 
-export default function RequisitionDetailPage({ params }: { params: { id: string } }) {
     // Para la demo asumimos un gerente
     const currentUser = { id: 'mgr-01', name: 'Carlos Ruiz', role: 'Gerente' };
 
@@ -18,7 +18,7 @@ export default function RequisitionDetailPage({ params }: { params: { id: string
                 <h2 className="text-3xl font-bold tracking-tight">Gestión de Requisición</h2>
             </div>
 
-            <RequisitionDetail repository={repository} requisitionId={params.id} currentUser={currentUser} />
+            <RequisitionDetail requisitionId={id} currentUser={currentUser} />
         </div>
     );
 }

@@ -1,9 +1,5 @@
 import { RequisitionsDashboard } from '@/src/features/requisitions/presentation/components/requisitions-dashboard';
-import { RequisitionRepositoryImpl } from '@/src/features/requisitions/infrastructure/repositories/requisition.repository.impl';
 import Link from 'next/link';
-
-// Usamos el repositorio mockeado para la demo
-const repository = new RequisitionRepositoryImpl();
 
 export default function RequisitionsDashboardPage() {
     return (
@@ -15,7 +11,7 @@ export default function RequisitionsDashboardPage() {
                     <Link href="/dashboard/requisitions/list" className="px-3 py-1 text-muted-foreground hover:text-foreground text-sm font-medium">Listado</Link>
                 </div>
             </div>
-            <RequisitionsDashboard repository={repository} />
+            <RequisitionsDashboard />
         </div>
     );
 }

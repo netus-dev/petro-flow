@@ -1,9 +1,6 @@
 import { NewRequisitionForm } from '@/src/features/requisitions/presentation/components/new-requisition-form';
-import { RequisitionRepositoryImpl } from '@/src/features/requisitions/infrastructure/repositories/requisition.repository.impl';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
-
-const repository = new RequisitionRepositoryImpl();
 
 export default function NewRequisitionPage() {
     const currentUser = { id: 'usr-01', name: 'Juan Pérez' };
@@ -17,7 +14,7 @@ export default function NewRequisitionPage() {
                 <h2 className="text-3xl font-bold tracking-tight">Nueva Requisición</h2>
             </div>
 
-            <NewRequisitionForm repository={repository} currentUser={currentUser} />
+            <NewRequisitionForm currentUser={currentUser} />
         </div>
     );
 }

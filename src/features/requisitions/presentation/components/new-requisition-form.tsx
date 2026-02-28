@@ -12,14 +12,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Trash2, Search, PlusCircle, Save, Send } from 'lucide-react';
 import { RequisitionPriority, RequisitionItem } from '../../domain/entities/requisition';
 import { mockCatalogItems } from '../../infrastructure/datasources/requisition.mock.datasource';
-import { RequisitionRepository } from '../../domain/repositories/requisition.repository';
+import { requisitionRepository } from '../../infrastructure/repositories/requisition.repository.impl';
 
 interface NewRequisitionFormProps {
-    repository: RequisitionRepository;
     currentUser: { id: string; name: string };
 }
 
-export const NewRequisitionForm: React.FC<NewRequisitionFormProps> = ({ repository, currentUser }) => {
+export const NewRequisitionForm: React.FC<NewRequisitionFormProps> = ({ currentUser }) => {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [items, setItems] = useState<RequisitionItem[]>([]);
@@ -86,7 +85,7 @@ export const NewRequisitionForm: React.FC<NewRequisitionFormProps> = ({ reposito
 
         setLoading(true);
         try {
-            const newReq = await repository.createRequisition({
+            const newReq = await requisitionRepository.createRequisition({
                 solicitanteId: currentUser.id,
                 solicitanteName: currentUser.name,
                 rig,
@@ -284,7 +283,7 @@ export const NewRequisitionForm: React.FC<NewRequisitionFormProps> = ({ reposito
                             <div className="flex justify-between items-center pb-2 border-b">
                                 <span className="text-muted-foreground">Prioridad</span>
                                 <span className={`font-semibold ${prioridad === RequisitionPriority.CRITICA ? 'text-red-600' :
-                                        prioridad === RequisitionPriority.ALTA ? 'text-amber-500' : 'text-blue-600'
+                                    prioridad === RequisitionPriority.ALTA ? 'text-amber-500' : 'text-blue-600'
                                     }`}>
                                     {prioridad}
                                 </span>

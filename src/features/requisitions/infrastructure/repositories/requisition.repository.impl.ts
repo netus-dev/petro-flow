@@ -159,3 +159,5 @@ export class RequisitionRepositoryImpl implements RequisitionRepository {
         };
     }
 }
+
+export const requisitionRepository = new RequisitionRepositoryImpl();

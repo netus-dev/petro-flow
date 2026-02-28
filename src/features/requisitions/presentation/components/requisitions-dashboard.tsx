@@ -5,24 +5,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/src
 import { Badge } from '@/src/core/presentation/components/ui/badge';
 import { Progress } from '@/src/core/presentation/components/ui/progress';
 import { FileText, Clock, AlertTriangle, Truck, XCircle, CheckCircle } from 'lucide-react';
-import { RequisitionMetrics, RequisitionRepository } from '../../domain/repositories/requisition.repository';
+import { RequisitionMetrics } from '../../domain/repositories/requisition.repository';
 import { RequisitionStatus } from '../../domain/entities/requisition';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { requisitionRepository } from '../../infrastructure/repositories/requisition.repository.impl';
 
-interface DashboardProps {
-    repository: RequisitionRepository;
-}
-
-export const RequisitionsDashboard: React.FC<DashboardProps> = ({ repository }) => {
+export const RequisitionsDashboard: React.FC = () => {
     const [metrics, setMetrics] = useState<RequisitionMetrics | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        repository.getMetrics().then(m => {
+        requisitionRepository.getMetrics().then(m => {
             setMetrics(m);
             setLoading(false);
         });
-    }, [repository]);
+    }, []);
 
     if (loading || !metrics) {
         return (

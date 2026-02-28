@@ -16,14 +16,14 @@ import { RequisitionBadge } from './requisition-badge';
 // En un entorno real, RequisitionTimeline sería importado. Para simplificar lo pondremos como prop o hijo, 
 // o lo importaremos directamente.
 import { RequisitionTimeline } from './requisition-timeline';
+import { requisitionRepository } from '../../infrastructure/repositories/requisition.repository.impl';
 
 interface RequisitionDetailProps {
     requisitionId: string;
-    repository: RequisitionRepository;
     currentUser: { id: string; name: string; role: string };
 }
 
-export const RequisitionDetail: React.FC<RequisitionDetailProps> = ({ requisitionId, repository, currentUser }) => {
+export const RequisitionDetail: React.FC<RequisitionDetailProps> = ({ requisitionId, currentUser }) => {
     const [data, setData] = useState<Requisition | null>(null);
     const [loading, setLoading] = useState(true);
     const [comment, setComment] = useState('');
@@ -32,7 +32,7 @@ export const RequisitionDetail: React.FC<RequisitionDetailProps> = ({ requisitio
 
     const loadData = async () => {
         setLoading(true);
-        const req = await repository.getRequisitionById(requisitionId);
+        const req = await requisitionRepository.getRequisitionById(requisitionId);
         setData(req);
         setLoading(false);
     };
@@ -66,7 +66,7 @@ export const RequisitionDetail: React.FC<RequisitionDetailProps> = ({ requisitio
 
         setIsUpdating(true);
         try {
-            const updated = await repository.updateRequisitionStatus(
+            const updated = await requisitionRepository.updateRequisitionStatus(
                 data.id,
                 newStatus,
                 currentUser.id,
