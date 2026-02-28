@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import {
   createContext,
@@ -6,17 +6,17 @@ import {
   useState,
   useEffect,
   type ReactNode,
-} from "react"
+} from "react";
 
-type Theme = "dark" | "light"
-type Locale = "es" | "en"
+type Theme = "dark" | "light";
+type Locale = "es" | "en";
 
 interface AppContextType {
-  theme: Theme
-  toggleTheme: () => void
-  locale: Locale
-  setLocale: (locale: Locale) => void
-  t: (key: string) => string
+  theme: Theme;
+  toggleTheme: () => void;
+  locale: Locale;
+  setLocale: (locale: Locale) => void;
+  t: (key: string) => string;
 }
 
 const translations: Record<Locale, Record<string, string>> = {
@@ -33,7 +33,7 @@ const translations: Record<Locale, Record<string, string>> = {
     "sidebar.traceability": "Trazabilidad",
     "sidebar.timesheet": "Timesheet",
     "sidebar.elearning": "E-Learning",
-    "sidebar.orometers": "Orometers Dashboard",
+    "sidebar.hourMeters": "Horometros",
     "sidebar.lookahead": "Look-a-Head",
     "sidebar.settings": "Configuracion",
     "sidebar.support": "Soporte",
@@ -42,7 +42,8 @@ const translations: Record<Locale, Record<string, string>> = {
     "footer.rights": "Todos los derechos reservados.",
     "footer.last_sync": "Ultima sync:",
     "dashboard.welcome": "Bienvenido de nuevo",
-    "dashboard.summary": "Resumen general de tus operaciones y modulos del sistema.",
+    "dashboard.summary":
+      "Resumen general de tus operaciones y modulos del sistema.",
     "dashboard.modules": "Modulos del Sistema",
     "dashboard.activity": "Actividad Reciente",
     "theme.dark": "Oscuro",
@@ -72,7 +73,7 @@ const translations: Record<Locale, Record<string, string>> = {
     "sidebar.traceability": "Traceability",
     "sidebar.timesheet": "Timesheet",
     "sidebar.elearning": "E-Learning",
-    "sidebar.orometers": "Orometers Dashboard",
+    "sidebar.hourMeters": "Hour Meters",
     "sidebar.lookahead": "Look-a-Head",
     "sidebar.settings": "Settings",
     "sidebar.support": "Support",
@@ -81,7 +82,8 @@ const translations: Record<Locale, Record<string, string>> = {
     "footer.rights": "All rights reserved.",
     "footer.last_sync": "Last sync:",
     "dashboard.welcome": "Welcome back",
-    "dashboard.summary": "General overview of your operations and system modules.",
+    "dashboard.summary":
+      "General overview of your operations and system modules.",
     "dashboard.modules": "System Modules",
     "dashboard.activity": "Recent Activity",
     "theme.dark": "Dark",
@@ -98,40 +100,41 @@ const translations: Record<Locale, Record<string, string>> = {
     "notif.1hr": "1 hour ago",
     "notif.3hr": "3 hours ago",
   },
-}
+};
 
-const AppContext = createContext<AppContextType | undefined>(undefined)
+const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function useApp() {
-  const ctx = useContext(AppContext)
-  if (!ctx) throw new Error("useApp must be used within AppProvider")
-  return ctx
+  const ctx = useContext(AppContext);
+  if (!ctx) throw new Error("useApp must be used within AppProvider");
+  return ctx;
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("dark")
-  const [locale, setLocale] = useState<Locale>("es")
+  const [theme, setTheme] = useState<Theme>("dark");
+  const [locale, setLocale] = useState<Locale>("es");
 
   useEffect(() => {
-    const root = document.documentElement
+    const root = document.documentElement;
     if (theme === "light") {
-      root.classList.add("light")
+      root.classList.add("light");
     } else {
-      root.classList.remove("light")
+      root.classList.remove("light");
     }
-  }, [theme])
+  }, [theme]);
 
   useEffect(() => {
-    document.documentElement.lang = locale
-  }, [locale])
+    document.documentElement.lang = locale;
+  }, [locale]);
 
-  const toggleTheme = () => setTheme((prev) => (prev === "dark" ? "light" : "dark"))
+  const toggleTheme = () =>
+    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
 
-  const t = (key: string) => translations[locale]?.[key] ?? key
+  const t = (key: string) => translations[locale]?.[key] ?? key;
 
   return (
     <AppContext.Provider value={{ theme, toggleTheme, locale, setLocale, t }}>
       {children}
     </AppContext.Provider>
-  )
+  );
 }

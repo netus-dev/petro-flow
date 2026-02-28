@@ -1,6 +1,6 @@
-export type OdometerStatus = "normal" | "warning" | "critical";
+export type HourMeterStatus = "normal" | "warning" | "critical";
 
-export interface OdometerRecord {
+export interface HourMeterRecord {
   id: string;
   platform: string;
   equipment: string;
@@ -9,10 +9,10 @@ export interface OdometerRecord {
   unit: string;
   lastUpdated: string;
   maxThreshold: number;
-  status: OdometerStatus;
+  status: HourMeterStatus;
 }
 
-export interface OrometerStats {
+export interface HourMeterStats {
   total: number;
   normal: number;
   warning: number;

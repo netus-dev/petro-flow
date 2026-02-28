@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import Link from "next/link"
+import Link from "next/link";
 import {
   Route,
   Clock,
@@ -8,9 +8,9 @@ import {
   Gauge,
   CalendarRange,
   ArrowRight,
-} from "lucide-react"
-import { Card, CardContent } from "@/src/core/presentation/components/ui/card"
-import { Badge } from "@/src/core/presentation/components/ui/badge"
+} from "lucide-react";
+import { Card, CardContent } from "@/src/core/presentation/components/ui/card";
+import { Badge } from "@/src/core/presentation/components/ui/badge";
 
 const modules = [
   {
@@ -44,11 +44,11 @@ const modules = [
     stat: "87% completado",
   },
   {
-    title: "Orometers Dashboard",
+    title: "Horometros",
     description:
-      "Monitoreo en tiempo real de instrumentacion y medidores de presion, flujo y temperatura.",
+      "Monitoreo en tiempo real de instrumentacion y horometros de maquinaria y equipos.",
     icon: Gauge,
-    href: "/dashboard/orometers",
+    href: "/dashboard/hour-meters",
     badge: "En vivo",
     badgeVariant: "default" as const,
     stat: "204 sensores",
@@ -63,7 +63,7 @@ const modules = [
     badgeVariant: "secondary" as const,
     stat: "14 proyectos",
   },
-]
+];
 
 export function DashboardModuleCards() {
   return (
@@ -80,9 +80,7 @@ export function DashboardModuleCards() {
                 <Badge
                   variant={mod.badgeVariant}
                   className={`text-[9px] tracking-wider uppercase ${
-                    mod.badgeVariant === "default"
-                      ? ""
-                      : "border-border"
+                    mod.badgeVariant === "default" ? "" : "border-border"
                   }`}
                 >
                   {mod.badge}
@@ -111,5 +109,5 @@ export function DashboardModuleCards() {
         </Link>
       ))}
     </div>
-  )
+  );
 }

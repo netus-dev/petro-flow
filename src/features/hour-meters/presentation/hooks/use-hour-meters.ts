@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
-import { OdometerRecord, OrometerStats } from "../../domain/entities";
+import { HourMeterRecord, HourMeterStats } from "../../domain/entities";
 
-const initialRecords: OdometerRecord[] = [
+const initialRecords: HourMeterRecord[] = [
   {
     id: "ODO-001",
     platform: "Plataforma Norte",
@@ -70,8 +70,8 @@ const initialRecords: OdometerRecord[] = [
   },
 ];
 
-export function useOrometers() {
-  const [records, setRecords] = useState<OdometerRecord[]>(initialRecords);
+export function useHourMeters() {
+  const [records, setRecords] = useState<HourMeterRecord[]>(initialRecords);
   const [loading, setLoading] = useState(false);
 
   const stats = useMemo(() => {
@@ -86,7 +86,7 @@ export function useOrometers() {
           0,
         ) / records.length,
       ),
-    };
+    } as HourMeterStats;
   }, [records]);
 
   const addRecord = (newRecord: {
@@ -98,7 +98,7 @@ export function useOrometers() {
     const reading = parseInt(newRecord.reading);
     const max = parseInt(newRecord.maxThreshold);
     const usage = reading / max;
-    const record: OdometerRecord = {
+    const record: HourMeterRecord = {
       id: `ODO-${String(records.length + 1).padStart(3, "0")}`,
       platform: newRecord.platform,
       equipment: newRecord.equipment,

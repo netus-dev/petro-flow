@@ -1,9 +1,8 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
-  Flame,
   Route,
   Clock,
   GraduationCap,
@@ -14,7 +13,8 @@ import {
   HelpCircle,
   LogOut,
   ChevronDown,
-} from "lucide-react"
+} from "lucide-react";
+import { PetroLogo } from "@/src/core/presentation/components/ui/petro-logo";
 import {
   Sidebar,
   SidebarContent,
@@ -27,20 +27,23 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarSeparator,
-} from "@/src/core/presentation/components/ui/sidebar"
+} from "@/src/core/presentation/components/ui/sidebar";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/src/core/presentation/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback } from "@/src/core/presentation/components/ui/avatar"
-import { useApp } from "@/src/core/presentation/providers/providers"
+} from "@/src/core/presentation/components/ui/dropdown-menu";
+import {
+  Avatar,
+  AvatarFallback,
+} from "@/src/core/presentation/components/ui/avatar";
+import { useApp } from "@/src/core/presentation/providers/providers";
 
 export function AppSidebar() {
-  const pathname = usePathname()
-  const { t } = useApp()
+  const pathname = usePathname();
+  const { t } = useApp();
 
   const mainModules = [
     {
@@ -68,10 +71,10 @@ export function AppSidebar() {
       href: "/dashboard/e-learning",
     },
     {
-      titleKey: "sidebar.orometers",
-      label: t("sidebar.orometers"),
+      titleKey: "sidebar.hourMeters",
+      label: t("sidebar.hourMeters"),
       icon: Gauge,
-      href: "/dashboard/orometers",
+      href: "/dashboard/hour-meters",
     },
     {
       titleKey: "sidebar.lookahead",
@@ -79,7 +82,7 @@ export function AppSidebar() {
       icon: CalendarRange,
       href: "/dashboard/look-a-head",
     },
-  ]
+  ];
 
   const secondaryItems = [
     {
@@ -94,24 +97,14 @@ export function AppSidebar() {
       icon: HelpCircle,
       href: "/dashboard/soporte",
     },
-  ]
+  ];
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
       {/* Header */}
       <SidebarHeader className="p-4">
         <Link href="/dashboard" className="flex items-center gap-3">
-          <div className="flex items-center justify-center size-9 rounded-lg bg-primary/10 border border-primary/20 shrink-0">
-            <Flame className="size-5 text-primary" />
-          </div>
-          <div className="flex flex-col overflow-hidden group-data-[collapsible=icon]:hidden">
-            <span className="text-base font-bold tracking-tight text-sidebar-foreground font-mono truncate">
-              PetroFlow
-            </span>
-            <span className="text-[9px] tracking-[0.25em] uppercase text-muted-foreground truncate">
-              {t("sidebar.platform")}
-            </span>
-          </div>
+          <PetroLogo iconClassName="size-9" />
         </Link>
       </SidebarHeader>
 
@@ -129,7 +122,7 @@ export function AppSidebar() {
                 const isActive =
                   pathname === item.href ||
                   (item.href !== "/dashboard" &&
-                    pathname.startsWith(item.href))
+                    pathname.startsWith(item.href));
                 return (
                   <SidebarMenuItem key={item.titleKey}>
                     <SidebarMenuButton
@@ -148,7 +141,7 @@ export function AppSidebar() {
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
-                )
+                );
               })}
             </SidebarMenu>
           </SidebarGroupContent>
@@ -163,7 +156,7 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {secondaryItems.map((item) => {
-                const isActive = pathname === item.href
+                const isActive = pathname === item.href;
                 return (
                   <SidebarMenuItem key={item.titleKey}>
                     <SidebarMenuButton
@@ -177,7 +170,7 @@ export function AppSidebar() {
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
-                )
+                );
               })}
             </SidebarMenu>
           </SidebarGroupContent>
@@ -257,5 +250,5 @@ export function AppSidebar() {
         </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
-  )
+  );
 }

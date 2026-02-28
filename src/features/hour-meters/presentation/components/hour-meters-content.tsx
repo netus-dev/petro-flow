@@ -58,8 +58,8 @@ import {
   Line,
 } from "recharts";
 
-// Platform odometer data
-type OdometerRecord = {
+// Platform hour meter data
+type HourMeterRecord = {
   id: string;
   platform: string;
   equipment: string;
@@ -71,7 +71,7 @@ type OdometerRecord = {
   status: "normal" | "warning" | "critical";
 };
 
-const initialRecords: OdometerRecord[] = [
+const initialRecords: HourMeterRecord[] = [
   {
     id: "ODO-001",
     platform: "Plataforma Norte",
@@ -165,10 +165,10 @@ function getStatusBorderColor(status: string) {
   return "border-red-400/20";
 }
 
-import { useOrometers } from "../hooks/use-orometers";
+import { useHourMeters } from "../hooks/use-hour-meters";
 
-export function OrometersContent() {
-  const { records, stats, loading, addRecord } = useOrometers();
+export function HourMeterContent() {
+  const { records, stats, loading, addRecord } = useHourMeters();
   const [selectedPlatform, setSelectedPlatform] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [newRecord, setNewRecord] = useState({
@@ -204,7 +204,7 @@ export function OrometersContent() {
   if (loading) {
     return (
       <div className="p-6 text-center text-muted-foreground font-mono text-xs">
-        Cargando odometros...
+        Cargando horometros...
       </div>
     );
   }
@@ -219,10 +219,10 @@ export function OrometersContent() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-foreground font-mono tracking-tight">
-              Orometers Dashboard
+              Dashboard de Horometros
             </h1>
             <p className="text-sm text-muted-foreground">
-              KPIs de odometros por plataforma y registro de lecturas
+              KPIs de horometros por plataforma y registro de lecturas
             </p>
           </div>
         </div>
@@ -242,7 +242,7 @@ export function OrometersContent() {
                 Registrar Nueva Lectura
               </DialogTitle>
               <DialogDescription className="text-muted-foreground text-xs">
-                Agrega una nueva lectura de odometro para alimentar los KPIs.
+                Agrega una nueva lectura de horometro para alimentar los KPIs.
               </DialogDescription>
             </DialogHeader>
             <div className="flex flex-col gap-4">
@@ -342,7 +342,7 @@ export function OrometersContent() {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
         {[
           {
-            label: "Total Odometros",
+            label: "Total Horometros",
             value: stats.total,
             icon: Gauge,
             color: "text-foreground",
@@ -514,7 +514,7 @@ export function OrometersContent() {
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <span className="text-xs font-medium tracking-[0.2em] uppercase text-muted-foreground">
-            Registros de Odometros
+            Registros de Horometros
           </span>
           <Select value={selectedPlatform} onValueChange={setSelectedPlatform}>
             <SelectTrigger className="h-8 text-xs w-48 bg-secondary/50 border-border">
