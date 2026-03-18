@@ -35,7 +35,7 @@ interface AuthState {
   error: string | null;
 
   login: (credentials: AuthCredentials) => Promise<void>;
-  getProfile: () => Promise<void>;
+  getProfile: () => Promise<any>;
   register: (credentials: RegisterCredentials) => Promise<void>;
   logout: () => Promise<void>;
   checkSession: () => Promise<void>;
@@ -44,7 +44,7 @@ interface AuthState {
   clearError: () => void;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   isLoading: false,
   error: null,
@@ -65,17 +65,25 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   getProfile: async () => {
+    if (!get().user) return null;
+
     set({ isLoading: true, error: null });
     try {
       const response = await getProfileUseCase.execute();
       if (response.error) {
         set({ error: response.error, isLoading: false });
       } else {
+        // Objeto ya convertido a JSON correctamente a través de toJson o stringify
+        localStorage.setItem("profile", JSON.stringify(response.data));
         set({ profile: response.data, isLoading: false });
-        console.log(response.data);
+        return response.data;
       }
     } catch (err: any) {
-      set({ error: err.message, isLoading: false });
+      set({ 
+        error: err.message || "Error inesperado", 
+        isLoading: false 
+      });
+      return null;
     }
   },
 
@@ -94,10 +102,11 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   logout: async () => {
-    set({ isLoading: true });
+    set({ isLoading: true, error: null }); // Limpiar error al iniciar logout
     try {
       await logoutUseCase.execute();
-      set({ user: null, isLoading: false });
+      set({ user: null, profile: null, isLoading: false, error: null }); // Limpiar todo al salir
+      localStorage.removeItem("profile"); // También limpiar storage
     } catch (err: any) {
       set({ error: err.message, isLoading: false });
     }
