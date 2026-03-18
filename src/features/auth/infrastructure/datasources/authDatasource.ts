@@ -3,6 +3,8 @@ import {
   AuthCredentials,
   RegisterCredentials,
 } from "../../domain/entities/authEntities";
+import { ProfileEntity } from "../../domain/entities/profileEntity";
+import { ProfileModel, ProfileEntityModel } from "../models/profileModel";
 
 export class AuthDataSource {
   private supabase = createClient();
@@ -53,12 +55,16 @@ export class AuthDataSource {
     return { data: userData, error };
   }
 
-  async getProfile() {
-    // 1. Obtener el ID del usuario actual de la sesión de Supabase
-    const {
-      data: { user },
-      error: authError,
-    } = await this.supabase.auth.getUser();
+  async getProfile(): Promise<{ data: ProfileEntity | null; error: any }> {
+    // 1. Intentar obtener el usuario de la sesión actual
+    // Usamos getUser() primero (más seguro), luego getSession() como fallback si getUser() falla intermitentemente
+    let { data: { user }, error: authError } = await this.supabase.auth.getUser();
+    
+
+    if (!user && !authError) {
+      const { data: sessionData } = await this.supabase.auth.getSession();
+      user = sessionData.session?.user || null;
+    }
 
     if (authError || !user) {
       console.error("No se pudo obtener el usuario de la sesión");
@@ -71,9 +77,15 @@ export class AuthDataSource {
     });
 
     if (error) {
-      console.error("Error en RPC:", error.message, error.details);
+      console.error("Error en RPC get_user_profile:", error.message, error.details);
+      return { data: null, error };
     }
 
-    return { data, error };
+    console.log("Data RPC:", data);
+
+    // Instanciamos la respuesta completa con el modelo unificado ProfileEntityModel
+    const entity = data ? ProfileEntityModel.fromJson(data) : null;
+    
+    return { data: entity, error: null };
   }
 }

@@ -15,6 +15,10 @@ export class AuthRepositoryImpl implements IAuthRepository {
   }
   async getProfile(): Promise<any> {
     const { data, error } = await this.dataSource.getProfile();
+    return { 
+      data, 
+      error: error ? (error.message || "Error al obtener el perfil") : null 
+    };
   }
 
   async login(credentials: AuthCredentials): Promise<AuthResponse> {

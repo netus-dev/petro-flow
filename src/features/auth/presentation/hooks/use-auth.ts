@@ -29,7 +29,7 @@ export function useAuth() {
   );
 
   const getProfile = useCallback(async () => {
-    await storeGetProfile();
+    return await storeGetProfile();
   }, [storeGetProfile]);
 
   const logout = useCallback(async () => {

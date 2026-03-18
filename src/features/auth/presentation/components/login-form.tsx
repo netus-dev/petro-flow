@@ -8,25 +8,41 @@ import { Label } from "@/src/core/presentation/components/ui/label";
 import { Button } from "@/src/core/presentation/components/ui/button";
 
 import { useAuth } from "../hooks/use-auth";
+import { useAuthStore } from "../store/auth-store";
 import { useEffect } from "react";
 
 export function LoginForm() {
-  const { login, isLoading, error, user, getProfile, profile } = useAuth();
+  const { login, isLoading, error, user, getProfile } = useAuth();
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("cjuan2921@gmail.com");
   const [password, setPassword] = useState("Ghx35put-");
 
   useEffect(() => {
+    // Si ya existe un usuario al cargar el componente, redirigir al dashboard
     if (user) {
-      getProfile();
       router.push("/dashboard");
     }
-  }, [user, router, getProfile]);
+  }, [user, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // 1. Iniciamos sesión
     await login({ email, password });
+    
+    // 2. Si el login fue exitoso (el estado 'user' de la store se actualizó), 
+    // procedemos a obtener el perfil y redirigir.
+    // Accederemos al estado actual de la store para validar el éxito
+    const { user: authUser } = useAuthStore.getState();
+
+    if (authUser) {
+      const profileData = await getProfile();
+      if (profileData) {
+        console.log("Información del profile recibida y guardada:", profileData);
+      }
+      router.push("/dashboard");
+    }
   };
 
   return (
