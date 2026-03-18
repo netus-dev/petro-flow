@@ -1,64 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import {
-  Gauge,
-  Plus,
-  TrendingUp,
-  TrendingDown,
-  Activity,
-  Wrench,
-  AlertTriangle,
-  CheckCircle2,
-  ChevronDown,
-} from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/src/core/presentation/components/ui/card";
+import { useState, useEffect } from "react";
+import { Activity, Clock } from "lucide-react";
+import { Card, CardContent } from "@/src/core/presentation/components/ui/card";
 import { Badge } from "@/src/core/presentation/components/ui/badge";
-import { Button } from "@/src/core/presentation/components/ui/button";
-import { Input } from "@/src/core/presentation/components/ui/input";
-import { Label } from "@/src/core/presentation/components/ui/label";
-import { Progress } from "@/src/core/presentation/components/ui/progress";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/src/core/presentation/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/src/core/presentation/components/ui/dialog";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/src/core/presentation/components/ui/tabs";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  LineChart,
-  Line,
-} from "recharts";
+import { useHourMeters } from "../hooks/use-hour-meters";
 
-// Platform hour meter data
+// Type definition from entities but not exported, so inferring or redeclaring is fine, but we have records array
 type HourMeterRecord = {
   id: string;
   platform: string;
@@ -71,557 +19,209 @@ type HourMeterRecord = {
   status: "normal" | "warning" | "critical";
 };
 
-const initialRecords: HourMeterRecord[] = [
-  {
-    id: "ODO-001",
-    platform: "Plataforma Norte",
-    equipment: "Motor Principal MP-01",
-    currentReading: 4280,
-    previousReading: 4100,
-    unit: "hrs",
-    lastUpdated: "2026-02-27",
-    maxThreshold: 5000,
-    status: "warning",
-  },
-  {
-    id: "ODO-002",
-    platform: "Plataforma Norte",
-    equipment: "Compresor CG-04",
-    currentReading: 2150,
-    previousReading: 2000,
-    unit: "hrs",
-    lastUpdated: "2026-02-27",
-    maxThreshold: 6000,
-    status: "normal",
-  },
-  {
-    id: "ODO-003",
-    platform: "Plataforma Sur",
-    equipment: "Bomba de Inyeccion BI-12",
-    currentReading: 5800,
-    previousReading: 5600,
-    unit: "hrs",
-    lastUpdated: "2026-02-26",
-    maxThreshold: 6000,
-    status: "critical",
-  },
-  {
-    id: "ODO-004",
-    platform: "Plataforma Sur",
-    equipment: "Generador GE-07",
-    currentReading: 3400,
-    previousReading: 3200,
-    unit: "hrs",
-    lastUpdated: "2026-02-27",
-    maxThreshold: 8000,
-    status: "normal",
-  },
-  {
-    id: "ODO-005",
-    platform: "Plataforma Este",
-    equipment: "Motor Auxiliar MA-03",
-    currentReading: 1900,
-    previousReading: 1800,
-    unit: "hrs",
-    lastUpdated: "2026-02-27",
-    maxThreshold: 5000,
-    status: "normal",
-  },
-  {
-    id: "ODO-006",
-    platform: "Plataforma Este",
-    equipment: "Turbina de Gas TG-01",
-    currentReading: 7200,
-    previousReading: 7000,
-    unit: "hrs",
-    lastUpdated: "2026-02-25",
-    maxThreshold: 8000,
-    status: "warning",
-  },
-];
-
-const chartData = [
-  { name: "Ene", norte: 320, sur: 280, este: 240 },
-  { name: "Feb", norte: 350, sur: 310, este: 260 },
-  { name: "Mar", norte: 300, sur: 290, este: 230 },
-  { name: "Abr", norte: 380, sur: 340, este: 280 },
-  { name: "May", norte: 360, sur: 320, este: 250 },
-  { name: "Jun", norte: 400, sur: 350, este: 290 },
-];
-
-const trendData = [
-  { day: "Lun", reading: 4200 },
-  { day: "Mar", reading: 4220 },
-  { day: "Mie", reading: 4240 },
-  { day: "Jue", reading: 4255 },
-  { day: "Vie", reading: 4270 },
-  { day: "Sab", reading: 4275 },
-  { day: "Dom", reading: 4280 },
-];
-
-function getStatusBorderColor(status: string) {
-  if (status === "normal") return "border-emerald-500/20";
-  if (status === "warning") return "border-primary/20";
-  return "border-red-400/20";
-}
-
-import { useHourMeters } from "../hooks/use-hour-meters";
-
 export function HourMeterContent() {
-  const { records, stats, loading, addRecord } = useHourMeters();
-  const [selectedPlatform, setSelectedPlatform] = useState<string>("all");
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [newRecord, setNewRecord] = useState({
-    platform: "",
-    equipment: "",
-    reading: "",
-    maxThreshold: "",
-  });
+  const { records, loading } = useHourMeters() as { records: HourMeterRecord[]; loading: boolean };
+  const [lastSync, setLastSync] = useState("hace 1 min");
 
-  const filtered =
-    selectedPlatform === "all"
-      ? records
-      : records.filter((r) => r.platform === selectedPlatform);
-
-  const handleAddRecord = () => {
-    if (
-      !newRecord.platform ||
-      !newRecord.equipment ||
-      !newRecord.reading ||
-      !newRecord.maxThreshold
-    )
-      return;
-    addRecord(newRecord);
-    setNewRecord({
-      platform: "",
-      equipment: "",
-      reading: "",
-      maxThreshold: "",
-    });
-    setDialogOpen(false);
-  };
+  // Subtle live update simulation effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setLastSync("hace unos segundos");
+      setTimeout(() => setLastSync("hace 1 min"), 20000);
+    }, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   if (loading) {
     return (
-      <div className="p-6 text-center text-muted-foreground font-mono text-xs">
-        Cargando horometros...
+      <div className="flex h-[calc(100vh-4rem)] w-full items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <Activity className="size-8 animate-pulse text-primary" />
+          <p className="font-mono text-sm tracking-widest text-muted-foreground uppercase">
+            CARGANDO TELEMETRÍA...
+          </p>
+        </div>
       </div>
     );
   }
 
+  // Calculate specific thresholds required by the new logic
+  const enhancedRecords = records.map((record) => {
+    const remainingHours = record.maxThreshold - record.currentReading;
+    const isCritical = remainingHours <= 250;
+    const isWarning = remainingHours > 250 && remainingHours <= 500;
+    const isNormal = remainingHours > 500;
+    const progressValue = Math.min(100, Math.max(0, (record.currentReading / record.maxThreshold) * 100));
+
+    return {
+      ...record,
+      remainingHours,
+      isCritical,
+      isWarning,
+      isNormal,
+      progressValue,
+    };
+  });
+
+  const stats = {
+    total: enhancedRecords.length,
+    criticalCount: enhancedRecords.filter(r => r.isCritical).length,
+    warningCount: enhancedRecords.filter(r => r.isWarning).length,
+    avgUsage: Math.round(
+      enhancedRecords.reduce((acc, r) => acc + r.progressValue, 0) / (enhancedRecords.length || 1)
+    ),
+  };
+
   return (
-    <div className="flex flex-col gap-6 p-6">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center size-9 rounded-lg bg-primary/10 border border-primary/20">
-            <Gauge className="size-5 text-primary" />
+    <div className="flex flex-col h-screen max-h-screen w-full bg-background overflow-hidden p-4 md:p-6 lg:p-8">
+      {/* Top Header Panel (Fixed Height) */}
+      <header className="shrink-0 mb-4 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/40 pb-4">
+        <div className="flex items-center gap-4">
+          <div className="flex size-12 items-center justify-center rounded-xl bg-primary/10 border border-primary/20 shadow-inner">
+            <Clock className="size-6 text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-foreground font-mono tracking-tight">
-              Dashboard de Horometros
+            <h1 className="text-2xl md:text-3xl font-black tracking-tight text-foreground font-mono uppercase">
+              Dashboard de Horómetros
             </h1>
-            <p className="text-sm text-muted-foreground">
-              KPIs de horometros por plataforma y registro de lecturas
+            <p className="text-xs md:text-sm font-medium tracking-widest text-muted-foreground uppercase mt-1">
+              RIG 702 / 703
             </p>
           </div>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button
-              size="sm"
-              className="h-8 text-xs bg-primary text-primary-foreground hover:bg-primary/90"
-            >
-              <Plus className="size-3 mr-1.5" />
-              Nueva Lectura
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="bg-card border-border">
-            <DialogHeader>
-              <DialogTitle className="text-foreground font-mono">
-                Registrar Nueva Lectura
-              </DialogTitle>
-              <DialogDescription className="text-muted-foreground text-xs">
-                Agrega una nueva lectura de horometro para alimentar los KPIs.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="flex flex-col gap-4">
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs text-muted-foreground">
-                  Plataforma
-                </Label>
-                <Select
-                  value={newRecord.platform}
-                  onValueChange={(v) =>
-                    setNewRecord({ ...newRecord, platform: v })
-                  }
-                >
-                  <SelectTrigger className="h-9 text-xs bg-secondary/50 border-border w-full">
-                    <SelectValue placeholder="Seleccionar plataforma" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-card border-border">
-                    <SelectItem value="Plataforma Norte">
-                      Plataforma Norte
-                    </SelectItem>
-                    <SelectItem value="Plataforma Sur">
-                      Plataforma Sur
-                    </SelectItem>
-                    <SelectItem value="Plataforma Este">
-                      Plataforma Este
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs text-muted-foreground">Equipo</Label>
-                <Input
-                  value={newRecord.equipment}
-                  onChange={(e) =>
-                    setNewRecord({ ...newRecord, equipment: e.target.value })
-                  }
-                  placeholder="Ej: Motor Principal MP-05"
-                  className="h-9 text-xs bg-secondary/50 border-border"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex flex-col gap-1.5">
-                  <Label className="text-xs text-muted-foreground">
-                    Lectura Actual (hrs)
-                  </Label>
-                  <Input
-                    type="number"
-                    value={newRecord.reading}
-                    onChange={(e) =>
-                      setNewRecord({ ...newRecord, reading: e.target.value })
-                    }
-                    placeholder="0"
-                    className="h-9 text-xs bg-secondary/50 border-border"
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label className="text-xs text-muted-foreground">
-                    Umbral Maximo (hrs)
-                  </Label>
-                  <Input
-                    type="number"
-                    value={newRecord.maxThreshold}
-                    onChange={(e) =>
-                      setNewRecord({
-                        ...newRecord,
-                        maxThreshold: e.target.value,
-                      })
-                    }
-                    placeholder="0"
-                    className="h-9 text-xs bg-secondary/50 border-border"
-                  />
-                </div>
-              </div>
+
+        <div className="flex items-center gap-6">
+          <div className="flex flex-col items-end">
+            <div className="flex items-center gap-2">
+              <span className="relative flex size-3">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex size-3 rounded-full bg-emerald-500"></span>
+              </span>
+              <span className="font-mono text-xs tracking-wider text-emerald-500 uppercase font-semibold">
+                Conectado
+              </span>
             </div>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-xs border-border"
-                onClick={() => setDialogOpen(false)}
-              >
-                Cancelar
-              </Button>
-              <Button
-                size="sm"
-                className="text-xs bg-primary text-primary-foreground"
-                onClick={handleAddRecord}
-              >
-                Registrar Lectura
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {/* KPI Summary */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-        {[
-          {
-            label: "Total Horometros",
-            value: stats.total,
-            icon: Gauge,
-            color: "text-foreground",
-          },
-          {
-            label: "Normal",
-            value: stats.normal,
-            icon: CheckCircle2,
-            color: "text-emerald-500",
-          },
-          {
-            label: "Advertencia",
-            value: stats.warning,
-            icon: AlertTriangle,
-            color: "text-primary",
-          },
-          {
-            label: "Critico",
-            value: stats.critical,
-            icon: AlertTriangle,
-            color: "text-red-400",
-          },
-          {
-            label: "Uso Promedio",
-            value: `${stats.avgUsage}%`,
-            icon: Activity,
-            color: "text-primary",
-          },
-        ].map((stat) => (
-          <Card key={stat.label} className="border-border bg-card">
-            <CardContent className="flex items-center gap-3 p-4">
-              <div className="flex items-center justify-center size-8 rounded-md bg-secondary/50">
-                <stat.icon className={`size-4 ${stat.color}`} />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-lg font-bold font-mono tabular-nums text-foreground">
-                  {stat.value}
-                </span>
-                <span className="text-[9px] tracking-wider uppercase text-muted-foreground">
-                  {stat.label}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {/* Bar Chart — Hours by Platform */}
-        <Card className="border-border bg-card">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-semibold font-mono text-foreground">
-              Horas Acumuladas por Plataforma
-            </CardTitle>
-            <CardDescription className="text-xs text-muted-foreground">
-              Ultimos 6 meses
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-52">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData}>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="oklch(0.25 0.01 250)"
-                    vertical={false}
-                  />
-                  <XAxis
-                    dataKey="name"
-                    tick={{ fontSize: 10, fill: "oklch(0.60 0.02 250)" }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    tick={{ fontSize: 10, fill: "oklch(0.60 0.02 250)" }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "oklch(0.16 0.005 250)",
-                      border: "1px solid oklch(0.25 0.01 250)",
-                      borderRadius: "6px",
-                      fontSize: "11px",
-                      color: "oklch(0.95 0.01 90)",
-                    }}
-                  />
-                  <Bar
-                    dataKey="norte"
-                    fill="oklch(0.75 0.16 65)"
-                    radius={[3, 3, 0, 0]}
-                    name="Norte"
-                  />
-                  <Bar
-                    dataKey="sur"
-                    fill="oklch(0.60 0.12 45)"
-                    radius={[3, 3, 0, 0]}
-                    name="Sur"
-                  />
-                  <Bar
-                    dataKey="este"
-                    fill="oklch(0.50 0.08 250)"
-                    radius={[3, 3, 0, 0]}
-                    name="Este"
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Line Chart — Trend */}
-        <Card className="border-border bg-card">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-semibold font-mono text-foreground">
-              Tendencia Semanal — MP-01
-            </CardTitle>
-            <CardDescription className="text-xs text-muted-foreground">
-              Motor Principal, Plataforma Norte
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-52">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={trendData}>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="oklch(0.25 0.01 250)"
-                    vertical={false}
-                  />
-                  <XAxis
-                    dataKey="day"
-                    tick={{ fontSize: 10, fill: "oklch(0.60 0.02 250)" }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    tick={{ fontSize: 10, fill: "oklch(0.60 0.02 250)" }}
-                    axisLine={false}
-                    tickLine={false}
-                    domain={["dataMin - 50", "dataMax + 50"]}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "oklch(0.16 0.005 250)",
-                      border: "1px solid oklch(0.25 0.01 250)",
-                      borderRadius: "6px",
-                      fontSize: "11px",
-                      color: "oklch(0.95 0.01 90)",
-                    }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="reading"
-                    stroke="oklch(0.75 0.16 65)"
-                    strokeWidth={2}
-                    dot={{ fill: "oklch(0.75 0.16 65)", r: 3 }}
-                    name="Lectura"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filter + Records */}
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-medium tracking-[0.2em] uppercase text-muted-foreground">
-            Registros de Horometros
-          </span>
-          <Select value={selectedPlatform} onValueChange={setSelectedPlatform}>
-            <SelectTrigger className="h-8 text-xs w-48 bg-secondary/50 border-border">
-              <SelectValue placeholder="Filtrar plataforma" />
-            </SelectTrigger>
-            <SelectContent className="bg-card border-border">
-              <SelectItem value="all">Todas las plataformas</SelectItem>
-              <SelectItem value="Plataforma Norte">Plataforma Norte</SelectItem>
-              <SelectItem value="Plataforma Sur">Plataforma Sur</SelectItem>
-              <SelectItem value="Plataforma Este">Plataforma Este</SelectItem>
-            </SelectContent>
-          </Select>
+            <span className="font-mono text-[10px] text-muted-foreground mt-1">
+              Actualizado {lastSync}
+            </span>
+          </div>
         </div>
+      </header>
 
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((record) => {
-            const usage = Math.round(
-              (record.currentReading / record.maxThreshold) * 100,
-            );
-            const delta = record.currentReading - record.previousReading;
-            return (
-              <Card
-                key={record.id}
-                className={`border bg-card transition-colors ${getStatusBorderColor(record.status)}`}
-              >
-                <CardContent className="flex flex-col gap-3 p-4">
-                  {/* Header */}
-                  <div className="flex items-start justify-between">
-                    <div className="flex flex-col">
-                      <span className="text-xs font-semibold text-foreground">
-                        {record.equipment}
+      {/* Mini Stats Summary Row (Fixed Height) */}
+      <div className="shrink-0 grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+        <div className="flex flex-col bg-card/60 backdrop-blur-sm border border-border/50 rounded-lg p-3">
+          <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1">
+            Activos
+          </span>
+          <span className="text-xl font-bold font-mono text-foreground">{stats.total}</span>
+        </div>
+        <div className="flex flex-col bg-card/60 backdrop-blur-sm border border-border/50 rounded-lg p-3">
+          <span className="text-[10px] font-mono uppercase tracking-widest text-orange-500/80 mb-1">
+            Críticos (&lt; 250h)
+          </span>
+          <span className="text-xl font-bold font-mono text-orange-500">{stats.criticalCount}</span>
+        </div>
+        <div className="flex flex-col bg-card/60 backdrop-blur-sm border border-border/50 rounded-lg p-3">
+          <span className="text-[10px] font-mono uppercase tracking-widest text-amber-500/80 mb-1">
+            Próximos (&lt; 500h)
+          </span>
+          <span className="text-xl font-bold font-mono text-amber-500">{stats.warningCount}</span>
+        </div>
+        <div className="flex flex-col bg-card/60 backdrop-blur-sm border border-border/50 rounded-lg p-3">
+          <span className="text-[10px] font-mono uppercase tracking-widest text-primary/80 mb-1">
+            Uso Promedio
+          </span>
+          <span className="text-xl font-bold font-mono text-primary">{stats.avgUsage}%</span>
+        </div>
+      </div>
+
+      {/* Main Grid - Fills remaining space dynamically */}
+      <div className="flex-1 min-h-0 min-w-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-3 md:gap-4 overflow-hidden">
+        {enhancedRecords.map((record) => {
+          let cardBg = "bg-card border-border/50 hover:border-border";
+          let textColor = "text-foreground";
+          let badgeText = "Normal";
+          let progressIndicatorColor = "bg-primary";
+
+          if (record.isCritical) {
+            cardBg = "bg-orange-950/20 border-orange-500/30 shadow-[0_0_15px_rgba(249,115,22,0.05)]";
+            textColor = "text-orange-500";
+            badgeText = "Mantenimiento Crítico";
+            progressIndicatorColor = "bg-orange-500";
+          } else if (record.isWarning) {
+            cardBg = "bg-amber-950/20 border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.05)]";
+            textColor = "text-amber-500";
+            badgeText = "Próximo a Mantenimiento";
+            progressIndicatorColor = "bg-amber-500";
+          }
+
+          return (
+            <Card
+              key={record.id}
+              className={`transition-colors duration-500 ${cardBg} h-full overflow-hidden flex flex-col`}
+            >
+              <CardContent className="p-4 md:p-5 flex flex-col h-full grow">
+                {/* Upper Section */}
+                <div className="flex flex-col items-start gap-1 pb-2 border-b border-border/40">
+                  <h3 className="text-base md:text-lg font-bold tracking-tight text-foreground line-clamp-1">
+                    {record.equipment}
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    <p className="text-[10px] font-mono opacity-70 tracking-widest uppercase">
+                      {record.id}
+                    </p>
+                    {record.isWarning ? (
+                      <span className="text-amber-500 text-[9px] font-medium tracking-wider uppercase bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
+                        {badgeText}
                       </span>
-                      <span className="text-[10px] text-muted-foreground">
-                        {record.platform}
+                    ) : record.isCritical ? (
+                      <span className="text-orange-500 text-[9px] font-medium tracking-wider uppercase bg-orange-500/10 px-1.5 py-0.5 rounded border border-orange-500/20 animate-pulse">
+                        {badgeText}
                       </span>
-                    </div>
-                    <Badge
-                      variant="outline"
-                      className={`text-[9px] tracking-wider uppercase ${
-                        record.status === "normal"
-                          ? "border-emerald-500/30 text-emerald-500"
-                          : record.status === "warning"
-                            ? "border-primary/30 text-primary"
-                            : "border-red-400/30 text-red-400"
-                      }`}
-                    >
-                      {record.status === "normal"
-                        ? "Normal"
-                        : record.status === "warning"
-                          ? "Advertencia"
-                          : "Critico"}
-                    </Badge>
+                    ) : (
+                      <span className="text-emerald-500 text-[9px] font-medium tracking-wider uppercase bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
+                        {badgeText}
+                      </span>
+                    )}
                   </div>
+                </div>
 
-                  {/* Reading */}
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-bold font-mono tabular-nums text-foreground">
+                {/* Main Focus */}
+                <div className="flex-1 flex flex-col justify-center min-h-0">
+                  <div className="flex items-baseline gap-1.5 justify-center py-2">
+                    <span className="text-4xl md:text-5xl lg:text-6xl font-black font-mono tabular-nums tracking-tighter text-foreground drop-shadow-sm leading-none">
                       {record.currentReading.toLocaleString()}
                     </span>
-                    <span className="text-xs text-muted-foreground">
-                      {record.unit}
+                    <span className="text-lg md:text-xl font-mono text-muted-foreground font-bold">
+                      h
                     </span>
-                    <div
-                      className={`flex items-center gap-0.5 ml-auto text-[11px] font-medium ${
-                        delta > 0 ? "text-primary" : "text-emerald-500"
-                      }`}
-                    >
-                      {delta > 0 ? (
-                        <TrendingUp className="size-3" />
-                      ) : (
-                        <TrendingDown className="size-3" />
-                      )}
-                      +{delta} {record.unit}
+                  </div>
+                </div>
+
+                {/* Lower Section */}
+                <div className="mt-auto shrink-0 pt-3 border-t border-border/40">
+                  <p className={`text-xs md:text-sm font-medium mb-3 ${textColor}`}>
+                    Faltan <span className="font-bold font-mono text-base">{record.remainingHours.toLocaleString()}</span> hrs para límite de {record.maxThreshold.toLocaleString()}h
+                  </p>
+
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between text-[9px] font-mono font-medium tracking-widest text-muted-foreground uppercase">
+                      <span>{record.currentReading.toLocaleString()}h</span>
+                      <span>{record.maxThreshold.toLocaleString()}h</span>
+                    </div>
+                    <div className="h-1.5 w-full bg-secondary/60 overflow-hidden rounded-full">
+                      <div
+                        className={`h-full rounded-full transition-all duration-1000 ease-out ${progressIndicatorColor}`}
+                        style={{ width: `${record.progressValue}%` }}
+                      ></div>
                     </div>
                   </div>
-
-                  {/* Progress bar */}
-                  <div className="flex flex-col gap-1.5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] text-muted-foreground">
-                        Uso del ciclo
-                      </span>
-                      <span className="text-[10px] font-bold font-mono text-foreground">
-                        {usage}%
-                      </span>
-                    </div>
-                    <Progress value={usage} className="h-1.5" />
-                    <span className="text-[9px] text-muted-foreground">
-                      Maximo: {record.maxThreshold.toLocaleString()}{" "}
-                      {record.unit}
-                    </span>
-                  </div>
-
-                  {/* Footer */}
-                  <div className="flex items-center justify-between pt-2 border-t border-border/50">
-                    <span className="text-[10px] font-mono text-muted-foreground">
-                      {record.id}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground">
-                      Actualizado: {record.lastUpdated}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );

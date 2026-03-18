@@ -108,7 +108,7 @@ import { useElearning } from "../hooks/use-elearning";
 
 export function ElearningContent() {
   const { courses, stats, loading } = useElearning();
-  const [moodleUrl, setMoodleUrl] = useState("https://moodle.petroflow.com");
+  const [moodleUrl, setMoodleUrl] = useState("https://petroflow.moodlecloud.com");
   const [moodleToken, setMoodleToken] = useState("");
   const [isConnected, setIsConnected] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
