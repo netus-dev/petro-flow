@@ -13,6 +13,7 @@ import {
   HelpCircle,
   LogOut,
   ChevronDown,
+  ClipboardList,
   Database,
 } from "lucide-react";
 import { PetroLogo } from "@/src/core/presentation/components/ui/petro-logo";
@@ -70,7 +71,7 @@ export function AppSidebar() {
     {
       titleKey: "sidebar.requisitions",
       label: t("requisitions"),
-      icon: Clock,
+      icon: ClipboardList,
       href: "/dashboard/requisitions",
     },
     {
