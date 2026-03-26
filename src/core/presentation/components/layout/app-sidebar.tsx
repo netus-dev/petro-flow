@@ -13,6 +13,7 @@ import {
   HelpCircle,
   LogOut,
   ChevronDown,
+  Database,
 } from "lucide-react";
 import { PetroLogo } from "@/src/core/presentation/components/ui/petro-logo";
 import {
@@ -107,6 +108,15 @@ export function AppSidebar() {
     },
   ];
 
+  const adminItems = [
+    {
+      titleKey: "sidebar.catalogs",
+      label: "Catálogos",
+      icon: Database,
+      href: "/dashboard/admin/catalogs",
+    },
+  ];
+
   const handleLogout = async () => {
     await logout();
   };
@@ -153,6 +163,40 @@ export function AppSidebar() {
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarSeparator />
+
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground">
+            Administración
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {adminItems.map((item) => {
+                const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+                return (
+                  <SidebarMenuItem key={item.titleKey}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive}
+                      tooltip={item.label}
+                      className={
+                        isActive
+                          ? "bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary"
+                          : ""
+                      }
+                    >
+                      <Link href={item.href}>
+                        <item.icon className="size-4" />
+                        <span>{item.label}</span>
+                      </Link>
+                     </SidebarMenuButton>
+                   </SidebarMenuItem>
                 );
               })}
             </SidebarMenu>
