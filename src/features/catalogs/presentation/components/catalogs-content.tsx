@@ -19,6 +19,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/src/core/presentation/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/core/presentation/components/ui/select";
 
 export function CatalogsContent() {
   const { 
@@ -27,16 +34,20 @@ export function CatalogsContent() {
   } = useCatalogs();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [newItemName, setNewItemName] = useState("");
+  const [newItemPayload, setNewItemPayload] = useState<{ name: string; type?: string }>({ name: "" });
 
   useEffect(() => {
     loadItems("locations");
   }, [loadItems]);
 
   const handleCreate = async () => {
-    if (!newItemName.trim()) return;
-    await createItem({ name: newItemName });
-    setNewItemName("");
+    if (!newItemPayload.name.trim()) return;
+    
+    // Validar fields obligatorios por catálogo
+    if (activeCatalog === "locations" && !newItemPayload.type) return;
+
+    await createItem(newItemPayload);
+    setNewItemPayload({ name: "" });
     setIsDialogOpen(false);
   };
 
@@ -57,17 +68,36 @@ export function CatalogsContent() {
             <DialogHeader>
               <DialogTitle>Nuevo Elemento ({activeCatalog})</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4 py-4">
+            <div className="grid gap-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Nombre</Label>
                 <Input 
                   id="name" 
-                  value={newItemName} 
-                  onChange={(e) => setNewItemName(e.target.value)}
-                  placeholder="Ej. RIG 702, Tubular, etc." 
+                  value={newItemPayload.name} 
+                  onChange={(e) => setNewItemPayload({ ...newItemPayload, name: e.target.value })}
+                  placeholder="Ej. Nombre del elemento..." 
                 />
               </div>
-              <Button onClick={handleCreate} disabled={loading} className="w-full">
+
+              {activeCatalog === "locations" && (
+                <div className="space-y-2">
+                  <Label htmlFor="type">Tipo de Locación</Label>
+                  <Select 
+                    value={newItemPayload.type} 
+                    onValueChange={(val) => setNewItemPayload({ ...newItemPayload, type: val })}
+                  >
+                    <SelectTrigger id="type">
+                      <SelectValue placeholder="Seleccione el tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="rig">Rig (Equipo)</SelectItem>
+                      <SelectItem value="operating_base">Base Operativa</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              <Button onClick={handleCreate} disabled={loading} className="w-full mt-4">
                 {loading ? "Guardando..." : "Guardar"}
               </Button>
             </div>
