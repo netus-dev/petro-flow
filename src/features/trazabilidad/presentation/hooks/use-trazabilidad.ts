@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Asset, TrazabilidadStats } from "../../domain/entities";
-import { MockTrazabilidadRepository } from "../../infrastructure/repository";
+import { trazabilidadRepository } from "../../infrastructure/repository";
 import {
   AddCertificateUseCase,
   GetAssetListUseCase,
@@ -24,7 +24,7 @@ export function useTrazabilidad() {
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterType, setFilterType] = useState<string>("all");
 
-  const repository = useMemo(() => new MockTrazabilidadRepository(), []);
+  const repository = trazabilidadRepository;
 
   const getAssetListUseCase = useMemo(
     () => new GetAssetListUseCase(repository),

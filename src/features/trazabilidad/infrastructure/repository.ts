@@ -1,5 +1,6 @@
 import { Asset, TrazabilidadStats } from "../domain/entities";
 import { ITrazabilidadRepository } from "../domain/repository";
+import { SupabaseTrazabilidadRepository } from "./supabase-repository";
 
 const assets: Asset[] = [
   {
@@ -250,3 +251,5 @@ export class MockTrazabilidadRepository implements ITrazabilidadRepository {
     assets.push(newAsset);
   }
 }
+
+export const trazabilidadRepository = new SupabaseTrazabilidadRepository();
