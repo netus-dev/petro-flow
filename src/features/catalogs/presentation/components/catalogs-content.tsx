@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useCatalogs } from "../hooks/use-catalogs";
+import { catalogsRepository } from "../../infrastructure/repository";
 import { CatalogType, BaseCatalogItem } from "../../domain/entities";
 import { 
   Tabs, TabsContent, TabsList, TabsTrigger 
@@ -46,10 +47,19 @@ export function CatalogsContent() {
   const [editItemId, setEditItemId] = useState<string | null>(null);
   const [newItemPayload, setNewItemPayload] = useState<{ name: string; type?: string; is_active?: boolean; [key: string]: any }>({ name: "", is_active: true });
   const [properties, setProperties] = useState<PropertyItem[]>([]);
+  const [wellsList, setWellsList] = useState<BaseCatalogItem[]>([]);
+  const [suppliersList, setSuppliersList] = useState<BaseCatalogItem[]>([]);
 
   useEffect(() => {
     loadItems("companies");
   }, [loadItems]);
+
+  useEffect(() => {
+    if (activeCatalog === "locations") {
+      catalogsRepository.getItems("wells").then(setWellsList).catch(console.error);
+      catalogsRepository.getItems("suppliers").then(setSuppliersList).catch(console.error);
+    }
+  }, [activeCatalog]);
 
   const openCreateDialog = () => {
     setEditItemId(null);
@@ -74,7 +84,13 @@ export function CatalogsContent() {
       }
     }
     setProperties(parsedProps);
-    setNewItemPayload({ name: item.name, type: item.type, is_active: item.is_active !== false });
+    setNewItemPayload({ 
+      name: item.name, 
+      type: item.type, 
+      is_active: item.is_active !== false,
+      current_well_id: item.current_well_id,
+      supplier_id: item.supplier_id
+    });
     setIsDialogOpen(true);
   };
 
@@ -177,24 +193,69 @@ export function CatalogsContent() {
               </div>
 
               {activeCatalog === "locations" && (
-                <div className="space-y-2">
-                  <Label htmlFor="type">Tipo de Locación</Label>
-                  <Select 
-                    value={newItemPayload.type} 
-                    onValueChange={(val) => setNewItemPayload({ ...newItemPayload, type: val })}
-                  >
-                    <SelectTrigger id="type">
-                      <SelectValue placeholder="Seleccione el tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="rig">Rig (Equipo)</SelectItem>
-                      <SelectItem value="operating_base">Base Operativa</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="type">Tipo de Locación</Label>
+                    <Select 
+                      value={newItemPayload.type} 
+                      onValueChange={(val) => setNewItemPayload({ ...newItemPayload, type: val })}
+                    >
+                      <SelectTrigger id="type">
+                        <SelectValue placeholder="Seleccione el tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="rig">Rig (Equipo)</SelectItem>
+                        <SelectItem value="operating_base">Base Operativa</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {newItemPayload.type && (
+                    <>
+                      <Separator className="my-4" />
+                      <h3 className="text-sm font-medium text-muted-foreground pb-2">
+                        {newItemPayload.type === 'rig' ? "Sobre el Rig" : "Sobre la base operativa"}
+                      </h3>
+                      
+                      {newItemPayload.type === 'rig' && (
+                        <div className="space-y-2">
+                          <Label htmlFor="current_well_id">Pozo actual</Label>
+                          <Select 
+                            value={newItemPayload.current_well_id} 
+                            onValueChange={(val) => setNewItemPayload({ ...newItemPayload, current_well_id: val })}
+                          >
+                            <SelectTrigger id="current_well_id">
+                              <SelectValue placeholder="Seleccione el pozo" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {wellsList.map(w => <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+
+                      {newItemPayload.type === 'operating_base' && (
+                        <div className="space-y-2">
+                          <Label htmlFor="supplier_id">Proveedor propietario</Label>
+                          <Select 
+                            value={newItemPayload.supplier_id} 
+                            onValueChange={(val) => setNewItemPayload({ ...newItemPayload, supplier_id: val })}
+                          >
+                            <SelectTrigger id="supplier_id">
+                              <SelectValue placeholder="Seleccione el proveedor" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {suppliersList.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
               )}
 
-              {(activeCatalog === "wells" || activeCatalog === "suppliers" || activeCatalog === "ubications" || activeCatalog === "functional_principles") && (
+              {(activeCatalog === "wells" || activeCatalog === "suppliers" || activeCatalog === "ubications" || activeCatalog === "functional_principles" || activeCatalog === "locations") && (
                 <div className="flex items-center justify-between mt-4">
                   <Label htmlFor="is_active" className="cursor-pointer">Activo</Label>
                   <Switch 

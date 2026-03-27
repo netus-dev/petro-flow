@@ -6,44 +6,79 @@ export class SupabaseCatalogsRepository implements ICatalogsRepository {
   private supabase = createClient();
 
   async getItems(catalog: CatalogType): Promise<BaseCatalogItem[]> {
-    const { data, error } = await this.supabase
-      .from(catalog)
-      .select("*")
-      .order("created_at", { ascending: false });
+    let query = this.supabase.from(catalog).select("*").order("created_at", { ascending: false });
+
+    if (catalog === "locations") {
+      query = this.supabase.from("locations").select("*, rigs(current_well_id), operating_bases(supplier_id)") as any;
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error(`Error fetching items from ${catalog}:`, error);
       throw new Error(error.message);
     }
 
+    if (catalog === "locations") {
+      return data.map((d: any) => ({
+        ...d,
+        current_well_id: Array.isArray(d.rigs) ? d.rigs[0]?.current_well_id : d.rigs?.current_well_id,
+        supplier_id: Array.isArray(d.operating_bases) ? d.operating_bases[0]?.supplier_id : d.operating_bases?.supplier_id,
+      }));
+    }
+
     return data as BaseCatalogItem[];
   }
 
   async getItemById(catalog: CatalogType, id: string): Promise<BaseCatalogItem | undefined> {
-    const { data, error } = await this.supabase
-      .from(catalog)
-      .select("*")
-      .eq("id", id)
-      .single();
+    let query = this.supabase.from(catalog).select("*").eq("id", id).single();
+
+    if (catalog === "locations") {
+      query = this.supabase.from("locations").select("*, rigs(current_well_id), operating_bases(supplier_id)").eq("id", id).single() as any;
+    }
+
+    const { data, error } = await query;
 
     if (error || !data) {
       console.error(`Error fetching item ${id} from ${catalog}:`, error);
       return undefined;
     }
 
+    if (catalog === "locations") {
+      return {
+        ...data,
+        current_well_id: Array.isArray(data.rigs) ? data.rigs[0]?.current_well_id : data.rigs?.current_well_id,
+        supplier_id: Array.isArray(data.operating_bases) ? data.operating_bases[0]?.supplier_id : data.operating_bases?.supplier_id,
+      } as BaseCatalogItem;
+    }
+
     return data as BaseCatalogItem;
   }
 
   async createItem(catalog: CatalogType, item: Partial<BaseCatalogItem>): Promise<BaseCatalogItem> {
+    const payload = { ...item };
+    const current_well_id = payload.current_well_id;
+    const supplier_id = payload.supplier_id;
+    delete payload.current_well_id;
+    delete payload.supplier_id;
+
     const { data, error } = await this.supabase
       .from(catalog)
-      .insert(item)
+      .insert(payload)
       .select()
       .single();
 
     if (error) {
       console.error(`Error creating item in ${catalog}:`, error);
       throw new Error(error.message);
+    }
+
+    if (catalog === "locations" && data?.id) {
+      if (payload.type === "rig" && current_well_id) {
+        await this.supabase.from("rigs").insert({ location_id: data.id, current_well_id });
+      } else if (payload.type === "operating_base" && supplier_id) {
+        await this.supabase.from("operating_bases").insert({ location_id: data.id, supplier_id });
+      }
     }
 
     return data as BaseCatalogItem;
@@ -55,6 +90,14 @@ export class SupabaseCatalogsRepository implements ICatalogsRepository {
     delete payload.id;
     delete payload.created_at;
 
+    const current_well_id = payload.current_well_id;
+    const supplier_id = payload.supplier_id;
+    delete payload.current_well_id;
+    delete payload.supplier_id;
+    // Rigs and operating bases arrays fetched previously must not be updated into the locations table
+    delete payload.rigs;
+    delete payload.operating_bases;
+
     const { error } = await this.supabase
       .from(catalog)
       .update(payload)
@@ -63,6 +106,15 @@ export class SupabaseCatalogsRepository implements ICatalogsRepository {
     if (error) {
       console.error(`Error updating item ${id} in ${catalog}:`, error);
       throw new Error(error.message);
+    }
+
+    if (catalog === "locations") {
+      if (payload.type === "rig" && current_well_id !== undefined) {
+        // Upsert uses location_id uniquely assuming it's a primary/unique key on the rigs table
+        await this.supabase.from("rigs").upsert({ location_id: id, current_well_id }, { onConflict: "location_id" });
+      } else if (payload.type === "operating_base" && supplier_id !== undefined) {
+        await this.supabase.from("operating_bases").upsert({ location_id: id, supplier_id }, { onConflict: "location_id" });
+      }
     }
   }
 
