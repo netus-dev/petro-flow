@@ -337,19 +337,20 @@ export function CatalogsContent() {
             <TableHeader>
               <TableRow>
                 <TableHead>Nombre</TableHead>
+                <TableHead>Estado</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading && items.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={2} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">
                     Cargando catálogos...
                   </TableCell>
                 </TableRow>
               ) : items.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={2} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">
                     No hay elementos registrados.
                   </TableCell>
                 </TableRow>
@@ -357,6 +358,11 @@ export function CatalogsContent() {
                 items.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell className="font-medium">{item.name}</TableCell>
+                    <TableCell>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${item.is_active !== false ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400'}`}>
+                        {item.is_active !== false ? "Activo" : "Inactivo"}
+                      </span>
+                    </TableCell>
                     <TableCell className="text-right space-x-2">
                       <Button variant="outline" size="sm" onClick={() => navigator.clipboard.writeText(item.id)}>
                         <Copy className="size-3.5 mr-1" />
