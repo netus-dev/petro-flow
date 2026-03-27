@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from "@/src/core/presentation/components/ui/select";
 import { Switch } from "@/src/core/presentation/components/ui/switch";
+import { Copy } from "lucide-react";
 
 export function CatalogsContent() {
   const { 
@@ -117,7 +118,7 @@ export function CatalogsContent() {
                 </div>
               )}
 
-              {activeCatalog === "wells" && (
+              {(activeCatalog === "wells" || activeCatalog === "suppliers") && (
                 <div className="flex items-center justify-between mt-4">
                   <Label htmlFor="is_active" className="cursor-pointer">Activo</Label>
                   <Switch 
@@ -152,7 +153,6 @@ export function CatalogsContent() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>ID</TableHead>
                 <TableHead>Nombre</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
@@ -160,24 +160,25 @@ export function CatalogsContent() {
             <TableBody>
               {loading && items.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={2} className="text-center py-8 text-muted-foreground">
                     Cargando catálogos...
                   </TableCell>
                 </TableRow>
               ) : items.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={2} className="text-center py-8 text-muted-foreground">
                     No hay elementos registrados.
                   </TableCell>
                 </TableRow>
               ) : (
                 items.map((item) => (
                   <TableRow key={item.id}>
-                    <TableCell className="font-mono text-xs text-muted-foreground">
-                      {item.id.split('-')[0]}...
-                    </TableCell>
                     <TableCell className="font-medium">{item.name}</TableCell>
                     <TableCell className="text-right space-x-2">
+                      <Button variant="outline" size="sm" onClick={() => navigator.clipboard.writeText(item.id)}>
+                        <Copy className="size-3.5 mr-1" />
+                        Copiar ID
+                      </Button>
                       <Button variant="outline" size="sm" onClick={() => openEditDialog(item)}>
                         Editar
                       </Button>
