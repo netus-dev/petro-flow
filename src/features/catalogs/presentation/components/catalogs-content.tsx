@@ -192,6 +192,17 @@ export function CatalogsContent() {
                 />
               </div>
 
+              {(activeCatalog === "wells" || activeCatalog === "suppliers" || activeCatalog === "ubications" || activeCatalog === "functional_principles" || activeCatalog === "locations") && (
+                <div className="flex items-center justify-between mt-2 mb-2">
+                  <Label htmlFor="is_active" className="cursor-pointer">Activo</Label>
+                  <Switch 
+                    id="is_active" 
+                    checked={newItemPayload.is_active} 
+                    onCheckedChange={(val) => setNewItemPayload({ ...newItemPayload, is_active: val })}
+                  />
+                </div>
+              )}
+
               {activeCatalog === "locations" && (
                 <div className="space-y-4">
                   <div className="space-y-2">
@@ -254,18 +265,6 @@ export function CatalogsContent() {
                   )}
                 </div>
               )}
-
-              {(activeCatalog === "wells" || activeCatalog === "suppliers" || activeCatalog === "ubications" || activeCatalog === "functional_principles" || activeCatalog === "locations") && (
-                <div className="flex items-center justify-between mt-4">
-                  <Label htmlFor="is_active" className="cursor-pointer">Activo</Label>
-                  <Switch 
-                    id="is_active" 
-                    checked={newItemPayload.is_active} 
-                    onCheckedChange={(val) => setNewItemPayload({ ...newItemPayload, is_active: val })}
-                  />
-                </div>
-              )}
-
               {activeCatalog === "functional_principles" && (
                 <div className="space-y-4 mt-6">
                   <Separator />
