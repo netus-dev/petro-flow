@@ -40,7 +40,22 @@ export interface Well {
   created_at?: string;
 }
 
-export type CatalogType = "locations" | "ubications" | "functional_principles" | "companies" | "suppliers" | "wells";
+export interface Brand {
+  id: string;
+  name: string;
+  is_active: boolean;
+  created_at?: string;
+}
+
+export interface Model {
+  id: string;
+  name: string;
+  brand_id: string;
+  is_active: boolean;
+  created_at?: string;
+}
+
+export type CatalogType = "locations" | "ubications" | "functional_principles" | "companies" | "suppliers" | "wells" | "brands" | "models";
 
 // Generic Item Type for UI tables
 export interface BaseCatalogItem {

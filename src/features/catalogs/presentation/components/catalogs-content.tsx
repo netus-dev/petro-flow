@@ -49,6 +49,7 @@ export function CatalogsContent() {
   const [properties, setProperties] = useState<PropertyItem[]>([]);
   const [wellsList, setWellsList] = useState<BaseCatalogItem[]>([]);
   const [suppliersList, setSuppliersList] = useState<BaseCatalogItem[]>([]);
+  const [brandsList, setBrandsList] = useState<BaseCatalogItem[]>([]);
 
   useEffect(() => {
     loadItems("companies");
@@ -58,6 +59,8 @@ export function CatalogsContent() {
     if (activeCatalog === "locations") {
       catalogsRepository.getItems("wells").then(setWellsList).catch(console.error);
       catalogsRepository.getItems("suppliers").then(setSuppliersList).catch(console.error);
+    } else if (activeCatalog === "models") {
+      catalogsRepository.getItems("brands").then(setBrandsList).catch(console.error);
     }
   }, [activeCatalog]);
 
@@ -89,7 +92,8 @@ export function CatalogsContent() {
       type: item.type, 
       is_active: item.is_active !== false,
       current_well_id: item.current_well_id,
-      supplier_id: item.supplier_id
+      supplier_id: item.supplier_id,
+      brand_id: item.brand_id
     });
     setIsDialogOpen(true);
   };
@@ -191,6 +195,23 @@ export function CatalogsContent() {
                   placeholder="Ej. Nombre del elemento..." 
                 />
               </div>
+
+              {activeCatalog === "models" && (
+                <div className="space-y-2 mt-4">
+                  <Label htmlFor="brand_id">Marca</Label>
+                  <Select 
+                    value={newItemPayload.brand_id} 
+                    onValueChange={(val) => setNewItemPayload({ ...newItemPayload, brand_id: val })}
+                  >
+                    <SelectTrigger id="brand_id">
+                      <SelectValue placeholder="Seleccione la marca" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {brandsList.map(b => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               <div className="flex items-center justify-between mt-2 mb-2">
                 <Label htmlFor="is_active" className="cursor-pointer">Activo</Label>
@@ -323,13 +344,15 @@ export function CatalogsContent() {
       {error && <div className="text-red-500 font-medium">{error}</div>}
 
       <Tabs defaultValue="companies" onValueChange={handleTabChange}>
-        <TabsList className="mb-4">
+        <TabsList className="mb-4 flex-wrap">
           <TabsTrigger value="companies">Compañías</TabsTrigger>
           <TabsTrigger value="locations">Locaciones</TabsTrigger>
           <TabsTrigger value="functional_principles">Principios Funcionales</TabsTrigger>
           <TabsTrigger value="ubications">Ubicaciones</TabsTrigger>
           <TabsTrigger value="suppliers">Proveedores</TabsTrigger>
           <TabsTrigger value="wells">Pozos</TabsTrigger>
+          <TabsTrigger value="brands">Marcas</TabsTrigger>
+          <TabsTrigger value="models">Modelos</TabsTrigger>
         </TabsList>
 
         <div className="border rounded-md">
