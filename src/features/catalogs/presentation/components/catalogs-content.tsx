@@ -27,7 +27,14 @@ import {
   SelectValue,
 } from "@/src/core/presentation/components/ui/select";
 import { Switch } from "@/src/core/presentation/components/ui/switch";
-import { Copy } from "lucide-react";
+import { Copy, Plus, Trash } from "lucide-react";
+import { Separator } from "@/src/core/presentation/components/ui/separator";
+
+export type PropertyType = "text" | "integer" | "decimal";
+export interface PropertyItem {
+  name: string;
+  type: PropertyType;
+}
 
 export function CatalogsContent() {
   const { 
@@ -37,7 +44,8 @@ export function CatalogsContent() {
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editItemId, setEditItemId] = useState<string | null>(null);
-  const [newItemPayload, setNewItemPayload] = useState<{ name: string; type?: string; is_active?: boolean }>({ name: "", is_active: true });
+  const [newItemPayload, setNewItemPayload] = useState<{ name: string; type?: string; is_active?: boolean; [key: string]: any }>({ name: "", is_active: true });
+  const [properties, setProperties] = useState<PropertyItem[]>([]);
 
   useEffect(() => {
     loadItems("companies");
@@ -46,11 +54,26 @@ export function CatalogsContent() {
   const openCreateDialog = () => {
     setEditItemId(null);
     setNewItemPayload({ name: "", is_active: true });
+    setProperties([]);
     setIsDialogOpen(true);
   };
 
   const openEditDialog = (item: BaseCatalogItem) => {
     setEditItemId(item.id);
+    
+    // Parse functional principle properties from db columns
+    const parsedProps: PropertyItem[] = [];
+    for (let i = 1; i <= 20; i++) {
+      const val = item[`property_${i}`];
+      if (val) {
+        let type: PropertyType = "text";
+        if (i >= 11 && i <= 15) type = "integer";
+        if (i >= 16 && i <= 20) type = "decimal";
+
+        parsedProps.push({ name: val, type });
+      }
+    }
+    setProperties(parsedProps);
     setNewItemPayload({ name: item.name, type: item.type, is_active: item.is_active !== false });
     setIsDialogOpen(true);
   };
@@ -61,15 +84,68 @@ export function CatalogsContent() {
     // Validar fields obligatorios por catálogo
     if (activeCatalog === "locations" && !newItemPayload.type) return;
 
+    const payloadToSave = { ...newItemPayload };
+
+    if (activeCatalog === "functional_principles") {
+      // Clear all properties first to rewrite them completely
+      for (let i = 1; i <= 20; i++) {
+        payloadToSave[`property_${i}`] = null;
+      }
+
+      let textIndex = 1;
+      let intIndex = 11;
+      let decIndex = 16;
+
+      for (const p of properties) {
+        if (!p.name.trim()) continue;
+        let targetIndex = 0;
+        if (p.type === "text" && textIndex <= 10) {
+          targetIndex = textIndex++;
+        } else if (p.type === "integer" && intIndex <= 15) {
+          targetIndex = intIndex++;
+        } else if (p.type === "decimal" && decIndex <= 20) {
+          targetIndex = decIndex++;
+        }
+
+        if (targetIndex !== 0) {
+          // Store directly as plain text
+          payloadToSave[`property_${targetIndex}`] = p.name;
+        }
+      }
+    }
+
     if (editItemId) {
-      await updateItem(editItemId, newItemPayload);
+      await updateItem(editItemId, payloadToSave);
     } else {
-      await createItem(newItemPayload);
+      await createItem(payloadToSave);
     }
     
-    setNewItemPayload({ name: "" });
+    setNewItemPayload({ name: "", is_active: true });
+    setProperties([]);
     setEditItemId(null);
     setIsDialogOpen(false);
+  };
+
+  const addProperty = () => {
+    if (properties.length < 20) {
+      setProperties([...properties, { name: "", type: "text" }]);
+    }
+  };
+
+  const updateProperty = (index: number, key: keyof PropertyItem, value: any) => {
+    const newProps = [...properties];
+    newProps[index] = { ...newProps[index], [key]: value };
+    setProperties(newProps);
+  };
+
+  const removeProperty = (index: number) => {
+    setProperties(properties.filter((_, i) => i !== index));
+  };
+
+  const counts = {
+    text: properties.filter(p => p.type === "text").length,
+    integer: properties.filter(p => p.type === "integer").length,
+    decimal: properties.filter(p => p.type === "decimal").length,
   };
 
   return (
@@ -118,7 +194,7 @@ export function CatalogsContent() {
                 </div>
               )}
 
-              {(activeCatalog === "wells" || activeCatalog === "suppliers" || activeCatalog === "ubications") && (
+              {(activeCatalog === "wells" || activeCatalog === "suppliers" || activeCatalog === "ubications" || activeCatalog === "functional_principles") && (
                 <div className="flex items-center justify-between mt-4">
                   <Label htmlFor="is_active" className="cursor-pointer">Activo</Label>
                   <Switch 
@@ -126,6 +202,55 @@ export function CatalogsContent() {
                     checked={newItemPayload.is_active} 
                     onCheckedChange={(val) => setNewItemPayload({ ...newItemPayload, is_active: val })}
                   />
+                </div>
+              )}
+
+              {activeCatalog === "functional_principles" && (
+                <div className="space-y-4 mt-6">
+                  <Separator />
+                  <div className="flex justify-between items-center">
+                    <div className="flex flex-col gap-1 sm:flex-row sm:gap-4 text-[10px] sm:text-xs text-muted-foreground font-mono">
+                      <span className="flex items-center gap-1">
+                        <div className="w-2 h-2 rounded-full bg-blue-500" /> texto: {counts.text}/10
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <div className="w-2 h-2 rounded-full bg-green-500" /> número entero: {counts.integer}/5
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <div className="w-2 h-2 rounded-full bg-orange-500" /> con decimales: {counts.decimal}/5
+                      </span>
+                    </div>
+                    <Button type="button" variant="outline" size="sm" onClick={addProperty} disabled={properties.length >= 20}>
+                      <Plus className="size-3.5 mr-1" /> Propiedad
+                    </Button>
+                  </div>
+                  
+                  <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
+                    {properties.map((p, index) => (
+                      <div key={index} className="flex gap-2 items-center">
+                        <Input 
+                          value={p.name} 
+                          onChange={(e) => updateProperty(index, "name", e.target.value)} 
+                          placeholder="Nombre de propiedad" 
+                          className="flex-1 min-w-[100px]" 
+                          required
+                        />
+                        <Select value={p.type} onValueChange={(v: any) => updateProperty(index, "type", v)}>
+                          <SelectTrigger className="w-[140px] sm:w-[180px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="text" disabled={p.type !== "text" && counts.text >= 10}>Texto</SelectItem>
+                            <SelectItem value="integer" disabled={p.type !== "integer" && counts.integer >= 5}>Número Entero</SelectItem>
+                            <SelectItem value="decimal" disabled={p.type !== "decimal" && counts.decimal >= 5}>Con Decimales</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Button type="button" variant="ghost" size="icon" onClick={() => removeProperty(index)}>
+                          <Trash className="size-4 text-destructive" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 
