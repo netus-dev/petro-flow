@@ -118,7 +118,7 @@ export function CatalogsContent() {
                 </div>
               )}
 
-              {(activeCatalog === "wells" || activeCatalog === "suppliers") && (
+              {(activeCatalog === "wells" || activeCatalog === "suppliers" || activeCatalog === "ubications") && (
                 <div className="flex items-center justify-between mt-4">
                   <Label htmlFor="is_active" className="cursor-pointer">Activo</Label>
                   <Switch 
