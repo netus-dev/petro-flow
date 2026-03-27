@@ -30,24 +30,43 @@ import {
 export function CatalogsContent() {
   const { 
     activeCatalog, items, loading, error, 
-    handleTabChange, loadItems, createItem, deleteItem 
+    handleTabChange, loadItems, createItem, updateItem, deleteItem 
   } = useCatalogs();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editItemId, setEditItemId] = useState<string | null>(null);
   const [newItemPayload, setNewItemPayload] = useState<{ name: string; type?: string }>({ name: "" });
 
   useEffect(() => {
-    loadItems("locations");
+    loadItems("companies");
   }, [loadItems]);
 
-  const handleCreate = async () => {
+  const openCreateDialog = () => {
+    setEditItemId(null);
+    setNewItemPayload({ name: "" });
+    setIsDialogOpen(true);
+  };
+
+  const openEditDialog = (item: BaseCatalogItem) => {
+    setEditItemId(item.id);
+    setNewItemPayload({ name: item.name, type: item.type });
+    setIsDialogOpen(true);
+  };
+
+  const handleSave = async () => {
     if (!newItemPayload.name.trim()) return;
     
     // Validar fields obligatorios por catálogo
     if (activeCatalog === "locations" && !newItemPayload.type) return;
 
-    await createItem(newItemPayload);
+    if (editItemId) {
+      await updateItem(editItemId, newItemPayload);
+    } else {
+      await createItem(newItemPayload);
+    }
+    
     setNewItemPayload({ name: "" });
+    setEditItemId(null);
     setIsDialogOpen(false);
   };
 
@@ -60,13 +79,13 @@ export function CatalogsContent() {
             Gestiona las entidades base compartidas por todos los módulos.
           </p>
         </div>
+        <div>
+          <Button onClick={openCreateDialog}>Agregar Elemento</Button>
+        </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>Agregar Elemento</Button>
-          </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Nuevo Elemento ({activeCatalog})</DialogTitle>
+              <DialogTitle>{editItemId ? "Editar Elemento" : "Nuevo Elemento"} ({activeCatalog})</DialogTitle>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="space-y-2">
@@ -97,7 +116,7 @@ export function CatalogsContent() {
                 </div>
               )}
 
-              <Button onClick={handleCreate} disabled={loading} className="w-full mt-4">
+              <Button onClick={handleSave} disabled={loading} className="w-full mt-4">
                 {loading ? "Guardando..." : "Guardar"}
               </Button>
             </div>
@@ -107,12 +126,14 @@ export function CatalogsContent() {
 
       {error && <div className="text-red-500 font-medium">{error}</div>}
 
-      <Tabs defaultValue="locations" onValueChange={handleTabChange}>
+      <Tabs defaultValue="companies" onValueChange={handleTabChange}>
         <TabsList className="mb-4">
-          <TabsTrigger value="locations">Locaciones</TabsTrigger>
-          <TabsTrigger value="ubications">Ubicaciones</TabsTrigger>
-          <TabsTrigger value="functional_principles">Principios Funcionales</TabsTrigger>
           <TabsTrigger value="companies">Compañías</TabsTrigger>
+          <TabsTrigger value="locations">Locaciones</TabsTrigger>
+          <TabsTrigger value="functional_principles">Principios Funcionales</TabsTrigger>
+          <TabsTrigger value="ubications">Ubicaciones</TabsTrigger>
+          <TabsTrigger value="suppliers">Proveedores</TabsTrigger>
+          <TabsTrigger value="wells">Pozos</TabsTrigger>
         </TabsList>
 
         <div className="border rounded-md">
@@ -145,6 +166,9 @@ export function CatalogsContent() {
                     </TableCell>
                     <TableCell className="font-medium">{item.name}</TableCell>
                     <TableCell className="text-right space-x-2">
+                      <Button variant="outline" size="sm" onClick={() => openEditDialog(item)}>
+                        Editar
+                      </Button>
                       <Button variant="destructive" size="sm" onClick={() => deleteItem(item.id)}>
                         Eliminar
                       </Button>

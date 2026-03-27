@@ -26,7 +26,21 @@ export interface Company {
   created_at?: string;
 }
 
-export type CatalogType = "locations" | "ubications" | "functional_principles" | "companies";
+export interface Supplier {
+  id: string;
+  name: string;
+  is_active: boolean;
+  created_at?: string;
+}
+
+export interface Well {
+  id: string;
+  name: string;
+  is_active: boolean;
+  created_at?: string;
+}
+
+export type CatalogType = "locations" | "ubications" | "functional_principles" | "companies" | "suppliers" | "wells";
 
 // Generic Item Type for UI tables
 export interface BaseCatalogItem {
