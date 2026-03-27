@@ -26,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/core/presentation/components/ui/select";
+import { Switch } from "@/src/core/presentation/components/ui/switch";
 
 export function CatalogsContent() {
   const { 
@@ -35,7 +36,7 @@ export function CatalogsContent() {
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editItemId, setEditItemId] = useState<string | null>(null);
-  const [newItemPayload, setNewItemPayload] = useState<{ name: string; type?: string }>({ name: "" });
+  const [newItemPayload, setNewItemPayload] = useState<{ name: string; type?: string; is_active?: boolean }>({ name: "", is_active: true });
 
   useEffect(() => {
     loadItems("companies");
@@ -43,13 +44,13 @@ export function CatalogsContent() {
 
   const openCreateDialog = () => {
     setEditItemId(null);
-    setNewItemPayload({ name: "" });
+    setNewItemPayload({ name: "", is_active: true });
     setIsDialogOpen(true);
   };
 
   const openEditDialog = (item: BaseCatalogItem) => {
     setEditItemId(item.id);
-    setNewItemPayload({ name: item.name, type: item.type });
+    setNewItemPayload({ name: item.name, type: item.type, is_active: item.is_active !== false });
     setIsDialogOpen(true);
   };
 
@@ -113,6 +114,17 @@ export function CatalogsContent() {
                       <SelectItem value="operating_base">Base Operativa</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+              )}
+
+              {activeCatalog === "wells" && (
+                <div className="flex items-center justify-between mt-4">
+                  <Label htmlFor="is_active" className="cursor-pointer">Activo</Label>
+                  <Switch 
+                    id="is_active" 
+                    checked={newItemPayload.is_active} 
+                    onCheckedChange={(val) => setNewItemPayload({ ...newItemPayload, is_active: val })}
+                  />
                 </div>
               )}
 
