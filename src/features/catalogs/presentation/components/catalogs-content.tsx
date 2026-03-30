@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useAuth } from "@/src/features/auth/presentation/hooks/use-auth";
 import { useCatalogs } from "../hooks/use-catalogs";
 import { catalogsRepository } from "../../infrastructure/repository";
 import { CatalogType, BaseCatalogItem } from "../../domain/entities";
@@ -38,6 +39,7 @@ export interface PropertyItem {
 }
 
 export function CatalogsContent() {
+  const { profile } = useAuth();
   const { 
     activeCatalog, items, loading, error, 
     handleTabChange, loadItems, createItem, updateItem, deleteItem 
@@ -105,6 +107,28 @@ export function CatalogsContent() {
     if (activeCatalog === "locations" && !newItemPayload.type) return;
 
     const payloadToSave = { ...newItemPayload };
+
+    let companyId = profile?.company?.id;
+    if (!companyId) {
+      const storedProfile = localStorage.getItem("profile");
+      if (storedProfile) {
+        try {
+          companyId = JSON.parse(storedProfile)?.company?.id;
+        } catch (e) {
+          console.error("Error parsing profile cache", e);
+        }
+      }
+    }
+
+    const catalogsRequireCompany = [
+      "locations", "functional_principles", "ubications", 
+      "suppliers", "wells", "brands", "models"
+    ];
+
+    if (catalogsRequireCompany.includes(activeCatalog) && companyId) {
+      payloadToSave.company_id = companyId;
+    }
+
 
     if (activeCatalog === "functional_principles") {
       // Clear all properties first to rewrite them completely

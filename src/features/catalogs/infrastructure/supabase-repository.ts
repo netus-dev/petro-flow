@@ -74,10 +74,10 @@ export class SupabaseCatalogsRepository implements ICatalogsRepository {
     }
 
     if (catalog === "locations" && data?.id) {
-      if (payload.type === "rig" && current_well_id) {
-        await this.supabase.from("rigs").insert({ location_id: data.id, current_well_id });
-      } else if (payload.type === "operating_base" && supplier_id) {
-        await this.supabase.from("operating_bases").insert({ location_id: data.id, supplier_id });
+      if (payload.type === "rig") {
+        await this.supabase.from("rigs").insert({ id: data.id, current_well_id: current_well_id || null });
+      } else if (payload.type === "operating_base") {
+        await this.supabase.from("operating_bases").insert({ id: data.id, supplier_id: supplier_id || null });
       }
     }
 
@@ -109,11 +109,11 @@ export class SupabaseCatalogsRepository implements ICatalogsRepository {
     }
 
     if (catalog === "locations") {
-      if (payload.type === "rig" && current_well_id !== undefined) {
+      if (payload.type === "rig") {
         // Upsert uses location_id uniquely assuming it's a primary/unique key on the rigs table
-        await this.supabase.from("rigs").upsert({ location_id: id, current_well_id }, { onConflict: "location_id" });
-      } else if (payload.type === "operating_base" && supplier_id !== undefined) {
-        await this.supabase.from("operating_bases").upsert({ location_id: id, supplier_id }, { onConflict: "location_id" });
+        await this.supabase.from("rigs").upsert({ location_id: id, current_well_id: current_well_id || null }, { onConflict: "location_id" });
+      } else if (payload.type === "operating_base") {
+        await this.supabase.from("operating_bases").upsert({ location_id: id, supplier_id: supplier_id || null }, { onConflict: "location_id" });
       }
     }
   }
