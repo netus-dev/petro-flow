@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import {
   Route,
   Clock,
@@ -47,7 +48,33 @@ import { useAuth } from "@/src/features/auth/presentation/hooks/use-auth";
 export function AppSidebar() {
   const pathname = usePathname();
   const { t } = useApp();
-  const { logout } = useAuth();
+  const { logout, profile } = useAuth();
+
+  const [userData, setUserData] = useState({ name: "", email: "" });
+
+  useEffect(() => {
+    if (profile?.profile) {
+      setUserData({
+        name: profile.profile.name,
+        email: profile.profile.email,
+      });
+    } else {
+      const storedProfile = localStorage.getItem("profile");
+      if (storedProfile) {
+        try {
+          const parsed = JSON.parse(storedProfile);
+          if (parsed?.profile) {
+            setUserData({
+              name: parsed.profile.name || "",
+              email: parsed.profile.email || "",
+            });
+          }
+        } catch (e) {
+          console.error("Error parsing profile cache", e);
+        }
+      }
+    }
+  }, [profile]);
 
   const mainModules = [
     {
@@ -251,10 +278,10 @@ export function AppSidebar() {
                   </Avatar>
                   <div className="flex flex-col gap-0.5 leading-none overflow-hidden group-data-[collapsible=icon]:hidden">
                     <span className="text-sm font-semibold text-sidebar-foreground truncate">
-                      Carlos Mendez
+                      {userData.name || "Cargando..."}
                     </span>
                     <span className="text-[10px] text-muted-foreground truncate">
-                      {t("sidebar.operator")}
+                      {userData.email}
                     </span>
                   </div>
                   <ChevronDown className="ml-auto size-4 text-muted-foreground group-data-[collapsible=icon]:hidden" />
@@ -274,10 +301,10 @@ export function AppSidebar() {
                   </Avatar>
                   <div className="flex flex-col">
                     <span className="text-sm font-semibold text-foreground">
-                      Carlos Mendez
+                      {userData.name || "Cargando..."}
                     </span>
                     <span className="text-[10px] text-muted-foreground">
-                      carlos.mendez@petroflow.com
+                      {userData.email}
                     </span>
                   </div>
                 </div>
