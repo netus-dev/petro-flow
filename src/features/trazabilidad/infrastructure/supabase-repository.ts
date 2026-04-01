@@ -31,6 +31,8 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
             id, type, date, justification, origin_location_id, destination_location_id,
             origin:locations!fk_origin_location(name),
             destination:locations!fk_destination_location(name),
+            origin_ubication:ubications!transactions_origin_ubication_id_fkey(name),
+            destination_ubication:ubications!transactions_destination_ubication_id_fkey(name),
             users:created_by(name)
           )
         )
@@ -61,6 +63,8 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
             id, type, date, justification, origin_location_id, destination_location_id,
             origin:locations!fk_origin_location(name),
             destination:locations!fk_destination_location(name),
+            origin_ubication:ubications!transactions_origin_ubication_id_fkey(name),
+            destination_ubication:ubications!transactions_destination_ubication_id_fkey(name),
             users:created_by(name)
           )
         )
@@ -146,12 +150,42 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
       ? payload.destination_location_id 
       : payload.origin_location_id;
 
+    // Fetch current ubication of the first asset since all share the same origin ubication
+    const assetIds = payload.assets.map((a: any) => a.asset_id);
+    const { data: firstAsset, error: caError } = await this.supabase
+      .from("assets")
+      .select("id, current_ubication_id")
+      .eq("id", assetIds[0] || "")
+      .single();
+
+    if (caError && assetIds.length > 0) throw caError;
+    const originUbicationId = firstAsset?.current_ubication_id;
+
+    let globalDestinationUbicationId = payload.destination_ubication_id;
+
+    if (payload.type === "transfer") {
+      const { data: patioData, error: patioError } = await this.supabase
+        .from("ubications")
+        .select("id")
+        .ilike("name", "%patio%")
+        .limit(1)
+        .single();
+        
+      if (patioError || !patioData) {
+         console.error("Could not find global Patio ubication", patioError);
+         throw patioError || new Error("Patio not found");
+      }
+      globalDestinationUbicationId = patioData.id;
+    }
+
     // 1. Create transaction
     const { data: txData, error: txError } = await this.supabase
       .from("transactions")
       .insert({
         origin_location_id: payload.origin_location_id,
         destination_location_id: destLocationId,
+        origin_ubication_id: originUbicationId,
+        destination_ubication_id: globalDestinationUbicationId,
         date: new Date().toISOString(),
         type: payload.type,
         created_by: user.id,
@@ -184,41 +218,15 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
     }
 
     // 3. Update assets
-    const assetIds = payload.assets.map((a: any) => a.asset_id);
+    const { error: updateError } = await this.supabase
+      .from("assets")
+      .update({
+         current_location_id: destLocationId,
+         current_ubication_id: globalDestinationUbicationId
+      })
+      .in("id", assetIds);
 
-    if (payload.type === "transfer") {
-      // Find the global "Patio" ubication
-      const { data: patioData, error: patioError } = await this.supabase
-        .from("ubications")
-        .select("id")
-        .ilike("name", "%patio%")
-        .limit(1)
-        .single();
-        
-      if (patioError || !patioData) {
-         console.error("Could not find global Patio ubication", patioError);
-         throw patioError || new Error("Patio not found");
-      }
-
-      const { error: updateError } = await this.supabase
-        .from("assets")
-        .update({
-           current_location_id: payload.destination_location_id,
-           current_ubication_id: patioData.id
-        })
-        .in("id", assetIds);
-
-      if (updateError) throw updateError;
-    } else if (payload.type === "reubication") {
-      const { error: updateError } = await this.supabase
-        .from("assets")
-        .update({
-           current_ubication_id: payload.destination_ubication_id
-        })
-        .in("id", assetIds);
-
-      if (updateError) throw updateError;
-    }
+    if (updateError) throw updateError;
   }
 
   async addCertificate(assetId: string, certificate: Partial<any>): Promise<void> {
@@ -335,20 +343,38 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
     }));
 
     // Map journey stops from transaction_details
-    const journey: JourneyStop[] = (row.transaction_details || []).map((td: any) => {
+    const journey: JourneyStop[] = (row.transaction_details || [])
+      .sort((a: any, b: any) => {
+        const dateA = new Date(a.transactions?.date || 0).getTime();
+        const dateB = new Date(b.transactions?.date || 0).getTime();
+        return dateB - dateA; // Descending order (newest first)
+      })
+      .map((td: any) => {
       const tx = td.transactions || {};
       const oName = tx.origin?.name || "Origen";
       const dName = tx.destination?.name || "Destino";
+      const oUbication = tx.origin_ubication?.name;
+      const dUbication = tx.destination_ubication?.name;
+
+      let locationDisplay = dName;
+      let originDisplay = oName !== dName ? oName : undefined;
+
+      if (tx.type === 'reubication') {
+        locationDisplay = dUbication || "Destino";
+        originDisplay = `${oName} | ${oUbication || "Origen"}`;
+      }
+
       return {
         id: tx.id || Date.now().toString(),
         provider: dName,
-        location: dName,
+        location: locationDisplay,
+        originLocation: originDisplay,
         service: tx.type === 'transfer' ? "Traslado" : "Reubicación",
         dateIn: tx.date ? tx.date.split("T")[0] : "",
         dateOut: null,
         status: "completed",
         notes: td.comments || tx.justification || "",
-        responsible: tx.users?.[0]?.name || "Sistema" // Quick patch for responsible
+        responsible: tx.users?.name || "Sistema"
       };
     });
 

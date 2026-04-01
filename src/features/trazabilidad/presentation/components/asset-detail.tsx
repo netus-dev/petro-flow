@@ -238,16 +238,6 @@ export function AssetDetail({
                 </>
               )}
 
-              <div className="col-span-full border-t border-border pt-6 mt-4">
-                <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
-                  Observaciones
-                </span>
-                <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-                  Activo crítico para la operación del RIG. Requiere inspección
-                  visual cada 30 días de uso continuo.
-                </p>
-              </div>
-
               {/* Disable Asset Button */}
               {asset.is_active !== false && (
                 <div className="col-span-full flex justify-end mt-4 pt-6 border-t border-border">
@@ -302,7 +292,7 @@ export function AssetDetail({
                     <div className="flex flex-col gap-2 p-4 rounded-xl border border-border bg-secondary/20">
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-bold text-foreground font-mono">
-                          {stop.location}
+                          {stop.originLocation ? `${stop.originLocation} ➔ ${stop.location}` : stop.location}
                         </span>
                         <Badge
                           variant="secondary"

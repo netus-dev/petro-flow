@@ -6,6 +6,7 @@ export interface JourneyStop {
   id: string;
   provider: string;
   location: string;
+  originLocation?: string;
   service: string;
   dateIn: string;
   dateOut: string | null;
