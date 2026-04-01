@@ -30,7 +30,6 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { Asset } from "../../domain/entities";
-import { EquipmentJourneyMap } from "./equipment-journey-map";
 import { RegisterMovementModal } from "./register-movement-modal";
 import { AddCertificateModal } from "./add-certificate-modal";
 import { RegisterAssetModal } from "./register-asset-modal";
@@ -148,13 +147,7 @@ export function AssetDetail({
             <History className="size-4" />
             Historial de Movimientos
           </TabsTrigger>
-          <TabsTrigger
-            value="map"
-            className="relative h-12 rounded-none border-b-2 border-transparent bg-transparent px-1 pb-4 pt-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground transition-all shadow-none data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent focus-visible:ring-0 gap-2"
-          >
-            <MapIcon className="size-4" />
-            Ubicación en Mapa
-          </TabsTrigger>
+
           <TabsTrigger
             value="certificates"
             className="relative h-12 rounded-none border-b-2 border-transparent bg-transparent px-1 pb-4 pt-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground transition-all shadow-none data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent focus-visible:ring-0 gap-2"
@@ -324,61 +317,7 @@ export function AssetDetail({
           </Card>
         </TabsContent>
 
-        <TabsContent value="map">
-          <Card className="border-border bg-card overflow-hidden">
-            <CardHeader className="bg-secondary/30 border-b border-border">
-              <CardTitle className="text-lg font-mono flex items-center gap-2">
-                <MapPin className="size-5 text-primary" />
-                Visualización de Trayectoria
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-8">
-              <EquipmentJourneyMap journey={asset.journey} />
 
-              {/* Mock Map Layout */}
-              <div className="mt-12 grid grid-cols-3 gap-4 h-32 relative">
-                <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-0.5 bg-border border-dashed border-t" />
-                {[
-                  {
-                    name: "RIG 702",
-                    active: asset.currentLocation === "RIG 702",
-                  },
-                  {
-                    name: "Base Proveedor",
-                    active: asset.currentLocation === "Base Proveedor",
-                  },
-                  {
-                    name: "RIG 703",
-                    active: asset.currentLocation === "RIG 703",
-                  },
-                ].map((loc) => (
-                  <div
-                    key={loc.name}
-                    className={`relative z-10 flex flex-col items-center justify-center rounded-lg border bg-card transition-all ${
-                      loc.active
-                        ? "border-primary ring-4 ring-primary/10 scale-105"
-                        : "border-border opacity-60"
-                    }`}
-                  >
-                    <MapPin
-                      className={`size-6 mb-1 ${loc.active ? "text-primary" : "text-muted-foreground"}`}
-                    />
-                    <span
-                      className={`text-[10px] font-bold uppercase tracking-tighter ${loc.active ? "text-foreground" : "text-muted-foreground"}`}
-                    >
-                      {loc.name}
-                    </span>
-                    {loc.active && (
-                      <div className="absolute -top-2 px-2 py-0.5 rounded bg-primary text-[8px] font-bold text-white uppercase animate-bounce">
-                        Actual
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
         <TabsContent value="certificates">
           <Card className="border-border bg-card">
             <CardHeader className="flex flex-row items-center justify-between border-b border-border bg-secondary/10 py-4">

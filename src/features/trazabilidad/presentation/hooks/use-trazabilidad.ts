@@ -26,6 +26,8 @@ export function useTrazabilidad() {
   const [filterLocation, setFilterLocation] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterType, setFilterType] = useState<string>("all");
+  const [filterUbication, setFilterUbication] = useState<string>("all");
+  const [filterDisabled, setFilterDisabled] = useState<boolean>(false);
 
   const repository = trazabilidadRepository;
 
@@ -91,10 +93,14 @@ export function useTrazabilidad() {
 
   const filteredAssets = useMemo(() => {
     return assetList.filter((asset) => {
+      const s = search.toLowerCase();
       const matchesSearch =
-        asset.code.toLowerCase().includes(search.toLowerCase()) ||
-        asset.serialNumber.toLowerCase().includes(search.toLowerCase()) ||
-        asset.name.toLowerCase().includes(search.toLowerCase());
+        asset.code?.toLowerCase().includes(s) ||
+        asset.serialNumber?.toLowerCase().includes(s) ||
+        asset.name?.toLowerCase().includes(s) ||
+        asset.brand?.toLowerCase().includes(s) ||
+        asset.model?.toLowerCase().includes(s) ||
+        (asset.lastInspectionCode && asset.lastInspectionCode.toLowerCase().includes(s));
 
       const matchesLocation =
         filterLocation === "all" || asset.currentLocation === filterLocation || asset.current_location_id === filterLocation;
@@ -102,10 +108,13 @@ export function useTrazabilidad() {
         filterStatus === "all" || asset.status === filterStatus;
       const matchesType =
         filterType === "all" || asset.functionalPrinciple === filterType || asset.function_principle_id === filterType;
+      const matchesUbication =
+        filterUbication === "all" || asset.position === filterUbication || asset.current_ubication_id === filterUbication;
+      const matchesDisabled = filterDisabled ? asset.is_active === false : asset.is_active !== false;
 
-      return matchesSearch && matchesLocation && matchesStatus && matchesType;
+      return matchesSearch && matchesLocation && matchesStatus && matchesType && matchesUbication && matchesDisabled;
     });
-  }, [assetList, search, filterLocation, filterStatus, filterType]);
+  }, [assetList, search, filterLocation, filterStatus, filterType, filterUbication, filterDisabled]);
 
   const handleRegisterMovement = async (assetId: string, movement: any) => {
     await registerMovementUseCase.execute(assetId, movement);
@@ -173,6 +182,10 @@ export function useTrazabilidad() {
     setFilterStatus,
     filterType,
     setFilterType,
+    filterUbication,
+    setFilterUbication,
+    filterDisabled,
+    setFilterDisabled,
     stats,
     loading,
     handleRegisterMovement,

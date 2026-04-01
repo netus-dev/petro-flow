@@ -28,6 +28,7 @@ export function TrazabilidadContent() {
   const {
     view,
     setView,
+    assetList,
     filteredAssets,
     selectedAsset,
     setSelectedAsset,
@@ -37,6 +38,12 @@ export function TrazabilidadContent() {
     setFilterLocation,
     filterStatus,
     setFilterStatus,
+    filterType,
+    setFilterType,
+    filterUbication,
+    setFilterUbication,
+    filterDisabled,
+    setFilterDisabled,
     stats,
     loading,
     handleRegisterAsset,
@@ -126,6 +133,7 @@ export function TrazabilidadContent() {
         {view === "list" && (
           <AssetTable
             assets={filteredAssets}
+            allAssets={assetList}
             onViewDetail={navigateToDetail}
             search={search}
             setSearch={setSearch}
@@ -133,6 +141,12 @@ export function TrazabilidadContent() {
             setLocationFilter={setFilterLocation}
             statusFilter={filterStatus}
             setStatusFilter={setFilterStatus}
+            typeFilter={filterType}
+            setTypeFilter={setFilterType}
+            ubicationFilter={filterUbication}
+            setUbicationFilter={setFilterUbication}
+            disabledFilter={filterDisabled}
+            setDisabledFilter={setFilterDisabled}
             onEditAsset={handleEditAsset}
           />
         )}

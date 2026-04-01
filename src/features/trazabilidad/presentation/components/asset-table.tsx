@@ -33,6 +33,7 @@ import { RegisterAssetModal } from "./register-asset-modal";
 
 interface Props {
   assets: Asset[];
+  allAssets: Asset[];
   onViewDetail: (asset: Asset) => void;
   search: string;
   setSearch: (val: string) => void;
@@ -40,11 +41,18 @@ interface Props {
   setLocationFilter: (val: string) => void;
   statusFilter: string;
   setStatusFilter: (val: string) => void;
+  typeFilter: string;
+  setTypeFilter: (val: string) => void;
+  ubicationFilter: string;
+  setUbicationFilter: (val: string) => void;
+  disabledFilter: boolean;
+  setDisabledFilter: (val: boolean) => void;
   onEditAsset: (id: string, asset: Partial<Asset>) => Promise<void>;
 }
 
 export function AssetTable({
   assets,
+  allAssets,
   onViewDetail,
   search,
   setSearch,
@@ -52,6 +60,12 @@ export function AssetTable({
   setLocationFilter,
   statusFilter,
   setStatusFilter,
+  typeFilter,
+  setTypeFilter,
+  ubicationFilter,
+  setUbicationFilter,
+  disabledFilter,
+  setDisabledFilter,
   onEditAsset,
 }: Props) {
   const getStatusColor = (status: string) => {
@@ -67,53 +81,119 @@ export function AssetTable({
     }
   };
 
+  const filteredForLocation = locationFilter === "all" 
+      ? allAssets 
+      : allAssets.filter(a => a.currentLocation === locationFilter || a.current_location_id === locationFilter);
+
+  const uniqueLocations = Array.from(new Set(allAssets.map(a => a.currentLocation).filter(Boolean)));
+  const availablePrinciples = Array.from(new Set(filteredForLocation.map(a => a.functionalPrinciple).filter(Boolean)));
+  const availableUbications = Array.from(new Set(filteredForLocation.map(a => a.position).filter(Boolean).filter(p => p !== "N/A")));
+
   return (
     <div className="flex flex-col gap-4">
       {/* Filters Area */}
-      <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-lg bg-secondary/20 border border-border">
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="relative w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por código o serie..."
-              className="pl-10 h-10 text-sm"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+      <div className="flex flex-col gap-4 p-4 rounded-lg bg-secondary/20 border border-border">
+        <div className="flex flex-wrap items-center gap-4 w-full">
+          <div className="flex flex-col gap-1.5 w-40">
+            <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground pl-1">Locación</span>
+            <Select value={locationFilter} onValueChange={(val) => {
+              setLocationFilter(val);
+              setTypeFilter("all");
+              setUbicationFilter("all");
+            }}>
+              <SelectTrigger className="h-10 text-sm">
+                <SelectValue placeholder="Locación" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas</SelectItem>
+                {uniqueLocations.map(loc => (
+                  <SelectItem key={loc} value={loc}>{loc}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
-          <Select value={locationFilter} onValueChange={setLocationFilter}>
-            <SelectTrigger className="w-40 h-10 text-sm">
-              <SelectValue placeholder="Ubicación" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas las ubicaciones</SelectItem>
-              <SelectItem value="RIG 702">RIG 702</SelectItem>
-              <SelectItem value="RIG 703">RIG 703</SelectItem>
-              <SelectItem value="Base Proveedor">Base Proveedor</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex flex-col gap-1.5 w-40">
+            <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground pl-1">Principio Func.</span>
+            <Select value={typeFilter} onValueChange={setTypeFilter} disabled={!availablePrinciples.length}>
+              <SelectTrigger className="h-10 text-sm truncate">
+                <SelectValue placeholder="Principio Func." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                {availablePrinciples.map(fp => (
+                  <SelectItem key={fp} value={fp}>{fp}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-40 h-10 text-sm">
-              <SelectValue placeholder="Estado" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos los estados</SelectItem>
-              <SelectItem value="Operativo">Operativo</SelectItem>
-              <SelectItem value="En mantenimiento">En mantenimiento</SelectItem>
-              <SelectItem value="En tránsito">En tránsito</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex flex-col gap-1.5 w-40">
+            <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground pl-1">Ubicación</span>
+            <Select value={ubicationFilter} onValueChange={setUbicationFilter} disabled={!availableUbications.length}>
+              <SelectTrigger className="h-10 text-sm truncate">
+                <SelectValue placeholder="Ubicación" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas</SelectItem>
+                {availableUbications.map(ubi => (
+                  <SelectItem key={ubi} value={ubi}>{ubi}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex flex-col gap-1.5 w-40">
+            <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground pl-1">Estado</span>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="h-10 text-sm">
+                <SelectValue placeholder="Estado" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="Operativo">Operativo</SelectItem>
+                <SelectItem value="En mantenimiento">En mantenimiento</SelectItem>
+                <SelectItem value="En tránsito">En tránsito</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex flex-col gap-1.5 flex-1 min-w-[250px]">
+            <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground pl-1">Búsqueda libre</span>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por serie, cdo. inspección, modelo..."
+                className="pl-10 h-10 text-sm w-full"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+          </div>
         </div>
 
-        <Button
-          variant="outline"
-          className="h-10 gap-2 border-border hover:bg-secondary"
-        >
-          <Download className="size-4" />
-          Exportar Censo
-        </Button>
+        <div className="flex items-center justify-between w-full">
+          <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground select-none">
+            <div className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${disabledFilter ? 'bg-destructive' : 'bg-border'}`}>
+              <input 
+                type="checkbox" 
+                className="sr-only" 
+                checked={disabledFilter} 
+                onChange={(e) => setDisabledFilter(e.target.checked)} 
+              />
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${disabledFilter ? 'translate-x-4' : 'translate-x-1'}`} />
+            </div>
+            Mostrar solo activos deshabilitados
+          </label>
+
+          <Button
+            variant="outline"
+            className="h-10 gap-2 border-border hover:bg-secondary"
+          >
+            <Download className="size-4" />
+            Exportar Censo
+          </Button>
+        </div>
       </div>
 
       {/* Table Area */}
