@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import {
   User,
   AuthCredentials,
@@ -44,105 +45,109 @@ interface AuthState {
   clearError: () => void;
 }
 
-export const useAuthStore = create<AuthState>((set, get) => ({
-  user: null,
-  isLoading: false,
-  error: null,
-  profile: null,
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set, get) => ({
+      user: null,
+      isLoading: false,
+      error: null,
+      profile: null,
 
-  login: async (credentials) => {
-    set({ isLoading: true, error: null });
-    try {
-      const response = await loginUseCase.execute(credentials);
-      if (response.error) {
-        set({ error: response.error, isLoading: false });
-      } else {
-        set({ user: response.user, isLoading: false });
-      }
-    } catch (err: any) {
-      set({ error: err.message, isLoading: false });
+      login: async (credentials) => {
+        set({ isLoading: true, error: null });
+        try {
+          const response = await loginUseCase.execute(credentials);
+          if (response.error) {
+            set({ error: response.error, isLoading: false });
+          } else {
+            set({ user: response.user, isLoading: false });
+          }
+        } catch (err: any) {
+          set({ error: err.message, isLoading: false });
+        }
+      },
+
+      getProfile: async () => {
+        if (!get().user) return null;
+
+        set({ isLoading: true, error: null });
+        try {
+          const response = await getProfileUseCase.execute();
+          if (response.error) {
+            set({ error: response.error, isLoading: false });
+          } else {
+            set({ profile: response.data, isLoading: false });
+            return response.data;
+          }
+        } catch (err: any) {
+          set({
+            error: err.message || "Error inesperado",
+            isLoading: false
+          });
+          return null;
+        }
+      },
+
+      register: async (credentials) => {
+        set({ isLoading: true, error: null });
+        try {
+          const response = await registerUseCase.execute(credentials);
+          if (response.error) {
+            set({ error: response.error, isLoading: false });
+          } else {
+            set({ user: response.user, isLoading: false });
+          }
+        } catch (err: any) {
+          set({ error: err.message, isLoading: false });
+        }
+      },
+
+      logout: async () => {
+        set({ isLoading: true, error: null }); // Limpiar error al iniciar logout
+        try {
+          await logoutUseCase.execute();
+          set({ user: null, profile: null, isLoading: false, error: null }); // Limpiar todo al salir
+        } catch (err: any) {
+          set({ error: err.message, isLoading: false });
+        }
+      },
+
+      checkSession: async () => {
+        set({ isLoading: true });
+        try {
+          const response = await getCurrentUserUseCase.execute();
+          set({ user: response?.user || null, isLoading: false });
+        } catch {
+          set({ user: null, isLoading: false });
+        }
+      },
+
+      resetPassword: async (email) => {
+        set({ isLoading: true, error: null });
+        try {
+          await resetPasswordUseCase.execute(email);
+          set({ isLoading: false });
+        } catch (err: any) {
+          set({ error: err.message, isLoading: false });
+        }
+      },
+
+      updateUser: async (data) => {
+        set({ isLoading: true, error: null });
+        try {
+          await updateUserUseCase.execute(data);
+          // Re-fetch user to update state
+          const response = await getCurrentUserUseCase.execute();
+          set({ user: response?.user || null, isLoading: false });
+        } catch (err: any) {
+          set({ error: err.message, isLoading: false });
+        }
+      },
+
+      clearError: () => set({ error: null }),
+    }),
+    {
+      name: "auth-storage", // llave bajo la cual se guardará en localStorage
     }
-  },
-
-  getProfile: async () => {
-    if (!get().user) return null;
-
-    set({ isLoading: true, error: null });
-    try {
-      const response = await getProfileUseCase.execute();
-      if (response.error) {
-        set({ error: response.error, isLoading: false });
-      } else {
-        // Objeto ya convertido a JSON correctamente a través de toJson o stringify
-        localStorage.setItem("profile", JSON.stringify(response.data));
-        set({ profile: response.data, isLoading: false });
-        return response.data;
-      }
-    } catch (err: any) {
-      set({ 
-        error: err.message || "Error inesperado", 
-        isLoading: false 
-      });
-      return null;
-    }
-  },
-
-  register: async (credentials) => {
-    set({ isLoading: true, error: null });
-    try {
-      const response = await registerUseCase.execute(credentials);
-      if (response.error) {
-        set({ error: response.error, isLoading: false });
-      } else {
-        set({ user: response.user, isLoading: false });
-      }
-    } catch (err: any) {
-      set({ error: err.message, isLoading: false });
-    }
-  },
-
-  logout: async () => {
-    set({ isLoading: true, error: null }); // Limpiar error al iniciar logout
-    try {
-      await logoutUseCase.execute();
-      set({ user: null, profile: null, isLoading: false, error: null }); // Limpiar todo al salir
-      localStorage.removeItem("profile"); // También limpiar storage
-    } catch (err: any) {
-      set({ error: err.message, isLoading: false });
-    }
-  },
-
-  checkSession: async () => {
-    set({ isLoading: true });
-    try {
-      const response = await getCurrentUserUseCase.execute();
-      set({ user: response?.user || null, isLoading: false });
-    } catch {
-      set({ user: null, isLoading: false });
-    }
-  },
-
-  resetPassword: async (email) => {
-    set({ isLoading: true, error: null });
-    try {
-      await resetPasswordUseCase.execute(email);
-      set({ isLoading: false });
-    } catch (err: any) {
-      set({ error: err.message, isLoading: false });
-    }
-  },
-
-  updateUser: async (data) => {
-    set({ isLoading: true, error: null });
-    try {
-      await updateUserUseCase.execute(data);
-      // Re-fetch user to update state
-      const response = await getCurrentUserUseCase.execute();
-      set({ user: response?.user || null, isLoading: false });
-    } catch (err: any) {
-      set({ error: err.message, isLoading: false });
-    }
-  },
-
-  clearError: () => set({ error: null }),
-}));
+  )
+);

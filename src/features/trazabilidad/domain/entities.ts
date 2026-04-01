@@ -21,19 +21,31 @@ export interface AssetCertificate {
   fileUrl: string;
 }
 
+export interface AssetProperty {
+  key: string;
+  label: string;
+  value: string | number;
+}
+
 export interface Asset {
   id: string;
   code: string;
   functionalPrinciple: FunctionalPrinciple;
   brand: string;
   model: string;
+  brand_id?: string;
+  model_id?: string;
+  capacity?: string;
+  lastInspectionCode?: string;
   serialNumber: string;
   currentLocation: string;
   position: string;
   status: AssetStatus;
   lastMovementDate: string;
+  createdAt?: string;
   name: string; // Keep for compatibility
   type: string; // Keep for compatibility
+  properties: AssetProperty[];
   journey: JourneyStop[];
   certificates: AssetCertificate[];
 }

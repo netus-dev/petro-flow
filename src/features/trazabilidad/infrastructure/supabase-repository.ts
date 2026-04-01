@@ -18,8 +18,10 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
     const { data, error } = await this.supabase
       .from("assets")
       .select(`
-        id, brand, model, serial_number, status, updated_at,
-        functional_principles:function_principle_id ( name ),
+        *,
+        brands:brand_id ( name ),
+        models:model_id ( name ),
+        functional_principles:function_principle_id ( * ),
         locations:current_location_id ( name ),
         ubications:current_ubication_id ( name ),
         certificates ( id, certificate_url, created_at ),
@@ -46,8 +48,10 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
     const { data, error } = await this.supabase
       .from("assets")
       .select(`
-        id, brand, model, serial_number, status, updated_at,
-        functional_principles:function_principle_id ( name ),
+        *,
+        brands:brand_id ( name ),
+        models:model_id ( name ),
+        functional_principles:function_principle_id ( * ),
         locations:current_location_id ( name ),
         ubications:current_ubication_id ( name ),
         certificates ( id, certificate_url, created_at ),
@@ -146,16 +150,57 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
   }
 
   async registerAsset(asset: Partial<Asset>): Promise<void> {
-    // Basic insert structure
-    console.log("Registering asset", asset);
+    const rawAsset = asset as any;
+    const payload = {
+      brand_id: rawAsset.brand_id,
+      model_id: rawAsset.model_id,
+      company_id: rawAsset.company_id,
+      serial_number: rawAsset.serial_number || rawAsset.serialNumber,
+      status: rawAsset.status, // formData passes "active", "under_inspection", "rejected"
+      function_principle_id: rawAsset.function_principle_id,
+      current_location_id: rawAsset.current_location_id,
+      current_ubication_id: rawAsset.current_ubication_id,
+      capacity: rawAsset.capacity,
+      last_inspection_code: rawAsset.last_inspection_code,
+      ...Array.from({ length: 20 }, (_, i) => `property_${i + 1}`).reduce((acc: any, key) => {
+        if (rawAsset[key] !== undefined && rawAsset[key] !== "") {
+          acc[key] = rawAsset[key];
+        }
+        return acc;
+      }, {})
+    };
+
+    const { error } = await this.supabase.from("assets").insert(payload);
+    if (error) {
+      console.error("Error registering asset:", error);
+      throw error;
+    }
   }
 
   private mapRowToAsset(row: any): Asset {
-    const brand = row.brand || "Sin marca";
-    const model = row.model || "Sin modelo";
+    const brand = row.brands?.name || "Sin marca";
+    const model = row.models?.name || "Sin modelo";
     const serialNumber = row.serial_number || "Sin SN";
     const functionalPrinciple = row.functional_principles?.name || "Componente";
     const currentLocation = row.locations?.name || "Base";
+    
+    // Map properties
+    const properties: any[] = [];
+    if (row.functional_principles) {
+      for (let i = 1; i <= 20; i++) {
+        const propKey = `property_${i}`;
+        const label = row.functional_principles[propKey];
+        const value = row[propKey];
+        
+        if (label && value !== null && value !== undefined && value !== "") {
+          properties.push({
+            key: propKey,
+            label,
+            value
+          });
+        }
+      }
+    }
     
     // Map certificates
     const certificates: AssetCertificate[] = (row.certificates || []).map((c: any) => ({
@@ -189,13 +234,17 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
       functionalPrinciple: functionalPrinciple as any,
       brand: brand,
       model: model,
+      capacity: row.capacity,
+      lastInspectionCode: row.last_inspection_code,
       serialNumber: serialNumber,
       currentLocation: currentLocation,
       position: row.ubications?.name || "N/A",
       status: this.mapAssetStatus(row.status),
       lastMovementDate: row.updated_at ? row.updated_at.split("T")[0] : "N/A",
+      createdAt: row.created_at ? row.created_at.split("T")[0] : "N/A",
       name: `${brand} ${model}`,
       type: functionalPrinciple,
+      properties,
       journey,
       certificates
     };

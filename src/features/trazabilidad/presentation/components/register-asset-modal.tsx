@@ -20,10 +20,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/core/presentation/components/ui/select";
-import { Plus } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/src/core/presentation/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/src/core/presentation/components/ui/command";
+import { Plus, Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/src/core/utils/utils";
 import { Asset } from "../../domain/entities";
 import { catalogsRepository } from "@/src/features/catalogs/infrastructure/repository";
 import { useEffect } from "react";
+import { useAuthStore } from "@/src/features/auth/presentation/store/auth-store";
 
 interface Props {
   onRegister: (asset: Partial<Asset>) => Promise<void>;
@@ -36,10 +51,19 @@ export function RegisterAssetModal({ onRegister }: Props) {
   const [functionalPrinciples, setFunctionalPrinciples] = useState<any[]>([]);
   const [locations, setLocations] = useState<any[]>([]);
   const [ubications, setUbications] = useState<any[]>([]);
+  const [brands, setBrands] = useState<any[]>([]);
+  const [models, setModels] = useState<any[]>([]);
+
+  const company_id = useAuthStore( state => state.profile?.company?.id );
+
+  const [brandOpen, setBrandOpen] = useState(false);
+  const [brandSearch, setBrandSearch] = useState("");
+  const [modelOpen, setModelOpen] = useState(false);
+  const [modelSearch, setModelSearch] = useState("");
 
   const initialFormState = {
-    brand: "",
-    model: "",
+    brand_id: "",
+    model_id: "",
     capacity: "",
     serial_number: "",
     last_inspection_code: "",
@@ -50,18 +74,23 @@ export function RegisterAssetModal({ onRegister }: Props) {
   };
 
   const [formData, setFormData] = useState<any>(initialFormState);
-
+  
   useEffect(() => {
     if (open) {
+      console.log("company_id:", company_id);
       Promise.all([
         catalogsRepository.getItems("functional_principles"),
         catalogsRepository.getItems("locations"),
         catalogsRepository.getItems("ubications"),
+        catalogsRepository.getItems("brands"),
+        catalogsRepository.getItems("models"),
       ])
-        .then(([fps, locs, ubis]) => {
+        .then(([fps, locs, ubis, brs, mods]) => {
           setFunctionalPrinciples(fps);
           setLocations(locs);
           setUbications(ubis);
+          setBrands(brs);
+          setModels(mods);
         })
         .catch(console.error);
     } else {
@@ -73,7 +102,33 @@ export function RegisterAssetModal({ onRegister }: Props) {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await onRegister(formData as any);
+      let finalBrandId = formData.brand_id;
+      let finalModelId = formData.model_id;
+
+      let isNewBrand = false;
+      if (finalBrandId && !brands.find(b => b.id === finalBrandId)) {
+        const newBrand = await catalogsRepository.createItem("brands", { name: finalBrandId, is_active: true });
+        finalBrandId = newBrand.id;
+        isNewBrand = true;
+      }
+
+      if (finalModelId && !models.find(m => m.id === finalModelId)) {
+        const newModel = await catalogsRepository.createItem("models", { 
+          name: finalModelId, 
+          brand_id: finalBrandId, 
+          is_active: true 
+        });
+        finalModelId = newModel.id;
+      }
+
+      const payloadToSave = { 
+        ...formData, 
+        brand_id: finalBrandId, 
+        model_id: finalModelId,
+        company_id: company_id
+      };
+
+      await onRegister(payloadToSave as any);
       setOpen(false);
     } catch (error) {
       console.error("Error registering asset:", error);
@@ -116,29 +171,122 @@ export function RegisterAssetModal({ onRegister }: Props) {
           <div className="grid grid-cols-2 gap-4">
             {/* 1. Marca */}
             <div className="flex flex-col gap-2">
-              <Label htmlFor="brand" className="text-xs uppercase tracking-widest text-muted-foreground">
+              <Label htmlFor="brand_id" className="text-xs uppercase tracking-widest text-muted-foreground">
                 Marca
               </Label>
-              <Input
-                id="brand"
-                placeholder="Ej: Schlumberger"
-                className="bg-secondary/20 border-border h-11"
-                value={formData.brand}
-                onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-              />
+              <Popover open={brandOpen} onOpenChange={setBrandOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    className="justify-between bg-secondary/20 border-border h-11 font-normal w-full"
+                  >
+                    {formData.brand_id
+                      ? brands.find((b) => b.id === formData.brand_id)?.name || formData.brand_id
+                      : "Seleccione marca"}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="p-0 z-[100] w-[--radix-popover-trigger-width]">
+                  <Command>
+                    <CommandInput placeholder="Buscar marca..." value={brandSearch} onValueChange={setBrandSearch} />
+                    <CommandList>
+                      <CommandEmpty className="py-2 text-center text-sm px-2">
+                        <Button 
+                          variant="ghost" 
+                          className="w-full justify-start font-normal h-auto py-2 whitespace-normal text-left"
+                          onClick={() => {
+                            setFormData({ ...formData, brand_id: brandSearch, model_id: "" });
+                            setBrandOpen(false);
+                          }}
+                        >
+                          Se guardará como nueva marca: <span className="font-semibold ml-1 block truncate">{brandSearch}</span>
+                        </Button>
+                      </CommandEmpty>
+                      <CommandGroup>
+                        {brands.filter(b => b.is_active !== false).map((b) => (
+                          <CommandItem
+                            key={b.id}
+                            value={b.name}
+                            onSelect={() => {
+                              setFormData({ ...formData, brand_id: b.id, model_id: "" });
+                              setBrandOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                formData.brand_id === b.id ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {b.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
             {/* 2. Modelo */}
             <div className="flex flex-col gap-2">
-              <Label htmlFor="model" className="text-xs uppercase tracking-widest text-muted-foreground">
+              <Label htmlFor="model_id" className="text-xs uppercase tracking-widest text-muted-foreground">
                 Modelo
               </Label>
-              <Input
-                id="model"
-                placeholder="Ej: VAM21"
-                className="bg-secondary/20 border-border h-11"
-                value={formData.model}
-                onChange={(e) => setFormData({ ...formData, model: e.target.value })}
-              />
+              <Popover open={modelOpen} onOpenChange={setModelOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    disabled={!formData.brand_id}
+                    className="justify-between bg-secondary/20 border-border h-11 font-normal w-full"
+                  >
+                    {formData.model_id
+                      ? models.find((m) => m.id === formData.model_id)?.name || formData.model_id
+                      : "Seleccione modelo"}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="p-0 z-[100] w-[--radix-popover-trigger-width]">
+                  <Command>
+                    <CommandInput placeholder="Buscar modelo..." value={modelSearch} onValueChange={setModelSearch} />
+                    <CommandList>
+                      <CommandEmpty className="py-2 text-center text-sm px-2">
+                        <Button 
+                          variant="ghost" 
+                          className="w-full justify-start font-normal h-auto py-2 whitespace-normal text-left"
+                          onClick={() => {
+                            setFormData({ ...formData, model_id: modelSearch });
+                            setModelOpen(false);
+                          }}
+                        >
+                          Se guardará como nuevo modelo: <span className="font-semibold ml-1 block truncate">{modelSearch}</span>
+                        </Button>
+                      </CommandEmpty>
+                      <CommandGroup>
+                        {models.filter(m => m.brand_id === formData.brand_id && m.is_active !== false).map((m) => (
+                          <CommandItem
+                            key={m.id}
+                            value={m.name}
+                            onSelect={() => {
+                              setFormData({ ...formData, model_id: m.id });
+                              setModelOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                formData.model_id === m.id ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {m.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
 

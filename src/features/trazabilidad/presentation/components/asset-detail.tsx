@@ -145,24 +145,51 @@ export function AssetDetail({
               {[
                 { label: "Marca", value: asset.brand },
                 { label: "Modelo", value: asset.model },
+                { label: "Capacidad", value: asset.capacity },
                 { label: "Número de Serie", value: asset.serialNumber },
                 {
                   label: "Principio Funcional",
                   value: asset.functionalPrinciple,
                 },
-                { label: "Fecha Alta", value: "2026-01-15" },
+                { label: "Fecha Alta", value: asset.createdAt || "N/A" },
                 { label: "Último Movimiento", value: asset.lastMovementDate },
-              ].map((item) => (
-                <div key={item.label} className="flex flex-col gap-1">
-                  <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
-                    {item.label}
-                  </span>
-                  <span className="text-sm font-medium text-foreground">
-                    {item.value}
-                  </span>
-                </div>
-              ))}
-              <div className="col-span-full border-t border-border pt-6">
+                { label: "Cód. Última Inspección", value: asset.lastInspectionCode },
+              ]
+                .filter((item) => item.value)
+                .map((item) => (
+                  <div key={item.label} className="flex flex-col gap-1">
+                    <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
+                      {item.label}
+                    </span>
+                    <span className="text-sm font-medium text-foreground">
+                      {item.value}
+                    </span>
+                  </div>
+                ))}
+
+              {asset.properties && asset.properties.length > 0 && (
+                <>
+                  <div className="col-span-full mt-4 flex items-center gap-4">
+                    <div className="h-px flex-1 bg-border" />
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                      Propiedades: {asset.functionalPrinciple}
+                    </span>
+                    <div className="h-px flex-1 bg-border" />
+                  </div>
+                  {asset.properties.map((prop) => (
+                    <div key={prop.key} className="flex flex-col gap-1">
+                      <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
+                        {prop.label}
+                      </span>
+                      <span className="text-sm font-medium text-foreground">
+                        {prop.value}
+                      </span>
+                    </div>
+                  ))}
+                </>
+              )}
+
+              <div className="col-span-full border-t border-border pt-6 mt-4">
                 <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
                   Observaciones
                 </span>
