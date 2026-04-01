@@ -1,11 +1,12 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { Asset, TrazabilidadStats } from "../../domain/entities";
+import { AssetMovementPayload, Asset, TrazabilidadStats } from "../../domain/entities";
 import { trazabilidadRepository } from "../../infrastructure/repository";
 import {
   AddCertificateUseCase,
   GetAssetListUseCase,
   GetDashboardStatsUseCase,
   RegisterMovementUseCase,
+  RegisterBulkMovementUseCase,
   RegisterAssetUseCase,
   EditAssetUseCase,
   DisableAssetUseCase,
@@ -40,6 +41,11 @@ export function useTrazabilidad() {
 
   const registerMovementUseCase = useMemo(
     () => new RegisterMovementUseCase(repository),
+    [repository],
+  );
+
+  const registerBulkMovementUseCase = useMemo(
+    () => new RegisterBulkMovementUseCase(repository),
     [repository],
   );
 
@@ -91,11 +97,11 @@ export function useTrazabilidad() {
         asset.name.toLowerCase().includes(search.toLowerCase());
 
       const matchesLocation =
-        filterLocation === "all" || asset.currentLocation === filterLocation;
+        filterLocation === "all" || asset.currentLocation === filterLocation || asset.current_location_id === filterLocation;
       const matchesStatus =
         filterStatus === "all" || asset.status === filterStatus;
       const matchesType =
-        filterType === "all" || asset.functionalPrinciple === filterType;
+        filterType === "all" || asset.functionalPrinciple === filterType || asset.function_principle_id === filterType;
 
       return matchesSearch && matchesLocation && matchesStatus && matchesType;
     });
@@ -108,6 +114,11 @@ export function useTrazabilidad() {
       const updated = await repository.getAssetById(assetId);
       if (updated) setSelectedAsset(updated);
     }
+  };
+
+  const handleRegisterBulkMovement = async (payload: AssetMovementPayload) => {
+    await registerBulkMovementUseCase.execute(payload);
+    await fetchData(); // Refresh data
   };
 
   const handleAddCertificate = async (assetId: string, certificate: any) => {
@@ -165,6 +176,7 @@ export function useTrazabilidad() {
     stats,
     loading,
     handleRegisterMovement,
+    handleRegisterBulkMovement,
     handleAddCertificate,
     handleRegisterAsset,
     handleEditAsset,

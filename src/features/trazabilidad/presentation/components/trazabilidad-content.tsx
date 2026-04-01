@@ -14,13 +14,7 @@ import { TrazabilidadDashboard } from "./trazabilidad-dashboard";
 import { AssetTable } from "./asset-table";
 import { AssetDetail } from "./asset-detail";
 import { RegisterAssetModal } from "./register-asset-modal";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/src/core/presentation/components/ui/select";
+import { RegisterBatchMovementModal } from "./register-batch-movement-modal";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -49,6 +43,7 @@ export function TrazabilidadContent() {
     handleEditAsset,
     handleDisableAsset,
     handleRegisterMovement,
+    handleRegisterBulkMovement,
     handleAddCertificate,
     navigateToDetail,
   } = useTrazabilidad();
@@ -95,17 +90,7 @@ export function TrazabilidadContent() {
         </div>
 
         <div className="flex items-center gap-3">
-          <Select defaultValue="Todos">
-            <SelectTrigger className="w-[180px] h-9 text-xs bg-secondary/30 border-border">
-              <SelectValue placeholder="Seleccionar RIG" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Todos">Todos los RIGs</SelectItem>
-              <SelectItem value="702">RIG 702</SelectItem>
-              <SelectItem value="703">RIG 703</SelectItem>
-            </SelectContent>
-          </Select>
-
+          <RegisterBatchMovementModal assets={filteredAssets} onRegister={handleRegisterBulkMovement} />
           <RegisterAssetModal onRegister={handleRegisterAsset} />
         </div>
       </div>

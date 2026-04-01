@@ -69,3 +69,40 @@ export interface TrazabilidadStats {
     message: string;
   }[];
 }
+
+export type TransactionType = "transfer" | "reubication";
+
+export interface Transaction {
+  id: string;
+  origin_location_id: string;
+  destination_location_id: string;
+  date: string;
+  type: TransactionType;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  justification: string;
+}
+
+export interface TransactionDetail {
+  id: string;
+  transaction_id: string;
+  asset_id: string;
+  comments?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AssetMovementItem {
+  asset_id: string;
+  comments?: string;
+}
+
+export interface AssetMovementPayload {
+  type: TransactionType;
+  origin_location_id: string;
+  destination_location_id?: string;
+  destination_ubication_id?: string;
+  justification: string;
+  assets: AssetMovementItem[];
+}

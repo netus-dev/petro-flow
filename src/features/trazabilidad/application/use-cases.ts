@@ -64,3 +64,11 @@ export class DisableAssetUseCase {
     return this.repository.disableAsset(id);
   }
 }
+
+export class RegisterBulkMovementUseCase {
+  constructor(private repository: ITrazabilidadRepository) {}
+
+  async execute(payload: any): Promise<void> {
+    return this.repository.registerBulkMovement(payload);
+  }
+}

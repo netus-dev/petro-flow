@@ -204,6 +204,10 @@ export class MockTrazabilidadRepository implements ITrazabilidadRepository {
     }
   }
 
+  async registerBulkMovement(payload: any): Promise<void> {
+    console.log("Mock registerBulkMovement", payload);
+  }
+
   async addCertificate(
     assetId: string,
     certificate: Partial<any>,

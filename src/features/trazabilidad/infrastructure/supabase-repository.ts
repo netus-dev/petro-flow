@@ -138,6 +138,89 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
     console.log("Saving movement", movement);
   }
 
+  async registerBulkMovement(payload: any): Promise<void> {
+    const { data: { user } } = await this.supabase.auth.getUser();
+    if (!user) throw new Error("No user authenticated");
+
+    const destLocationId = payload.type === "transfer" 
+      ? payload.destination_location_id 
+      : payload.origin_location_id;
+
+    // 1. Create transaction
+    const { data: txData, error: txError } = await this.supabase
+      .from("transactions")
+      .insert({
+        origin_location_id: payload.origin_location_id,
+        destination_location_id: destLocationId,
+        date: new Date().toISOString(),
+        type: payload.type,
+        created_by: user.id,
+        justification: payload.justification,
+      })
+      .select("id")
+      .single();
+
+    if (txError || !txData) {
+      console.error("Error creating transaction", txError);
+      throw txError || new Error("Transaction creation failed");
+    }
+
+    const transactionId = txData.id;
+
+    // 2. Create transaction details
+    const detailsPayload = payload.assets.map((a: any) => ({
+      transaction_id: transactionId,
+      asset_id: a.asset_id,
+      comments: a.comments || null
+    }));
+
+    const { error: detailsError } = await this.supabase
+      .from("transaction_details")
+      .insert(detailsPayload);
+
+    if (detailsError) {
+      console.error("Error creating transaction details", detailsError);
+      throw detailsError;
+    }
+
+    // 3. Update assets
+    const assetIds = payload.assets.map((a: any) => a.asset_id);
+
+    if (payload.type === "transfer") {
+      // Find the global "Patio" ubication
+      const { data: patioData, error: patioError } = await this.supabase
+        .from("ubications")
+        .select("id")
+        .ilike("name", "%patio%")
+        .limit(1)
+        .single();
+        
+      if (patioError || !patioData) {
+         console.error("Could not find global Patio ubication", patioError);
+         throw patioError || new Error("Patio not found");
+      }
+
+      const { error: updateError } = await this.supabase
+        .from("assets")
+        .update({
+           current_location_id: payload.destination_location_id,
+           current_ubication_id: patioData.id
+        })
+        .in("id", assetIds);
+
+      if (updateError) throw updateError;
+    } else if (payload.type === "reubication") {
+      const { error: updateError } = await this.supabase
+        .from("assets")
+        .update({
+           current_ubication_id: payload.destination_ubication_id
+        })
+        .in("id", assetIds);
+
+      if (updateError) throw updateError;
+    }
+  }
+
   async addCertificate(assetId: string, certificate: Partial<any>): Promise<void> {
     // Insert into certificates table
     const { error } = await this.supabase
