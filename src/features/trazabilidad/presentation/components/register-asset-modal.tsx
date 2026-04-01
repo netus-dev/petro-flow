@@ -125,7 +125,7 @@ export function RegisterAssetModal({ mode = "create", assetToEdit, onRegister, o
 
       let isNewBrand = false;
       if (finalBrandId && !brands.find(b => b.id === finalBrandId)) {
-        const newBrand = await catalogsRepository.createItem("brands", { name: finalBrandId, is_active: true });
+        const newBrand = await catalogsRepository.createItem("brands", { name: finalBrandId, is_active: true, company_id: company_id });
         finalBrandId = newBrand.id;
         isNewBrand = true;
       }
@@ -134,6 +134,7 @@ export function RegisterAssetModal({ mode = "create", assetToEdit, onRegister, o
         const newModel = await catalogsRepository.createItem("models", { 
           name: finalModelId, 
           brand_id: finalBrandId, 
+          company_id: company_id,
           is_active: true 
         });
         finalModelId = newModel.id;
