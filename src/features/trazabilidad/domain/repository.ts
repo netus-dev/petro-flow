@@ -11,4 +11,5 @@ export interface ITrazabilidadRepository {
   ): Promise<void>;
   registerAsset(asset: Partial<Asset>): Promise<void>;
   updateAsset(id: string, asset: Partial<Asset>): Promise<void>;
+  disableAsset(id: string): Promise<void>;
 }

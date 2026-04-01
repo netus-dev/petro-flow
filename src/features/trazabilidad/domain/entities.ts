@@ -25,6 +25,7 @@ export interface AssetProperty {
   key: string;
   label: string;
   value: string | number;
+  default_unit?: string;
 }
 
 export interface Asset {
@@ -44,6 +45,7 @@ export interface Asset {
   position: string;
   current_ubication_id?: string;
   status: AssetStatus;
+  is_active?: boolean;
   lastMovementDate: string;
   createdAt?: string;
   name: string; // Keep for compatibility

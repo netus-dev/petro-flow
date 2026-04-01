@@ -26,12 +26,26 @@ import {
   FileText,
   Plus,
   Edit2,
+  Trash2,
+  AlertCircle,
 } from "lucide-react";
 import { Asset } from "../../domain/entities";
 import { EquipmentJourneyMap } from "./equipment-journey-map";
 import { RegisterMovementModal } from "./register-movement-modal";
 import { AddCertificateModal } from "./add-certificate-modal";
 import { RegisterAssetModal } from "./register-asset-modal";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/src/core/presentation/components/ui/alert-dialog";
+
 
 interface Props {
   asset: Asset;
@@ -39,6 +53,7 @@ interface Props {
   onRegisterMovement: (assetId: string, movement: any) => Promise<void>;
   onAddCertificate: (assetId: string, certificate: any) => Promise<void>;
   onEditAsset: (id: string, asset: Partial<Asset>) => Promise<void>;
+  onDisableAsset: (id: string) => Promise<void>;
 }
 
 export function AssetDetail({
@@ -47,6 +62,7 @@ export function AssetDetail({
   onRegisterMovement,
   onAddCertificate,
   onEditAsset,
+  onDisableAsset,
 }: Props) {
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -62,47 +78,57 @@ export function AssetDetail({
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4">
-        <button
-          onClick={onBack}
-          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-fit"
-        >
-          <ChevronLeft className="size-4" />
-          Volver al listado
-        </button>
+    <div className="flex flex-col gap-6 animate-in fade-in zoom-in-95 duration-500">
+      <button
+        onClick={onBack}
+        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-fit"
+      >
+        <ChevronLeft className="size-4" />
+        Volver al listado
+      </button>
 
-        <div className="flex flex-wrap items-start justify-between gap-4 p-6 rounded-xl border border-border bg-card shadow-sm">
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold font-mono tracking-tight text-foreground">
-                {asset.code}
-              </h1>
-              <Badge
-                variant="outline"
-                className={`h-6 px-3 font-semibold ${getStatusColor(asset.status)}`}
-              >
-                {asset.status}
-              </Badge>
-            </div>
-            <div className="flex flex-wrap items-center gap-6 text-sm text-muted-foreground">
-              <span className="flex items-center gap-2">
-                <Info className="size-4" />
-                {asset.functionalPrinciple}
-              </span>
-              <span className="flex items-center gap-2">
-                <MapPin className="size-4" />
-                {asset.currentLocation} — {asset.position}
-              </span>
-            </div>
+      {/* Read Only Banner */}
+      {asset.is_active === false && (
+        <div className="flex items-center gap-3 bg-red-500/10 border border-red-500/20 text-red-500 p-4 rounded-lg font-mono text-sm">
+          <AlertCircle className="size-5" />
+          <p>
+            <strong>Este activo está deshabilitado</strong> y se encuentra en modo de solo lectura. No es posible editar su información ni registrar nuevos movimientos.
+          </p>
+        </div>
+      )}
+
+      {/* Header Profile */}
+      <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 p-6 rounded-xl border border-border bg-card shadow-sm">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold font-mono tracking-tight text-foreground">
+              {asset.code}
+            </h1>
+            <Badge
+              variant="outline"
+              className={`h-6 px-3 font-semibold ${getStatusColor(asset.status)}`}
+            >
+              {asset.status}
+            </Badge>
           </div>
+          <div className="flex flex-wrap items-center gap-6 text-sm text-muted-foreground">
+            <span className="flex items-center gap-2">
+              <Info className="size-4" />
+              {asset.functionalPrinciple}
+            </span>
+            <span className="flex items-center gap-2">
+              <MapPin className="size-4" />
+              {asset.currentLocation} — {asset.position}
+            </span>
+          </div>
+        </div>
 
+        {asset.is_active !== false && (
           <RegisterMovementModal
             asset={asset}
             onRegister={onRegisterMovement}
           />
-        </div>
+        )}
       </div>
 
       {/* Tabs */}
@@ -144,21 +170,23 @@ export function AssetDetail({
               <CardTitle className="text-lg font-mono">
                 Detalles Técnicos
               </CardTitle>
-              <RegisterAssetModal
-                mode="edit"
-                assetToEdit={asset}
-                onEdit={onEditAsset}
-                trigger={
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 gap-2 bg-secondary/50 border-border hover:bg-secondary text-xs"
-                  >
-                    <Edit2 className="size-3.5" />
-                    Editar Detalles
-                  </Button>
-                }
-              />
+              {asset.is_active !== false && (
+                <RegisterAssetModal
+                  mode="edit"
+                  assetToEdit={asset}
+                  onEdit={onEditAsset}
+                  trigger={
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 gap-2 bg-secondary/50 border-border hover:bg-secondary text-xs"
+                    >
+                      <Edit2 className="size-3.5" />
+                      Editar Detalles
+                    </Button>
+                  }
+                />
+              )}
             </CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {[
@@ -195,16 +223,18 @@ export function AssetDetail({
                     </span>
                     <div className="h-px flex-1 bg-border" />
                   </div>
-                  {asset.properties.map((prop) => (
-                    <div key={prop.key} className="flex flex-col gap-1">
-                      <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
-                        {prop.label}
-                      </span>
-                      <span className="text-sm font-medium text-foreground">
-                        {prop.value}
-                      </span>
-                    </div>
-                  ))}
+                  <div className="col-span-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {asset.properties.map((prop, idx) => (
+                      <div key={idx} className="flex flex-col gap-1.5 p-3 rounded-lg bg-secondary/20 border border-border/50">
+                        <span className="text-[10px] uppercase font-mono tracking-wider text-muted-foreground">
+                          {prop.label}
+                        </span>
+                        <span className="text-sm font-medium text-foreground">
+                          {prop.value} {prop.default_unit}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </>
               )}
 
@@ -217,6 +247,38 @@ export function AssetDetail({
                   visual cada 30 días de uso continuo.
                 </p>
               </div>
+
+              {/* Disable Asset Button */}
+              {asset.is_active !== false && (
+                <div className="col-span-full flex justify-end mt-4 pt-6 border-t border-border">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" className="gap-2">
+                        <Trash2 className="size-4" />
+                        Deshabilitar Activo
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent className="bg-card border-border">
+                      <AlertDialogHeader>
+                        <AlertDialogTitle className="font-mono">¿Estás seguro de deshabilitar este activo?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Esta acción convertirá el activo a modo "Solo lectura". 
+                          Ya no será posible editarlo, transferirlo ni subir nuevos certificados.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel className="border-border hover:bg-secondary">Cancelar</AlertDialogCancel>
+                        <AlertDialogAction 
+                          className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                          onClick={() => onDisableAsset(asset.id)}
+                        >
+                          Sí, Deshabilitar Activo
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

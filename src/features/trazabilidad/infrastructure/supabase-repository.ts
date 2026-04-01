@@ -84,7 +84,8 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
       .select(`
         id, status, serial_number,
         locations:current_location_id ( name )
-      `);
+      `)
+      .neq("is_active", false);
 
     if (error || !assets) {
       return {
@@ -205,6 +206,18 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
     }
   }
 
+  async disableAsset(id: string): Promise<void> {
+    const { error } = await this.supabase
+      .from("assets")
+      .update({ is_active: false })
+      .eq("id", id);
+      
+    if (error) {
+      console.error("Error disabling asset:", error);
+      throw error;
+    }
+  }
+
   private mapRowToAsset(row: any): Asset {
     const brand = row.brands?.name || "Sin marca";
     const model = row.models?.name || "Sin modelo";
@@ -273,6 +286,7 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
       position: row.ubications?.name || "N/A",
       current_ubication_id: row.ubications?.id,
       status: this.mapAssetStatus(row.status),
+      is_active: row.is_active,
       lastMovementDate: row.updated_at ? row.updated_at.split("T")[0] : "N/A",
       createdAt: row.created_at ? row.created_at.split("T")[0] : "N/A",
       name: `${brand} ${model}`,

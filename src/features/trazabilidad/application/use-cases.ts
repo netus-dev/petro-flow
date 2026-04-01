@@ -56,3 +56,11 @@ export class EditAssetUseCase {
     return this.repository.updateAsset(id, asset);
   }
 }
+
+export class DisableAssetUseCase {
+  constructor(private repository: ITrazabilidadRepository) {}
+
+  async execute(id: string): Promise<void> {
+    return this.repository.disableAsset(id);
+  }
+}

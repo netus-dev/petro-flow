@@ -47,6 +47,7 @@ export function TrazabilidadContent() {
     loading,
     handleRegisterAsset,
     handleEditAsset,
+    handleDisableAsset,
     handleRegisterMovement,
     handleAddCertificate,
     navigateToDetail,
@@ -158,6 +159,7 @@ export function TrazabilidadContent() {
             onRegisterMovement={handleRegisterMovement}
             onAddCertificate={handleAddCertificate}
             onEditAsset={handleEditAsset}
+            onDisableAsset={handleDisableAsset}
           />
         )}
       </div>

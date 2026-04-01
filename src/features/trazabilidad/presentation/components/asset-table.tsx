@@ -148,10 +148,17 @@ export function AssetTable({
             {assets.map((asset) => (
               <TableRow
                 key={asset.id}
-                className="hover:bg-secondary/20 transition-colors border-border"
+                className={`hover:bg-secondary/20 transition-colors border-border ${asset.is_active === false ? 'opacity-50 grayscale' : ''}`}
               >
                 <TableCell className="font-medium text-foreground">
-                  {asset.code}
+                  <div className="flex items-center gap-2">
+                    {asset.code}
+                    {asset.is_active === false && (
+                      <Badge variant="destructive" className="h-5 text-[9px] uppercase px-1.5 whitespace-nowrap">
+                        Deshabilitado
+                      </Badge>
+                    )}
+                  </div>
                 </TableCell>
                 <TableCell>
                   <span className="text-xs text-muted-foreground">
@@ -218,22 +225,24 @@ export function AssetTable({
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator className="bg-border" />
                         
-                        <RegisterAssetModal
-                          mode="edit"
-                          assetToEdit={asset}
-                          onEdit={onEditAsset}
-                          trigger={
-                            <DropdownMenuItem
-                              className="gap-2 text-xs focus:bg-secondary cursor-pointer"
-                              onSelect={(e) => {
-                                // Prevent dropdown from closing immediately when opening dialog
-                                e.preventDefault();
-                              }}
-                            >
-                              <Edit2 className="size-3.5" /> Editar
-                            </DropdownMenuItem>
-                          }
-                        />
+                        {asset.is_active !== false && (
+                          <RegisterAssetModal
+                            mode="edit"
+                            assetToEdit={asset}
+                            onEdit={onEditAsset}
+                            trigger={
+                              <DropdownMenuItem
+                                className="gap-2 text-xs focus:bg-secondary cursor-pointer"
+                                onSelect={(e) => {
+                                  // Prevent dropdown from closing immediately when opening dialog
+                                  e.preventDefault();
+                                }}
+                              >
+                                <Edit2 className="size-3.5" /> Editar
+                              </DropdownMenuItem>
+                            }
+                          />
+                        )}
 
                         <DropdownMenuItem
                           className="gap-2 text-xs focus:bg-secondary cursor-pointer"

@@ -8,6 +8,7 @@ import {
   RegisterMovementUseCase,
   RegisterAssetUseCase,
   EditAssetUseCase,
+  DisableAssetUseCase,
 } from "../../application/use-cases";
 
 export type TrazabilidadView = "dashboard" | "list" | "detail";
@@ -54,6 +55,11 @@ export function useTrazabilidad() {
 
   const editAssetUseCase = useMemo(
     () => new EditAssetUseCase(repository),
+    [repository],
+  );
+
+  const disableAssetUseCase = useMemo(
+    () => new DisableAssetUseCase(repository),
     [repository],
   );
 
@@ -127,6 +133,15 @@ export function useTrazabilidad() {
     }
   };
 
+  const handleDisableAsset = async (id: string) => {
+    await disableAssetUseCase.execute(id);
+    await fetchData(); // Refresh data
+    if (selectedAsset?.id === id) {
+      const updated = await repository.getAssetById(id);
+      if (updated) setSelectedAsset(updated);
+    }
+  };
+
   const navigateToDetail = (asset: Asset) => {
     setSelectedAsset(asset);
     setView("detail");
@@ -153,6 +168,7 @@ export function useTrazabilidad() {
     handleAddCertificate,
     handleRegisterAsset,
     handleEditAsset,
+    handleDisableAsset,
     navigateToDetail,
     refresh: fetchData,
   };
