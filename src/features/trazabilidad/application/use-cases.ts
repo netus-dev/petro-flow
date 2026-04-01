@@ -48,3 +48,11 @@ export class RegisterAssetUseCase {
     return this.repository.registerAsset(asset);
   }
 }
+
+export class EditAssetUseCase {
+  constructor(private repository: ITrazabilidadRepository) {}
+
+  async execute(id: string, asset: Partial<Asset>): Promise<void> {
+    return this.repository.updateAsset(id, asset);
+  }
+}

@@ -10,7 +10,7 @@ import {
 } from "@/src/core/presentation/components/ui/table";
 import { Badge } from "@/src/core/presentation/components/ui/badge";
 import { Button } from "@/src/core/presentation/components/ui/button";
-import { Eye, Download, MoreVertical, Search, Filter } from "lucide-react";
+import { Eye, Download, MoreVertical, Search, Filter, Edit2 } from "lucide-react";
 import { Input } from "@/src/core/presentation/components/ui/input";
 import {
   Select,
@@ -29,6 +29,7 @@ import {
 } from "@/src/core/presentation/components/ui/dropdown-menu";
 import { Asset } from "../../domain/entities";
 import { FileText } from "lucide-react";
+import { RegisterAssetModal } from "./register-asset-modal";
 
 interface Props {
   assets: Asset[];
@@ -39,6 +40,7 @@ interface Props {
   setLocationFilter: (val: string) => void;
   statusFilter: string;
   setStatusFilter: (val: string) => void;
+  onEditAsset: (id: string, asset: Partial<Asset>) => Promise<void>;
 }
 
 export function AssetTable({
@@ -50,6 +52,7 @@ export function AssetTable({
   setLocationFilter,
   statusFilter,
   setStatusFilter,
+  onEditAsset,
 }: Props) {
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -214,6 +217,24 @@ export function AssetTable({
                           Acciones
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator className="bg-border" />
+                        
+                        <RegisterAssetModal
+                          mode="edit"
+                          assetToEdit={asset}
+                          onEdit={onEditAsset}
+                          trigger={
+                            <DropdownMenuItem
+                              className="gap-2 text-xs focus:bg-secondary cursor-pointer"
+                              onSelect={(e) => {
+                                // Prevent dropdown from closing immediately when opening dialog
+                                e.preventDefault();
+                              }}
+                            >
+                              <Edit2 className="size-3.5" /> Editar
+                            </DropdownMenuItem>
+                          }
+                        />
+
                         <DropdownMenuItem
                           className="gap-2 text-xs focus:bg-secondary cursor-pointer"
                           onClick={() => onViewDetail(asset)}

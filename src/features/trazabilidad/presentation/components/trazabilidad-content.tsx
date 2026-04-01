@@ -46,6 +46,7 @@ export function TrazabilidadContent() {
     stats,
     loading,
     handleRegisterAsset,
+    handleEditAsset,
     handleRegisterMovement,
     handleAddCertificate,
     navigateToDetail,
@@ -146,6 +147,7 @@ export function TrazabilidadContent() {
             setLocationFilter={setFilterLocation}
             statusFilter={filterStatus}
             setStatusFilter={setFilterStatus}
+            onEditAsset={handleEditAsset}
           />
         )}
 
@@ -155,6 +157,7 @@ export function TrazabilidadContent() {
             onBack={() => setView("list")}
             onRegisterMovement={handleRegisterMovement}
             onAddCertificate={handleAddCertificate}
+            onEditAsset={handleEditAsset}
           />
         )}
       </div>

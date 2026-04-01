@@ -7,6 +7,7 @@ import {
   GetDashboardStatsUseCase,
   RegisterMovementUseCase,
   RegisterAssetUseCase,
+  EditAssetUseCase,
 } from "../../application/use-cases";
 
 export type TrazabilidadView = "dashboard" | "list" | "detail";
@@ -48,6 +49,11 @@ export function useTrazabilidad() {
 
   const registerAssetUseCase = useMemo(
     () => new RegisterAssetUseCase(repository),
+    [repository],
+  );
+
+  const editAssetUseCase = useMemo(
+    () => new EditAssetUseCase(repository),
     [repository],
   );
 
@@ -112,6 +118,15 @@ export function useTrazabilidad() {
     await fetchData(); // Refresh data
   };
 
+  const handleEditAsset = async (id: string, asset: Partial<Asset>) => {
+    await editAssetUseCase.execute(id, asset);
+    await fetchData(); // Refresh data
+    if (selectedAsset?.id === id) {
+      const updated = await repository.getAssetById(id);
+      if (updated) setSelectedAsset(updated);
+    }
+  };
+
   const navigateToDetail = (asset: Asset) => {
     setSelectedAsset(asset);
     setView("detail");
@@ -137,6 +152,7 @@ export function useTrazabilidad() {
     handleRegisterMovement,
     handleAddCertificate,
     handleRegisterAsset,
+    handleEditAsset,
     navigateToDetail,
     refresh: fetchData,
   };

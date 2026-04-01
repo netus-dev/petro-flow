@@ -31,6 +31,7 @@ export interface Asset {
   id: string;
   code: string;
   functionalPrinciple: FunctionalPrinciple;
+  function_principle_id?: string;
   brand: string;
   model: string;
   brand_id?: string;
@@ -39,7 +40,9 @@ export interface Asset {
   lastInspectionCode?: string;
   serialNumber: string;
   currentLocation: string;
+  current_location_id?: string;
   position: string;
+  current_ubication_id?: string;
   status: AssetStatus;
   lastMovementDate: string;
   createdAt?: string;

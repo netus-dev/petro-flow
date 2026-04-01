@@ -10,4 +10,5 @@ export interface ITrazabilidadRepository {
     certificate: Partial<AssetCertificate>,
   ): Promise<void>;
   registerAsset(asset: Partial<Asset>): Promise<void>;
+  updateAsset(id: string, asset: Partial<Asset>): Promise<void>;
 }

@@ -25,17 +25,20 @@ import {
   MapPin,
   FileText,
   Plus,
+  Edit2,
 } from "lucide-react";
 import { Asset } from "../../domain/entities";
 import { EquipmentJourneyMap } from "./equipment-journey-map";
 import { RegisterMovementModal } from "./register-movement-modal";
 import { AddCertificateModal } from "./add-certificate-modal";
+import { RegisterAssetModal } from "./register-asset-modal";
 
 interface Props {
   asset: Asset;
   onBack: () => void;
   onRegisterMovement: (assetId: string, movement: any) => Promise<void>;
   onAddCertificate: (assetId: string, certificate: any) => Promise<void>;
+  onEditAsset: (id: string, asset: Partial<Asset>) => Promise<void>;
 }
 
 export function AssetDetail({
@@ -43,6 +46,7 @@ export function AssetDetail({
   onBack,
   onRegisterMovement,
   onAddCertificate,
+  onEditAsset,
 }: Props) {
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -136,10 +140,25 @@ export function AssetDetail({
 
         <TabsContent value="general">
           <Card className="border-border bg-card">
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between pb-6">
               <CardTitle className="text-lg font-mono">
                 Detalles Técnicos
               </CardTitle>
+              <RegisterAssetModal
+                mode="edit"
+                assetToEdit={asset}
+                onEdit={onEditAsset}
+                trigger={
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 gap-2 bg-secondary/50 border-border hover:bg-secondary text-xs"
+                  >
+                    <Edit2 className="size-3.5" />
+                    Editar Detalles
+                  </Button>
+                }
+              />
             </CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {[

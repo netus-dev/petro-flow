@@ -41,10 +41,14 @@ import { useEffect } from "react";
 import { useAuthStore } from "@/src/features/auth/presentation/store/auth-store";
 
 interface Props {
-  onRegister: (asset: Partial<Asset>) => Promise<void>;
+  mode?: "create" | "edit";
+  assetToEdit?: Asset;
+  onRegister?: (asset: Partial<Asset>) => Promise<void>;
+  onEdit?: (id: string, asset: Partial<Asset>) => Promise<void>;
+  trigger?: React.ReactNode;
 }
 
-export function RegisterAssetModal({ onRegister }: Props) {
+export function RegisterAssetModal({ mode = "create", assetToEdit, onRegister, onEdit, trigger }: Props) {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -61,7 +65,21 @@ export function RegisterAssetModal({ onRegister }: Props) {
   const [modelOpen, setModelOpen] = useState(false);
   const [modelSearch, setModelSearch] = useState("");
 
-  const initialFormState = {
+  const initialFormState = mode === "edit" && assetToEdit ? {
+    brand_id: assetToEdit.brand_id || assetToEdit.brand,
+    model_id: assetToEdit.model_id || assetToEdit.model,
+    capacity: assetToEdit.capacity || "",
+    serial_number: assetToEdit.serialNumber || "",
+    last_inspection_code: assetToEdit.lastInspectionCode || "",
+    status: assetToEdit.status === "Operativo" ? "active" : assetToEdit.status === "En mantenimiento" ? "under_inspection" : "rejected",
+    current_location_id: assetToEdit.current_location_id || "",
+    current_ubication_id: assetToEdit.current_ubication_id || "",
+    function_principle_id: assetToEdit.function_principle_id || "",
+    ...assetToEdit.properties?.reduce((acc: any, prop: any) => {
+      acc[prop.key] = prop.value;
+      return acc;
+    }, {})
+  } : {
     brand_id: "",
     model_id: "",
     capacity: "",
@@ -128,7 +146,12 @@ export function RegisterAssetModal({ onRegister }: Props) {
         company_id: company_id
       };
 
-      await onRegister(payloadToSave as any);
+      if (mode === "edit" && onEdit && assetToEdit) {
+        await onEdit(assetToEdit.id, payloadToSave as any);
+      } else if (onRegister) {
+        await onRegister(payloadToSave as any);
+      }
+      
       setOpen(false);
     } catch (error) {
       console.error("Error registering asset:", error);
@@ -148,23 +171,26 @@ export function RegisterAssetModal({ onRegister }: Props) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-9 gap-2 border-border border-dashed font-mono uppercase text-[10px] tracking-wider"
-        >
-          <Plus className="size-3.5" />
-          Registrar Activo
-        </Button>
+        {trigger || (
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-9 gap-2 border-border border-dashed font-mono uppercase text-[10px] tracking-wider"
+          >
+            <Plus className="size-3.5" />
+            Registrar Activo
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px] bg-card border-border">
         <DialogHeader>
           <DialogTitle className="font-mono text-xl">
-            Registrar Nuevo Activo
+            {mode === "create" ? "Registrar Nuevo Activo" : "Editar Activo"}
           </DialogTitle>
           <DialogDescription className="text-muted-foreground">
-            Ingrese los detalles técnicos para dar de alta un nuevo activo en el
-            sistema.
+            {mode === "create" 
+              ? "Ingrese los detalles técnicos para dar de alta un nuevo activo en el sistema." 
+              : "Modifique los detalles técnicos del activo. El principio funcional principal no puede ser alterado."}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="flex flex-col gap-6 py-4">
@@ -393,7 +419,7 @@ export function RegisterAssetModal({ onRegister }: Props) {
             <Label htmlFor="function_principle" className="text-xs uppercase tracking-widest text-muted-foreground">
               Principio Funcional
             </Label>
-            <Select value={formData.function_principle_id} onValueChange={(v) => setFormData({ ...formData, function_principle_id: v })} required>
+            <Select value={formData.function_principle_id} onValueChange={(v) => setFormData({ ...formData, function_principle_id: v })} required disabled={mode === "edit"}>
               <SelectTrigger id="function_principle" className="bg-secondary/20 border-border h-11">
                 <SelectValue placeholder="Seleccione principio" />
               </SelectTrigger>
@@ -450,7 +476,7 @@ export function RegisterAssetModal({ onRegister }: Props) {
               disabled={isLoading}
               className="min-w-[150px]"
             >
-              {isLoading ? "Registrando..." : "Registrar Activo"}
+              {isLoading ? "Guardando..." : mode === "create" ? "Registrar Activo" : "Guardar Cambios"}
             </Button>
           </DialogFooter>
         </form>

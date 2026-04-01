@@ -19,11 +19,11 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
       .from("assets")
       .select(`
         *,
-        brands:brand_id ( name ),
-        models:model_id ( name ),
+        brands:brand_id ( * ),
+        models:model_id ( * ),
         functional_principles:function_principle_id ( * ),
-        locations:current_location_id ( name ),
-        ubications:current_ubication_id ( name ),
+        locations:current_location_id ( * ),
+        ubications:current_ubication_id ( * ),
         certificates ( id, certificate_url, created_at ),
         transaction_details (
           comments,
@@ -177,6 +177,34 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
     }
   }
 
+  async updateAsset(id: string, asset: Partial<Asset>): Promise<void> {
+    const rawAsset = asset as any;
+    const payload = {
+      brand_id: rawAsset.brand_id,
+      model_id: rawAsset.model_id,
+      serial_number: rawAsset.serial_number || rawAsset.serialNumber,
+      status: rawAsset.status,
+      // intentionally omit function_principle_id since it shouldn't be altered
+      current_location_id: rawAsset.current_location_id,
+      current_ubication_id: rawAsset.current_ubication_id,
+      capacity: rawAsset.capacity,
+      last_inspection_code: rawAsset.last_inspection_code,
+      ...Array.from({ length: 20 }, (_, i) => `property_${i + 1}`).reduce((acc: any, key) => {
+        // Here we can save empty strings to reset properties if needed, but we'll stick to updating provided keys
+        if (rawAsset[key] !== undefined) {
+          acc[key] = rawAsset[key];
+        }
+        return acc;
+      }, {})
+    };
+
+    const { error } = await this.supabase.from("assets").update(payload).eq("id", id);
+    if (error) {
+      console.error("Error updating asset:", error);
+      throw error;
+    }
+  }
+
   private mapRowToAsset(row: any): Asset {
     const brand = row.brands?.name || "Sin marca";
     const model = row.models?.name || "Sin modelo";
@@ -232,13 +260,18 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
       id: row.id,
       code: serialNumber, // Fallback code
       functionalPrinciple: functionalPrinciple as any,
+      function_principle_id: row.functional_principles?.id,
       brand: brand,
       model: model,
+      brand_id: row.brands?.id,
+      model_id: row.models?.id,
       capacity: row.capacity,
       lastInspectionCode: row.last_inspection_code,
       serialNumber: serialNumber,
       currentLocation: currentLocation,
+      current_location_id: row.locations?.id,
       position: row.ubications?.name || "N/A",
+      current_ubication_id: row.ubications?.id,
       status: this.mapAssetStatus(row.status),
       lastMovementDate: row.updated_at ? row.updated_at.split("T")[0] : "N/A",
       createdAt: row.created_at ? row.created_at.split("T")[0] : "N/A",
