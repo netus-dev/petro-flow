@@ -110,7 +110,7 @@ export function useTrazabilidad() {
         filterType === "all" || asset.functionalPrinciple === filterType || asset.function_principle_id === filterType;
       const matchesUbication =
         filterUbication === "all" || asset.position === filterUbication || asset.current_ubication_id === filterUbication;
-      const matchesDisabled = filterDisabled ? asset.is_active === false : asset.is_active !== false;
+      const matchesDisabled = filterDisabled ? true : asset.is_active !== false;
 
       return matchesSearch && matchesLocation && matchesStatus && matchesType && matchesUbication && matchesDisabled;
     });

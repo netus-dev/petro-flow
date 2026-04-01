@@ -183,7 +183,7 @@ export function AssetTable({
               />
               <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${disabledFilter ? 'translate-x-4' : 'translate-x-1'}`} />
             </div>
-            Mostrar solo activos deshabilitados
+            Incluir activos deshabilitados
           </label>
 
           <Button
