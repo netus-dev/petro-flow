@@ -106,4 +106,5 @@ export interface AssetMovementPayload {
   destination_ubication_id?: string;
   justification: string;
   assets: AssetMovementItem[];
+  certificates?: { file: File; name: string }[];
 }

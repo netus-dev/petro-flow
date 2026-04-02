@@ -210,15 +210,17 @@ export class MockTrazabilidadRepository implements ITrazabilidadRepository {
 
   async addCertificate(
     assetId: string,
-    certificate: Partial<any>,
+    certificates: { file: File; name: string }[],
   ): Promise<void> {
     const asset = assets.find((a) => a.id === assetId);
     if (asset) {
-      asset.certificates.push({
-        id: `CERT-${Date.now()}`,
-        name: certificate.name || "Nuevo Certificado",
-        uploadDate: new Date().toISOString().split("T")[0],
-        fileUrl: certificate.fileUrl || "/certificates/placeholder.pdf",
+      certificates.forEach(cert => {
+        asset.certificates.push({
+          id: `CERT-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+          name: cert.name || "Nuevo Certificado",
+          uploadDate: new Date().toISOString().split("T")[0],
+          fileUrl: "/certificates/placeholder.pdf",
+        });
       });
     }
   }

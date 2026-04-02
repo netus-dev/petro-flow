@@ -130,8 +130,8 @@ export function useTrazabilidad() {
     await fetchData(); // Refresh data
   };
 
-  const handleAddCertificate = async (assetId: string, certificate: any) => {
-    await addCertificateUseCase.execute(assetId, certificate);
+  const handleAddCertificate = async (assetId: string, certificates: { file: File; name: string }[]) => {
+    await addCertificateUseCase.execute(assetId, certificates);
     await fetchData(); // Refresh data
     if (selectedAsset?.id === assetId) {
       const updated = await repository.getAssetById(assetId);

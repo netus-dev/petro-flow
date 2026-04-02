@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -22,7 +22,7 @@ import {
 import { Asset, AssetMovementPayload, TransactionType } from "../../domain/entities";
 import { catalogsRepository } from "@/src/features/catalogs/infrastructure/repository";
 import { Checkbox } from "@/src/core/presentation/components/ui/checkbox";
-import { FileUp, Shuffle, Info, Search } from "lucide-react";
+import { FileUp, Shuffle, Info, Search, Upload, FileText, Image as ImageIcon, X, AlertCircle } from "lucide-react";
 
 interface Props {
   assets: Asset[];
@@ -41,6 +41,11 @@ export function RegisterBatchMovementModal({ assets, onRegister }: Props) {
   const [destinationLocation, setDestinationLocation] = useState("");
   const [destinationUbication, setDestinationUbication] = useState("");
   const [justification, setJustification] = useState("");
+
+  // Certificates State
+  const [certificates, setCertificates] = useState<{ id: string; file: File; name: string }[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const [certError, setCertError] = useState<string | null>(null);
 
   // Table State
   const [search, setSearch] = useState("");
@@ -71,9 +76,87 @@ export function RegisterBatchMovementModal({ assets, onRegister }: Props) {
     }
   }, [open]);
 
+  // Certificates Handlers
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  }, []);
+
+  const validateAndAddFiles = (selectedFiles: FileList | File[]) => {
+    setCertError(null);
+    const newCerts: { id: string; file: File; name: string }[] = [];
+    let hasError = false;
+
+    Array.from(selectedFiles).forEach((selectedFile) => {
+      const isPdf = selectedFile.type === "application/pdf";
+      const isImage = selectedFile.type.startsWith("image/");
+      
+      if (!isPdf && !isImage) {
+        hasError = true;
+        return;
+      }
+      
+      const defaultName = selectedFile.name.replace(/\.[^/.]+$/, "");
+      newCerts.push({
+        id: Math.random().toString(36).substring(7),
+        file: selectedFile,
+        name: defaultName,
+      });
+    });
+
+    if (hasError) {
+      setCertError("Algunos archivos fueron ignorados. Solo se permiten PDF o imágenes.");
+    }
+
+    if (newCerts.length > 0) {
+      setCertificates((prev) => [...prev, ...newCerts]);
+    }
+  };
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      validateAndAddFiles(e.dataTransfer.files);
+    }
+  }, []);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      validateAndAddFiles(e.target.files);
+      e.target.value = "";
+    }
+  };
+
+  const updateCertificateName = (id: string, newName: string) => {
+    setCertificates((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, name: newName } : c))
+    );
+  };
+
+  const removeCertificate = (id: string) => {
+    setCertificates((prev) => prev.filter((c) => c.id !== id));
+  };
+
+
   const handleNextStep = () => {
     if (!type || !originLocation || !justification) return;
     if (type === "transfer" && !destinationLocation) return;
+    if (type === "transfer") {
+       if (certificates.some(c => !c.name.trim())) {
+           setCertError("Todos los certificados adjuntos deben tener un nombre.");
+           return;
+       }
+    }
     if (type === "reubication" && (!originUbication || !destinationUbication)) return;
     
     setStep(2);
@@ -98,6 +181,9 @@ export function RegisterBatchMovementModal({ assets, onRegister }: Props) {
 
       if (type === "transfer") {
         payload.destination_location_id = destinationLocation;
+        if (certificates.length > 0) {
+           payload.certificates = certificates.map(c => ({ file: c.file, name: c.name.trim() }));
+        }
       } else {
         payload.destination_ubication_id = destinationUbication;
       }
@@ -125,6 +211,8 @@ export function RegisterBatchMovementModal({ assets, onRegister }: Props) {
     setFilterPrinciple("all");
     setSelectedAssetIds(new Set());
     setCommentsMap({});
+    setCertificates([]);
+    setCertError(null);
   };
 
   // Extract the "Patio" ubication logic for the origin if transfer, or specific ubication if reubication.
@@ -188,7 +276,7 @@ export function RegisterBatchMovementModal({ assets, onRegister }: Props) {
       </DialogTrigger>
       
       <DialogContent className="max-w-[800px] bg-card border-border p-0 overflow-hidden flex flex-col max-h-[90vh]">
-        <DialogHeader className="p-6 border-b border-border bg-secondary/10">
+        <DialogHeader className="p-6 border-b border-border bg-secondary/10 shrink-0">
           <DialogTitle className="font-mono text-xl">Registrar Movimiento</DialogTitle>
           <p className="text-sm text-muted-foreground mt-1">
             Mueve multiples activos entre locaciones y/o ubicaciones.
@@ -205,6 +293,7 @@ export function RegisterBatchMovementModal({ assets, onRegister }: Props) {
                   setDestinationLocation("");
                   setDestinationUbication("");
                   setOriginUbication("");
+                  if (val !== "transfer") setCertificates([]);
                 }}>
                   <SelectTrigger className="bg-secondary/20 h-11 border-border">
                     <SelectValue placeholder="Seleccione el tipo" />
@@ -312,6 +401,93 @@ export function RegisterBatchMovementModal({ assets, onRegister }: Props) {
                   />
                 </div>
               )}
+
+              {type === "transfer" && (
+                <div className="flex flex-col gap-2 mt-2 pt-6 border-t border-border">
+                  <Label className="text-xs uppercase tracking-widest text-muted-foreground">
+                    Certificados Adicionales (Opcional)
+                  </Label>
+                  <p className="text-xs text-muted-foreground">Si la transferencia incluye certificados de inspección o remisiones, puedes adjuntarlos aquí.</p>
+
+                  <div
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    className={`
+                      mt-2 relative border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center gap-3 transition-all
+                      ${isDragging ? "border-primary bg-primary/5 scale-[0.99]" : "border-border bg-secondary/10"}
+                    `}
+                  >
+                    <input
+                      type="file"
+                      accept=".pdf,image/*"
+                      multiple
+                      onChange={handleFileChange}
+                      className="absolute inset-0 opacity-0 cursor-pointer"
+                    />
+                    <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Upload className="size-5 text-primary" />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xs font-medium text-foreground">
+                        Arrastra archivos o haz clic
+                      </p>
+                    </div>
+                  </div>
+
+                  {certError && (
+                    <p className="text-[10px] text-red-500 flex items-center gap-1 mt-1 animate-in slide-in-from-top-1">
+                      <AlertCircle className="size-3 shrink-0" />
+                      {certError}
+                    </p>
+                  )}
+
+                  {certificates.length > 0 && (
+                    <div className="flex flex-col gap-2 mt-2">
+                      {certificates.map((cert) => (
+                        <div key={cert.id} className="flex flex-col gap-2 p-3 rounded-lg border border-primary/20 bg-primary/5">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <div className="size-8 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+                                {cert.file.type === "application/pdf" ? (
+                                  <FileText className="size-4 text-primary" />
+                                ) : (
+                                  <ImageIcon className="size-4 text-primary" />
+                                )}
+                              </div>
+                              <div className="flex flex-col min-w-0">
+                                <span className="text-xs font-medium text-foreground truncate">
+                                  {cert.file.name}
+                                </span>
+                                <span className="text-[10px] text-muted-foreground uppercase">
+                                  {(cert.file.size / (1024 * 1024)).toFixed(2)} MB
+                                </span>
+                              </div>
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="size-6 shrink-0 text-muted-foreground hover:text-red-500"
+                              onClick={() => removeCertificate(cert.id)}
+                            >
+                              <X className="size-3" />
+                            </Button>
+                          </div>
+                          <div>
+                             <Input 
+                               value={cert.name}
+                               onChange={(e) => updateCertificateName(cert.id, e.target.value)}
+                               className="h-8 text-xs bg-background/50 border-primary/20"
+                               placeholder="Nombre del documento..."
+                             />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           ) : (
             <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-right-4 h-full">
@@ -411,7 +587,7 @@ export function RegisterBatchMovementModal({ assets, onRegister }: Props) {
           )}
         </div>
 
-        <DialogFooter className="p-6 border-t border-border bg-secondary/10">
+        <DialogFooter className="p-6 border-t border-border bg-secondary/10 shrink-0">
           <Button variant="ghost" className="border border-border" onClick={() => {
             if (step === 2) setStep(1);
             else setOpen(false);

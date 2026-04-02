@@ -20,19 +20,20 @@ import {
   CheckCircle2,
   AlertCircle,
   Plus,
+  Image as ImageIcon,
 } from "lucide-react";
 import { Asset } from "../../domain/entities";
 
 interface Props {
   asset: Asset;
-  onAdd: (assetId: string, certificate: any) => Promise<void>;
+  onAdd: (assetId: string, certificates: { file: File; name: string }[]) => Promise<void>;
 }
 
 export function AddCertificateModal({ asset, onAdd }: Props) {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [name, setName] = useState("");
-  const [file, setFile] = useState<File | null>(null);
+  
+  const [certificates, setCertificates] = useState<{ id: string; file: File; name: string }[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -48,16 +49,34 @@ export function AddCertificateModal({ asset, onAdd }: Props) {
     setIsDragging(false);
   }, []);
 
-  const validateAndSetFile = (selectedFile: File) => {
+  const validateAndAddFiles = (selectedFiles: FileList | File[]) => {
     setError(null);
-    if (selectedFile.type !== "application/pdf") {
-      setError("Solo se permiten archivos PDF.");
-      return;
+    const newCerts: { id: string; file: File; name: string }[] = [];
+    let hasError = false;
+
+    Array.from(selectedFiles).forEach((selectedFile) => {
+      const isPdf = selectedFile.type === "application/pdf";
+      const isImage = selectedFile.type.startsWith("image/");
+      
+      if (!isPdf && !isImage) {
+        hasError = true;
+        return;
+      }
+      
+      const defaultName = selectedFile.name.replace(/\.[^/.]+$/, "");
+      newCerts.push({
+        id: Math.random().toString(36).substring(7),
+        file: selectedFile,
+        name: defaultName,
+      });
+    });
+
+    if (hasError) {
+      setError("Algunos archivos fueron ignorados. Solo se permiten archivos PDF o imágenes.");
     }
-    setFile(selectedFile);
-    if (!name) {
-      // Auto-fill name from filename without extension
-      setName(selectedFile.name.replace(/\.[^/.]+$/, ""));
+
+    if (newCerts.length > 0) {
+      setCertificates((prev) => [...prev, ...newCerts]);
     }
   };
 
@@ -68,47 +87,65 @@ export function AddCertificateModal({ asset, onAdd }: Props) {
       setIsDragging(false);
 
       if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-        validateAndSetFile(e.dataTransfer.files[0]);
+        validateAndAddFiles(e.dataTransfer.files);
       }
     },
-    [name],
+    [],
   );
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      validateAndSetFile(e.target.files[0]);
+      validateAndAddFiles(e.target.files);
+      // Reset input so the same files can be selected again if removed
+      e.target.value = "";
     }
   };
 
+  const updateCertificateName = (id: string, newName: string) => {
+    setCertificates((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, name: newName } : c))
+    );
+  };
+
+  const removeCertificate = (id: string) => {
+    setCertificates((prev) => prev.filter((c) => c.id !== id));
+  };
+
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!file || !name) return;
+    if (certificates.length === 0) return;
+
+    // Validate that all have names
+    if (certificates.some(c => !c.name.trim())) {
+      setError("Todos los certificados deben tener un nombre.");
+      return;
+    }
 
     setIsLoading(true);
     try {
-      // Mocking file upload delay
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      await onAdd(asset.id, {
-        name,
-        fileUrl: "/certificates/new-upload.pdf", // Mock URL
-      });
+      const payload = certificates.map(c => ({ file: c.file, name: c.name.trim() }));
+      await onAdd(asset.id, payload);
 
       setOpen(false);
-      // Reset form
-      setName("");
-      setFile(null);
+      setCertificates([]);
       setError(null);
     } catch (err) {
-      console.error("Error adding certificate:", err);
-      setError("Error al cargar el certificado. Intente de nuevo.");
+      console.error("Error adding certificates:", err);
+      setError("Error al cargar los certificados. Intente de nuevo.");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(val) => {
+      setOpen(val);
+      if (!val) {
+        setCertificates([]);
+        setError(null);
+      }
+    }}>
       <DialogTrigger asChild>
         <Button
           size="sm"
@@ -118,136 +155,139 @@ export function AddCertificateModal({ asset, onAdd }: Props) {
           Agregar Certificado
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px] bg-card border-border p-0 overflow-hidden">
-        <DialogHeader className="p-6 bg-secondary/10 border-b border-border">
+      <DialogContent className="sm:max-w-[550px] bg-card border-border p-0 overflow-hidden flex flex-col max-h-[90vh]">
+        <DialogHeader className="p-6 bg-secondary/10 border-b border-border shrink-0">
           <DialogTitle className="font-mono text-xl flex items-center gap-2">
             <FileText className="size-5 text-primary" />
-            Cargar Certificado
+            Cargar Certificados
           </DialogTitle>
           <DialogDescription className="text-muted-foreground">
-            Sube un certificado oficial en formato PDF para el activo{" "}
+            Sube certificados oficiales (PDF o imagen) para el activo{" "}
             <span className="font-mono text-foreground font-bold">
               {asset.code}
             </span>
-            .
+            . Puedes seleccionar varios archivos a la vez.
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-6">
-          <div className="flex flex-col gap-2">
-            <Label
-              htmlFor="cert-name"
-              className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold"
-            >
-              Nombre del Certificado
-            </Label>
-            <Input
-              id="cert-name"
-              placeholder="Ej: Inspección Anual 2026"
-              className="bg-secondary/20 border-border h-11"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
-          </div>
-
+        <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
           <div className="flex flex-col gap-2">
             <Label className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
-              Archivo Digital (PDF)
+              Archivos ({certificates.length} seleccionados)
             </Label>
 
-            {!file ? (
-              <div
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-                className={`
-                  relative border-2 border-dashed rounded-xl p-10 flex flex-col items-center justify-center gap-4 transition-all
-                  ${isDragging ? "border-primary bg-primary/5 scale-[0.99]" : "border-border bg-secondary/10"}
-                  ${error ? "border-red-500/50" : ""}
-                `}
-              >
-                <input
-                  type="file"
-                  accept=".pdf"
-                  onChange={handleFileChange}
-                  className="absolute inset-0 opacity-0 cursor-pointer"
-                />
-                <div className="size-12 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Upload className="size-6 text-primary" />
-                </div>
-                <div className="text-center">
-                  <p className="text-sm font-medium text-foreground">
-                    Arrastra el archivo aquí o haz clic para buscar
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Solo archivos PDF (Máx. 10MB)
-                  </p>
-                </div>
+            <div
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              className={`
+                relative border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center gap-4 transition-all
+                ${isDragging ? "border-primary bg-primary/5 scale-[0.99]" : "border-border bg-secondary/10"}
+              `}
+            >
+              <input
+                type="file"
+                accept=".pdf,image/*"
+                multiple
+                onChange={handleFileChange}
+                className="absolute inset-0 opacity-0 cursor-pointer"
+              />
+              <div className="size-12 rounded-full bg-primary/10 flex items-center justify-center">
+                <Upload className="size-6 text-primary" />
               </div>
-            ) : (
-              <div className="flex items-center justify-between p-4 rounded-xl border border-primary/20 bg-primary/5 animate-in fade-in zoom-in duration-300">
-                <div className="flex items-center gap-3">
-                  <div className="size-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <FileText className="size-5 text-primary" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-sm font-medium text-foreground truncate max-w-[240px]">
-                      {file.name}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground uppercase">
-                      {(file.size / (1024 * 1024)).toFixed(2)} MB • PDF
-                    </span>
-                  </div>
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="size-8 text-muted-foreground hover:text-red-500"
-                  onClick={() => setFile(null)}
-                >
-                  <X className="size-4" />
-                </Button>
+              <div className="text-center">
+                <p className="text-sm font-medium text-foreground">
+                  Arrastra archivos aquí o haz clic para buscar
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Formatos permitidos: PDF, JPG, PNG
+                </p>
               </div>
-            )}
+            </div>
 
             {error && (
               <p className="text-xs text-red-500 flex items-center gap-1 mt-1 animate-in slide-in-from-top-1">
-                <AlertCircle className="size-3" />
+                <AlertCircle className="size-3 shrink-0" />
                 {error}
               </p>
             )}
-          </div>
 
-          <DialogFooter className="pt-4 gap-3">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setOpen(false)}
-              className="border border-border text-xs uppercase font-bold tracking-widest h-10"
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              disabled={isLoading || !file || !name}
-              className="min-w-[160px] text-xs uppercase font-bold tracking-widest h-10 shadow-lg shadow-primary/20"
-            >
-              {isLoading ? (
-                <div className="flex items-center gap-2">
-                  <div className="size-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Cargando...
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="size-4" />
-                  Subir Certificado
-                </div>
-              )}
-            </Button>
-          </DialogFooter>
-        </form>
+            {certificates.length > 0 && (
+              <div className="flex flex-col gap-3 mt-4">
+                {certificates.map((cert) => (
+                  <div key={cert.id} className="flex flex-col gap-2 p-4 rounded-xl border border-primary/20 bg-primary/5 animate-in fade-in zoom-in duration-300">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="size-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                          {cert.file.type === "application/pdf" ? (
+                            <FileText className="size-5 text-primary" />
+                          ) : (
+                            <ImageIcon className="size-5 text-primary" />
+                          )}
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-sm font-medium text-foreground truncate">
+                            {cert.file.name}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground uppercase">
+                            {(cert.file.size / (1024 * 1024)).toFixed(2)} MB • {cert.file.type.split('/')[1] || "FILE"}
+                          </span>
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="size-8 shrink-0 text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
+                        onClick={() => removeCertificate(cert.id)}
+                      >
+                        <X className="size-4" />
+                      </Button>
+                    </div>
+                    <div className="mt-2">
+                       <Label className="text-[10px] uppercase font-bold text-muted-foreground mb-1 block">Nombre a guardar</Label>
+                       <Input 
+                         value={cert.name}
+                         onChange={(e) => updateCertificateName(cert.id, e.target.value)}
+                         className="h-9 bg-background/50 border-primary/20"
+                         placeholder="Ingresa un nombre..."
+                       />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+          </div>
+        </div>
+
+        <DialogFooter className="p-6 pt-4 gap-3 border-t border-border bg-secondary/5 shrink-0">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => setOpen(false)}
+            className="border border-border text-xs uppercase font-bold tracking-widest h-10"
+          >
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            disabled={isLoading || certificates.length === 0}
+            className="min-w-[160px] text-xs uppercase font-bold tracking-widest h-10 shadow-lg shadow-primary/20"
+          >
+            {isLoading ? (
+              <div className="flex items-center gap-2">
+                <div className="size-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Cargando...
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="size-4" />
+                Subir Certificados
+              </div>
+            )}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

@@ -8,7 +8,7 @@ export interface ITrazabilidadRepository {
   registerBulkMovement(payload: AssetMovementPayload): Promise<void>;
   addCertificate(
     assetId: string,
-    certificate: Partial<AssetCertificate>,
+    certificates: { file: File; name: string }[],
   ): Promise<void>;
   registerAsset(asset: Partial<Asset>): Promise<void>;
   updateAsset(id: string, asset: Partial<Asset>): Promise<void>;

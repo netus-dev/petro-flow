@@ -24,7 +24,9 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
         functional_principles:function_principle_id ( * ),
         locations:current_location_id ( * ),
         ubications:current_ubication_id ( * ),
-        certificates ( id, certificate_url, created_at ),
+        assets_certificates (
+          certificates ( id, storage_path, file_name, uploaded_at )
+        ),
         transaction_details (
           comments,
           transactions (
@@ -43,7 +45,7 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
       return [];
     }
 
-    return (data || []).map((row: any) => this.mapRowToAsset(row));
+    return Promise.all((data || []).map((row: any) => this.mapRowToAsset(row)));
   }
 
   async getAssetById(id: string): Promise<Asset | undefined> {
@@ -56,7 +58,9 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
         functional_principles:function_principle_id ( * ),
         locations:current_location_id ( name ),
         ubications:current_ubication_id ( name ),
-        certificates ( id, certificate_url, created_at ),
+        assets_certificates (
+          certificates ( id, storage_path, file_name, uploaded_at )
+        ),
         transaction_details (
           comments,
           transactions (
@@ -77,7 +81,7 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
       return undefined;
     }
 
-    return this.mapRowToAsset(data);
+    return await this.mapRowToAsset(data);
   }
 
   async getDashboardStats(): Promise<TrazabilidadStats> {
@@ -227,18 +231,74 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
       .in("id", assetIds);
 
     if (updateError) throw updateError;
+    
+    // 4. Upload and link certificates if it's a transfer and certs exist
+    if (payload.type === "transfer" && payload.certificates && payload.certificates.length > 0) {
+       const certIds = await this.uploadCertificates(payload.certificates, user.id);
+       if (certIds.length > 0) {
+          const links: any[] = [];
+          assetIds.forEach((aId: string) => {
+             certIds.forEach((cId) => {
+                links.push({
+                   asset_id: aId,
+                   certificate_id: cId
+                });
+             });
+          });
+          const { error: linksError } = await this.supabase.from('assets_certificates').insert(links);
+          if (linksError) throw linksError;
+       }
+    }
   }
 
-  async addCertificate(assetId: string, certificate: Partial<any>): Promise<void> {
-    // Insert into certificates table
-    const { error } = await this.supabase
-      .from('certificates')
-      .insert({
-        asset_id: assetId,
-        certificate_url: certificate.fileUrl || ''
-      });
+  private async uploadCertificates(certificates: { file: File; name: string }[], userId: string): Promise<string[]> {
+    const certIds: string[] = [];
+    for (const cert of certificates) {
+      const id = crypto.randomUUID();
+      const ext = cert.file.name.split('.').pop() || '';
+      const storagePath = `${id}.${ext}`;
       
-    if (error) console.error("Error adding certificate", error);
+      const { error: uploadError } = await this.supabase.storage
+        .from('certificates')
+        .upload(storagePath, cert.file);
+        
+      if (uploadError) throw uploadError;
+      
+      const { error: dbError } = await this.supabase
+        .from('certificates')
+        .insert({
+           id,
+           uploaded_by: userId,
+           storage_path: storagePath,
+           file_name: cert.name,
+           mime_type: cert.file.type || 'application/octet-stream'
+        });
+        
+      if (dbError) throw dbError;
+      certIds.push(id);
+    }
+    return certIds;
+  }
+
+  async addCertificate(assetId: string, certificates: { file: File; name: string }[]): Promise<void> {
+    const { data: { user } } = await this.supabase.auth.getUser();
+    if (!user) throw new Error("No user authenticated");
+    
+    // Upload and get cert ids
+    const certIds = await this.uploadCertificates(certificates, user.id);
+    
+    // Link to asset
+    if (certIds.length > 0) {
+      const links = certIds.map(certId => ({
+        asset_id: assetId,
+        certificate_id: certId
+      }));
+      const { error } = await this.supabase.from('assets_certificates').insert(links);
+      if (error) {
+         console.error("Error linking certificates to asset", error);
+         throw error;
+      }
+    }
   }
 
   async registerAsset(asset: Partial<Asset>): Promise<void> {
@@ -309,7 +369,7 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
     }
   }
 
-  private mapRowToAsset(row: any): Asset {
+  private async mapRowToAsset(row: any): Promise<Asset> {
     const brand = row.brands?.name || "Sin marca";
     const model = row.models?.name || "Sin modelo";
     const serialNumber = row.serial_number || "Sin SN";
@@ -334,13 +394,31 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
       }
     }
     
-    // Map certificates
-    const certificates: AssetCertificate[] = (row.certificates || []).map((c: any) => ({
-      id: c.id,
-      name: "Certificado de Inspección", // we could deduce from url
-      uploadDate: c.created_at?.split("T")[0] || "",
-      fileUrl: c.certificate_url,
-    }));
+    // Extract certificates from the M2M nested relationship
+    const rawCerts = (row.assets_certificates || [])
+      .map((ac: any) => ac.certificates)
+      .filter((c: any) => c != null);
+
+    const certificates: AssetCertificate[] = await Promise.all(
+      rawCerts.map(async (c: any) => {
+        let fileUrl = "";
+        if (c.storage_path) {
+          const { data } = await this.supabase.storage
+            .from('certificates')
+            .createSignedUrl(c.storage_path, 3600); // 1 hour expiry
+          if (data?.signedUrl) {
+            fileUrl = data.signedUrl;
+          }
+        }
+
+        return {
+          id: c.id,
+          name: c.file_name || "Certificado",
+          uploadDate: c.uploaded_at?.split("T")[0] || "",
+          fileUrl,
+        };
+      })
+    );
 
     // Map journey stops from transaction_details
     const journey: JourneyStop[] = (row.transaction_details || [])
