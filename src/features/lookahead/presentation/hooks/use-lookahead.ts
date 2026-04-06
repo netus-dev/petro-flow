@@ -171,6 +171,9 @@ export function useLookahead() {
 
     if (Object.keys(payload).length === 0) return;
 
+    // Obtener la tarea antigua antes de mutarla en el optimista
+    const oldTask = tasks.find(t => t.id === id);
+
     // Optimistic update
     setTasks((prev) =>
       prev.map((t) =>
@@ -185,7 +188,14 @@ export function useLookahead() {
     try {
       await lookaheadRepository.updateTask(id, payload);
 
-      const shiftMs = updates.start && oldStart ? updates.start.getTime() - oldStart.getTime() : 0;
+      // Bug 1: Al arrastrar o encoger la tarea desde el canvas, medimos respecto de END
+      let shiftMs = 0;
+      if (updates.end && oldTask) {
+        shiftMs = updates.end.getTime() - new Date(oldTask.end_date).getTime();
+      } else if (updates.start && oldStart) {
+        shiftMs = updates.start.getTime() - oldStart.getTime();
+      }
+
       if (shiftMs !== 0) {
         await lookaheadRepository.cascadeTaskDates(tasks, id, shiftMs);
         await fetchTasks(selectedRigId);
@@ -239,6 +249,7 @@ export function useLookahead() {
         end_date: new Date(editTaskForm.end_date).toISOString(),
         status: editTaskForm.status,
         comments: editTaskForm.comments || null,
+        previous_task_id: newPrev, // Arreglo Bug 2: Garantiza que la BD borre el link viejo de nuestra propia tarea
       };
 
       const updated = await lookaheadRepository.updateTask(editingTaskId, payload);
@@ -250,6 +261,19 @@ export function useLookahead() {
         }
         if (newPrev) {
           await lookaheadRepository.updateDependency(newPrev, editingTaskId); // Vincular nuevo
+        }
+      }
+
+      // Cascada de fechas si la fecha de fin cambió (Relación End-to-Start)
+      if (oldTask && payload.end_date) {
+        // En Gantt, las hijas (Start) dependen del Final (End) del padre.
+        const oldEnd = new Date(oldTask.end_date).getTime();
+        const newEnd = new Date(payload.end_date).getTime();
+        const shiftMs = newEnd - oldEnd;
+        
+        // Ejecutar cascada si existe diferencia en la finalización
+        if (shiftMs !== 0) {
+          await lookaheadRepository.cascadeTaskDates(tasks, editingTaskId, shiftMs);
         }
       }
 
