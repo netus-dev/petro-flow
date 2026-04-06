@@ -28,7 +28,6 @@ import {
 import { TrazabilidadStats } from "../../domain/entities";
 import { useTrazabilidadDashboard } from "../hooks/use-trazabilidad-dashboard";
 import { 
-  FunctionalPrincipleSelector, 
   AssetLocationChart 
 } from "./dashboard/trazabilidad-chart-components";
 
@@ -52,24 +51,13 @@ function AssetStatsDashboardSection({ className }: { className?: string }) {
 
   return (
     <div className={className}>
-      <div className="flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold font-mono uppercase tracking-wider text-muted-foreground">
-            Análisis por Principio Funcional
-          </h3>
-          <FunctionalPrincipleSelector 
-            principles={principles}
-            selectedId={selectedPrincipleId}
-            onChange={handlePrincipleChange}
-            disabled={isLoading}
-          />
-        </div>
-        
-        <AssetLocationChart 
-          data={stats}
-          isLoading={isLoading}
-        />
-      </div>
+      <AssetLocationChart 
+        data={stats}
+        isLoading={isLoading}
+        principles={principles}
+        selectedId={selectedPrincipleId}
+        onChange={handlePrincipleChange}
+      />
     </div>
   );
 }

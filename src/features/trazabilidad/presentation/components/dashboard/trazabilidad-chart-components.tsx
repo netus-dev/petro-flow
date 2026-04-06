@@ -74,7 +74,7 @@ export function FunctionalPrincipleSelector({
 function CustomTooltip({ active, payload, label }: any) {
   if (active && payload && payload.length) {
     const data = payload[0].payload as AssetLocationStat
-    const typeLabel = data.location_type === 'rig' ? 'RIG' : 'PROVIDER_BASE'
+    const typeLabel = data.location_type === 'rig' ? 'RIG' : 'Base de Proveedor'
     
     return (
       <div className="bg-popover border-border rounded-lg border p-3 shadow-md">
@@ -98,10 +98,16 @@ function CustomTooltip({ active, payload, label }: any) {
  */
 export function AssetLocationChart({
   data,
-  isLoading
+  isLoading,
+  principles,
+  selectedId,
+  onChange
 }: {
   data: AssetLocationStat[]
   isLoading?: boolean
+  principles: FunctionalPrincipleCatalog[]
+  selectedId: string | null
+  onChange: (id: string) => void
 }) {
   if (isLoading) return <DashboardSkeleton />
   
@@ -123,9 +129,17 @@ export function AssetLocationChart({
 
   return (
     <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="text-lg font-bold">Distribución por Locación</CardTitle>
-        <CardDescription>Cantidad de activos agrupados por equipo o base</CardDescription>
+      <CardHeader className="flex flex-row items-center justify-between pb-8">
+        <div className="space-y-1">
+          <CardTitle className="text-lg font-bold">Distribución por principio funcional</CardTitle>
+          <CardDescription>Cantidad de activos agrupados por equipo o base</CardDescription>
+        </div>
+        <FunctionalPrincipleSelector 
+          principles={principles}
+          selectedId={selectedId}
+          onChange={onChange}
+          disabled={isLoading}
+        />
       </CardHeader>
       <CardContent>
         <div className="h-[400px] w-full">
@@ -172,7 +186,7 @@ export function AssetLocationChart({
            </div>
            <div className="flex items-center gap-2">
              <div className="h-3 w-3 rounded-full" style={{ backgroundColor: COLORS.operating_base }} />
-             <span className="text-muted-foreground text-xs font-medium">PROVIDER_BASE</span>
+             <span className="text-muted-foreground text-xs font-medium">Base de Proveedor</span>
            </div>
         </div>
       </CardContent>
