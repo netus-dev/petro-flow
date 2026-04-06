@@ -61,7 +61,7 @@ const TaskBadgeCell = ({ row }: { row: any }) => {
 
   return (
     <div className="flex flex-col justify-center h-full gap-0.5">
-      <span className="font-medium text-[13px] truncate leading-none">{task?.text || "Tarea"}</span>
+      <span className="font-medium text-[13px] truncate leading-none" title={task?.description}>{task?.description || "Tarea"}</span>
       <div>
         <span className={`text-[8px] px-1 py-[1px] rounded font-semibold tracking-wider uppercase ${bg} ${textColor}`}>
           {label}
@@ -160,15 +160,27 @@ export function GanttChart({
   }, []);
 
   const ganttTasks = useMemo<ITask[]>(() =>
-    tasks.map((task) => ({
-      id:       task.id,
-      text:     task.description,
-      start:    new Date(task.start_date),
-      end:      new Date(task.end_date),
-      progress: statusToProgress(task.status),
-      type:     "task" as const,
-      status_raw: task.status,
-    })), [tasks]);
+    tasks.map((task) => {
+      const diffMs = new Date(task.end_date).getTime() - new Date(task.start_date).getTime();
+      const days = diffMs / (1000 * 60 * 60 * 24);
+      let formattedDays = days % 1 === 0 ? String(days) : days.toFixed(2);
+      
+      // Limpiar ceros a la derecha innecesarios si tiene decimales (ej 1.50 -> 1.5)
+      if (formattedDays.includes('.')) {
+        formattedDays = formattedDays.replace(/0+$/, '').replace(/\.$/, '');
+      }
+
+      return {
+        id:       task.id,
+        text:     formattedDays, // Muestra la duración dentro de la barra (ej: 0.5, 1)
+        description: task.description, // Conserva el nombre para la celda de la tabla
+        start:    new Date(task.start_date),
+        end:      new Date(task.end_date),
+        progress: statusToProgress(task.status),
+        type:     "task" as const,
+        status_raw: task.status,
+      };
+    }), [tasks]);
 
   const ganttLinks = useMemo(() =>
     tasks
@@ -207,11 +219,28 @@ export function GanttChart({
       <div className="absolute inset-0 overflow-hidden rounded-lg">
         <WillowDark>
           <Gantt
-          tasks={ganttTasks}
-          links={ganttLinks}
-          zoom={true}
-          cellBorders="column"
-          init={handleInit}
+            tasks={ganttTasks}
+            links={ganttLinks}
+            zoom={true}
+            cellBorders="column"
+            lengthUnit="hour"
+            scales={[
+              { 
+                unit: "month", 
+                step: 1, 
+                format: (d: Date) => {
+                  const m = d.toLocaleString('es-ES', { month: 'long', year: 'numeric' });
+                  return m.charAt(0).toUpperCase() + m.slice(1);
+                }
+              },
+              { 
+                unit: "day", 
+                step: 1, 
+                format: (d: Date) => d.getDate().toString() 
+              }
+            ]}
+            durationUnit="hour"
+            init={handleInit}
           columns={[
             { 
               id: "desc", 
@@ -248,7 +277,12 @@ export function GanttChart({
                 return <span className="text-[11px] text-muted-foreground whitespace-nowrap">{formatted}</span>;
               }
             },
-            { id: "duration", header: "Duración", width: 80 },
+            { 
+              id: "duration", 
+              header: "Días", 
+              width: 60,
+              cell: ({ row }: { row: any }) => <span className="text-[11px] font-medium">{row.text}</span>
+            },
           ]}
         />
         </WillowDark>

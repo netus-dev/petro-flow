@@ -253,6 +253,19 @@ export function useLookahead() {
         }
       }
 
+      // Cascada de fechas si la fecha de fin cambió (Relación End-to-Start)
+      if (oldTask && payload.end_date) {
+        // En Gantt, las hijas (Start) dependen del Final (End) del padre.
+        const oldEnd = new Date(oldTask.end_date).getTime();
+        const newEnd = new Date(payload.end_date).getTime();
+        const shiftMs = newEnd - oldEnd;
+        
+        // Ejecutar cascada si existe diferencia en la finalización
+        if (shiftMs !== 0) {
+          await lookaheadRepository.cascadeTaskDates(tasks, editingTaskId, shiftMs);
+        }
+      }
+
       setEditingTaskId(null);
       await fetchTasks(selectedRigId); // aseguramos todo actualizado y cascadas resueltas
     } catch (err: any) {
