@@ -72,3 +72,19 @@ export class RegisterBulkMovementUseCase {
     return this.repository.registerBulkMovement(payload);
   }
 }
+
+export class GetFunctionalPrinciplesUseCase {
+  constructor(private repository: ITrazabilidadRepository) {}
+
+  async execute() {
+    return this.repository.getFunctionalPrinciples();
+  }
+}
+
+export class GetAssetStatsUseCase {
+  constructor(private repository: ITrazabilidadRepository) {}
+
+  async execute(fpId: string) {
+    return this.repository.getAssetStatsByFunctionalPrinciple(fpId);
+  }
+}

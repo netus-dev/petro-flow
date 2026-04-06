@@ -108,3 +108,14 @@ export interface AssetMovementPayload {
   assets: AssetMovementItem[];
   certificates?: { file: File; name: string }[];
 }
+
+export interface FunctionalPrincipleCatalog {
+  id: string;
+  name: string;
+}
+
+export interface AssetLocationStat {
+  location_name: string;
+  location_type: string;
+  total_assets: number;
+}

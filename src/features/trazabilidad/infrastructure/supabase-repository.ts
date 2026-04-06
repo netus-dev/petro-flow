@@ -1,9 +1,51 @@
 import { createClient } from "@/src/core/lib/supabase/client";
-import { Asset, TrazabilidadStats, AssetCertificate, JourneyStop } from "../domain/entities";
+import { 
+  Asset, 
+  TrazabilidadStats, 
+  AssetCertificate, 
+  JourneyStop,
+  FunctionalPrincipleCatalog,
+  AssetLocationStat
+} from "../domain/entities";
 import { ITrazabilidadRepository } from "../domain/repository";
 
 export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
   private supabase = createClient();
+
+  async getFunctionalPrinciples(): Promise<FunctionalPrincipleCatalog[]> {
+    const { data, error } = await this.supabase
+      .from("functional_principles")
+      .select("id, name, assets!inner(id)")
+      .eq("is_active", true)
+      .eq("assets.is_active", true)
+      .order("name");
+
+    if (error) {
+      console.error("Error fetching functional principles:", error);
+      return [];
+    }
+
+    // Deduplicate as !inner may return multiple rows per principle if many assets exist
+    const unique = Array.from(new Map((data || []).map((item: any) => [item.id, { id: item.id, name: item.name }])).values());
+
+    return unique;
+  }
+
+  async getAssetStatsByFunctionalPrinciple(fpId: string): Promise<AssetLocationStat[]> {
+    const { data, error } = await this.supabase
+      .rpc("get_asset_stats_by_functional_principle", { fp_id: fpId });
+
+    if (error) {
+      console.error("Error fetching asset stats by functional principle:", error);
+      return [];
+    }
+
+    return (data || []).map((row: any) => ({
+      location_name: row.location_name,
+      location_type: row.location_type,
+      total_assets: Number(row.total_assets)
+    }));
+  }
 
   private mapAssetStatus(rawStatus: string): "Operativo" | "En mantenimiento" | "En tránsito" {
     switch (rawStatus) {

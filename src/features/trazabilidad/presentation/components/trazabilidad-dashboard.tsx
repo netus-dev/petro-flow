@@ -26,11 +26,52 @@ import {
   Cell,
 } from "recharts";
 import { TrazabilidadStats } from "../../domain/entities";
+import { useTrazabilidadDashboard } from "../hooks/use-trazabilidad-dashboard";
+import { 
+  FunctionalPrincipleSelector, 
+  AssetLocationChart 
+} from "./dashboard/trazabilidad-chart-components";
 
 const COLORS = ["#0096C7", "#17b983", "#f59e0b", "#6366f1"];
 
 interface Props {
   stats: TrazabilidadStats | null;
+}
+
+/**
+ * Section for detailed asset statistics by functional principle.
+ */
+function AssetStatsDashboardSection({ className }: { className?: string }) {
+  const { 
+    principles, 
+    selectedPrincipleId, 
+    stats, 
+    isLoading, 
+    handlePrincipleChange 
+  } = useTrazabilidadDashboard();
+
+  return (
+    <div className={className}>
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold font-mono uppercase tracking-wider text-muted-foreground">
+            Análisis por Principio Funcional
+          </h3>
+          <FunctionalPrincipleSelector 
+            principles={principles}
+            selectedId={selectedPrincipleId}
+            onChange={handlePrincipleChange}
+            disabled={isLoading}
+          />
+        </div>
+        
+        <AssetLocationChart 
+          data={stats}
+          isLoading={isLoading}
+        />
+      </div>
+    </div>
+  );
 }
 
 export function TrazabilidadDashboard({ stats }: Props) {
@@ -146,53 +187,12 @@ export function TrazabilidadDashboard({ stats }: Props) {
           </CardContent>
         </Card>
 
-        {/* Movements History */}
-        <Card className="md:col-span-7 lg:col-span-8 border-border bg-card">
-          <CardHeader>
-            <CardTitle className="text-sm font-semibold font-mono">
-              Movimientos últimos 30 días
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="h-[250px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={stats.movementsLast30Days}>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="#2d3748"
-                  vertical={false}
-                />
-                <XAxis
-                  dataKey="date"
-                  stroke="#718096"
-                  fontSize={10}
-                  tickLine={false}
-                  axisLine={false}
-                  tickFormatter={(val) => val.split("-")[2]}
-                />
-                <YAxis
-                  stroke="#718096"
-                  fontSize={10}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#1e293b",
-                    border: "none",
-                    borderRadius: "8px",
-                    fontSize: "12px",
-                  }}
-                  itemStyle={{ color: "#fff" }}
-                />
-                <Bar dataKey="count" fill="#0096C7" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+        {/* Dynamic Asset Stats Section */}
+        <AssetStatsDashboardSection className="md:col-span-12 lg:col-span-8" />
       </div>
 
       {/* Alerts */}
-      <Card className="border-border bg-card">
+      {/* <Card className="border-border bg-card">
         <CardHeader>
           <CardTitle className="text-sm font-semibold font-mono flex items-center gap-2">
             <AlertTriangle className="size-4 text-amber-500" />
@@ -225,7 +225,7 @@ export function TrazabilidadDashboard({ stats }: Props) {
             </div>
           ))}
         </CardContent>
-      </Card>
+      </Card> */}
     </div>
   );
 }

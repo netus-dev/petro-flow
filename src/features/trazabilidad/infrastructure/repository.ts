@@ -48,6 +48,7 @@ const assets: Asset[] = [
         fileUrl: "/certificates/tub-702-001-insp.pdf",
       },
     ],
+    properties: [],
   },
   {
     id: "AST-002",
@@ -94,6 +95,7 @@ const assets: Asset[] = [
         fileUrl: "/certificates/her-703-042-cal.pdf",
       },
     ],
+    properties: [],
   },
   {
     id: "AST-003",
@@ -133,6 +135,7 @@ const assets: Asset[] = [
       },
     ],
     certificates: [],
+    properties: [],
   },
 ];
 
@@ -253,8 +256,33 @@ export class MockTrazabilidadRepository implements ITrazabilidadRepository {
         },
       ],
       certificates: [],
+      properties: [], // Added missing property
     };
     assets.push(newAsset);
+  }
+
+  async updateAsset(id: string, asset: Partial<Asset>): Promise<void> {
+    console.log("Mock updateAsset", id, asset);
+  }
+
+  async disableAsset(id: string): Promise<void> {
+    console.log("Mock disableAsset", id);
+  }
+
+  async getFunctionalPrinciples() {
+    return [
+      { id: "1", name: "Tubular" },
+      { id: "2", name: "Herramienta" },
+      { id: "3", name: "Componente" }
+    ];
+  }
+
+  async getAssetStatsByFunctionalPrinciple(fpId: string) {
+    return [
+      { location_name: "RIG 702", location_type: "rig", total_assets: 15 },
+      { location_name: "RIG 703", location_type: "rig", total_assets: 8 },
+      { location_name: "Base Norte", location_type: "operating_base", total_assets: 25 }
+    ];
   }
 }
 
