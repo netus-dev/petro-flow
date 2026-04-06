@@ -9,7 +9,8 @@ import {
   Tooltip,
   ResponsiveContainer,
   Cell,
-  CartesianGrid
+  CartesianGrid,
+  LabelList
 } from 'recharts'
 import {
   Card,
@@ -147,7 +148,7 @@ export function AssetLocationChart({
             <BarChart
               layout="vertical"
               data={data}
-              margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
+              margin={{ top: 5, right: 40, left: 40, bottom: 5 }}
             >
               <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.3} />
               <XAxis 
@@ -174,6 +175,12 @@ export function AssetLocationChart({
                     fill={COLORS[entry.location_type] || COLORS.operating_base} 
                   />
                 ))}
+                <LabelList 
+                  dataKey="total_assets" 
+                  position="right" 
+                  offset={10}
+                  className="fill-muted-foreground text-[10px] font-bold"
+                />
               </Bar>
             </BarChart>
           </ResponsiveContainer>
