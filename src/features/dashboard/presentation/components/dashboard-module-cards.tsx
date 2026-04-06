@@ -79,9 +79,8 @@ export function DashboardModuleCards() {
                 </div>
                 <Badge
                   variant={mod.badgeVariant}
-                  className={`text-[9px] tracking-wider uppercase ${
-                    mod.badgeVariant === "default" ? "" : "border-border"
-                  }`}
+                  className={`text-[9px] tracking-wider uppercase ${mod.badgeVariant === "default" ? "" : "border-border"
+                    }`}
                 >
                   {mod.badge}
                 </Badge>

@@ -121,7 +121,24 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* ── Custom Scrollbar (Solo para el interior del Gantt) ── */
+.wx-gantt ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px; /* Scroll horizontal delgado internamente */
+}
+.wx-gantt ::-webkit-scrollbar-track {
+  background: transparent;
+}
+.wx-gantt ::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+.wx-gantt ::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
 }
