@@ -1,10 +1,12 @@
 export function PetroLogo({
   className = "",
   iconClassName = "",
+  textClassName = "",
   showText = true,
 }: {
   className?: string;
   iconClassName?: string;
+  textClassName?: string;
   showText?: boolean;
 }) {
   return (
@@ -33,8 +35,8 @@ export function PetroLogo({
         </svg>
       </div>
       {showText && (
-        <div className="flex flex-col">
-          <span className="text-lg font-bold tracking-tight text-foreground font-mono leading-none">
+        <div className={`flex flex-col overflow-hidden ${textClassName}`}>
+          <span className="text-lg font-bold tracking-tight text-foreground font-mono leading-none truncate">
             PetroFlow
           </span>
           <span className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground mt-0.5">

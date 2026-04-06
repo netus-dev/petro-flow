@@ -18,7 +18,7 @@ export default function DashboardLayout({
         <AppSidebar />
         <SidebarInset>
           <DashboardNavbar />
-          <div className="flex-1 overflow-auto">{children}</div>
+          <div className="flex-1 overflow-auto min-w-0">{children}</div>
           <DashboardFooter />
         </SidebarInset>
       </SidebarProvider>
