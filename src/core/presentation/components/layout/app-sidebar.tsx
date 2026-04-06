@@ -152,9 +152,9 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
       {/* Header */}
-      <SidebarHeader className="p-4">
-        <Link href="/dashboard" className="flex items-center gap-3">
-          <PetroLogo iconClassName="size-9" />
+      <SidebarHeader className="p-4 group-data-[collapsible=icon]:p-2">
+        <Link href="/dashboard" className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center">
+          <PetroLogo iconClassName="size-9 group-data-[collapsible=icon]:size-8 shrink-0 flex-shrink-0" textClassName="group-data-[collapsible=icon]:hidden" />
         </Link>
       </SidebarHeader>
 

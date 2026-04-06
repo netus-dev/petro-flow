@@ -1,227 +1,258 @@
-"use client"
+"use client";
 
-import { useMemo, useRef } from "react"
-import { format, eachDayOfInterval, isWeekend, isSameDay } from "date-fns"
-import { es } from "date-fns/locale"
-import { Badge } from "@/src/core/presentation/components/ui/badge"
+/**
+ * @fileoverview Gantt Chart completo usando @svar-ui/react-gantt.
+ *
+ * Diseño de eventos:
+ * - Cambios de TEXTO/PROGRESO: debounced 600ms (evitar spam a Supabase por keystroke).
+ *   NO actualizamos React state → SVAR ya muestra el cambio en su propio estado interno.
+ * - Cambios de FECHAS (drag/resize): se aplican al soltar (inProgress=false).
+ *   SÍ actualizamos React state (necesario para cascada).
+ * - add-task interno: bloqueado (tenemos nuestro propio formulario).
+ */
 
-export type TaskStatus = "completed" | "in-progress" | "pending"
+import { useState, useCallback, useMemo, useRef } from "react";
+import { Gantt, Toolbar, Editor, ContextMenu, WillowDark } from "@svar-ui/react-gantt";
+import type { IApi, ITask } from "@svar-ui/react-gantt";
+import "@svar-ui/react-gantt/all.css";
+import { Task } from "../../domain/entities";
 
-export interface GanttTask {
-  id: string
-  name: string
-  platform: string
-  startDate: Date
-  endDate: Date
-  status: TaskStatus
-  assignee: string
+export interface GanttTaskUpdate {
+  text?: string;
+  start?: Date;
+  end?: Date;
+  progress?: number;
 }
 
 interface GanttChartProps {
-  tasks: GanttTask[]
-  dateRange: { start: Date; end: Date }
+  tasks: Task[];
+  onTaskUpdate: (id: string, updates: GanttTaskUpdate, oldStart: Date | null) => void;
+  onTaskEdit: (id: string) => void;
+  onLinkAdd: (sourceId: string, targetId: string) => void;
+  onLinkDelete: (sourceId: string) => void;
+  onTaskDelete: (id: string) => void;
 }
 
-function getBarColor(status: TaskStatus) {
-  if (status === "completed") return "bg-emerald-500/80"
-  if (status === "in-progress") return "bg-primary/80"
-  return "bg-muted-foreground/40"
+function statusToProgress(status: Task["status"]): number {
+  return status === "completed" ? 100 : status === "in_progress" ? 50 : 0;
 }
 
-function getBarBorder(status: TaskStatus) {
-  if (status === "completed") return "border-emerald-500/30"
-  if (status === "in-progress") return "border-primary/30"
-  return "border-muted-foreground/20"
+function isValidUUID(id: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 }
 
-export function GanttChart({ tasks, dateRange }: GanttChartProps) {
-  const scrollRef = useRef<HTMLDivElement>(null)
+const TaskBadgeCell = ({ row }: { row: any }) => {
+  const task = row;
+  const statusStr = task?.status_raw || "pending";
+  
+  let bg = "bg-white/5"; 
+  let textColor = "text-zinc-400"; 
+  let label = "PENDIENTE";
 
-  const days = useMemo(
-    () => eachDayOfInterval({ start: dateRange.start, end: dateRange.end }),
-    [dateRange]
-  )
-
-  const today = new Date()
-  const colWidth = 44 // px per day column
-  const rowHeight = 44 // px per row
-  const labelWidth = 240 // px for task label column
+  if (statusStr === "in_progress") {
+    bg = "bg-orange-500/15";
+    textColor = "text-orange-400";
+    label = "EN PROCESO";
+  } else if (statusStr === "completed") {
+    bg = "bg-emerald-500/15";
+    textColor = "text-emerald-400";
+    label = "COMPLETADA";
+  }
 
   return (
-    <div className="flex flex-col border border-border rounded-lg bg-card overflow-hidden">
-      {/* Scrollable container */}
-      <div className="flex overflow-hidden">
-        {/* Fixed left: Task names */}
-        <div
-          className="shrink-0 border-r border-border bg-card z-10"
-          style={{ width: labelWidth }}
-        >
-          {/* Header cell */}
-          <div
-            className="flex items-center px-3 border-b border-border bg-secondary/30"
-            style={{ height: rowHeight }}
-          >
-            <span className="text-[10px] font-medium tracking-[0.15em] uppercase text-muted-foreground">
-              Tarea / Plataforma
-            </span>
-          </div>
-          {/* Task labels */}
-          {tasks.map((task) => (
-            <div
-              key={task.id}
-              className="flex items-center gap-2 px-3 border-b border-border/50 hover:bg-secondary/20 transition-colors"
-              style={{ height: rowHeight }}
-            >
-              <span
-                className={`size-2 rounded-full shrink-0 ${
-                  task.status === "completed"
-                    ? "bg-emerald-500"
-                    : task.status === "in-progress"
-                      ? "bg-primary"
-                      : "bg-muted-foreground"
-                }`}
-              />
-              <div className="flex flex-col min-w-0">
-                <span className="text-[11px] font-medium text-foreground truncate">
-                  {task.name}
-                </span>
-                <span className="text-[9px] text-muted-foreground truncate">
-                  {task.platform} — {task.assignee}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Scrollable right: Gantt bars */}
-        <div className="flex-1 overflow-x-auto" ref={scrollRef}>
-          <div style={{ minWidth: days.length * colWidth }}>
-            {/* Date headers */}
-            <div
-              className="flex border-b border-border bg-secondary/30"
-              style={{ height: rowHeight }}
-            >
-              {days.map((day, i) => {
-                const isToday = isSameDay(day, today)
-                const weekend = isWeekend(day)
-                return (
-                  <div
-                    key={i}
-                    className={`flex flex-col items-center justify-center shrink-0 border-r border-border/30 ${
-                      isToday
-                        ? "bg-primary/10"
-                        : weekend
-                          ? "bg-secondary/50"
-                          : ""
-                    }`}
-                    style={{ width: colWidth }}
-                  >
-                    <span
-                      className={`text-[9px] uppercase ${
-                        isToday ? "text-primary font-bold" : "text-muted-foreground"
-                      }`}
-                    >
-                      {format(day, "EEE", { locale: es })}
-                    </span>
-                    <span
-                      className={`text-[10px] font-mono ${
-                        isToday ? "text-primary font-bold" : "text-foreground"
-                      }`}
-                    >
-                      {format(day, "dd")}
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
-
-            {/* Task rows with bars */}
-            {tasks.map((task) => {
-              const startOffset = Math.max(
-                0,
-                Math.round(
-                  (task.startDate.getTime() - dateRange.start.getTime()) /
-                    (1000 * 60 * 60 * 24)
-                )
-              )
-              const duration = Math.max(
-                1,
-                Math.round(
-                  (task.endDate.getTime() - task.startDate.getTime()) /
-                    (1000 * 60 * 60 * 24)
-                ) + 1
-              )
-
-              return (
-                <div
-                  key={task.id}
-                  className="relative border-b border-border/50"
-                  style={{ height: rowHeight }}
-                >
-                  {/* Grid lines */}
-                  <div className="absolute inset-0 flex">
-                    {days.map((day, i) => {
-                      const isToday = isSameDay(day, today)
-                      const weekend = isWeekend(day)
-                      return (
-                        <div
-                          key={i}
-                          className={`shrink-0 border-r border-border/20 ${
-                            isToday
-                              ? "bg-primary/5"
-                              : weekend
-                                ? "bg-secondary/20"
-                                : ""
-                          }`}
-                          style={{ width: colWidth }}
-                        />
-                      )
-                    })}
-                  </div>
-
-                  {/* Bar */}
-                  <div
-                    className="absolute top-2 flex items-center"
-                    style={{
-                      left: startOffset * colWidth + 2,
-                      width: duration * colWidth - 4,
-                      height: rowHeight - 16,
-                    }}
-                  >
-                    <div
-                      className={`h-full w-full rounded-md border ${getBarColor(task.status)} ${getBarBorder(task.status)} flex items-center px-2 overflow-hidden`}
-                    >
-                      <span className="text-[9px] font-medium text-foreground truncate">
-                        {task.name}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* Legend */}
-      <div className="flex items-center gap-4 px-4 py-2 border-t border-border bg-secondary/20">
-        <div className="flex items-center gap-1.5">
-          <span className="size-2.5 rounded-sm bg-emerald-500/80" />
-          <span className="text-[9px] text-muted-foreground">Completada</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="size-2.5 rounded-sm bg-primary/80" />
-          <span className="text-[9px] text-muted-foreground">En Proceso</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="size-2.5 rounded-sm bg-muted-foreground/40" />
-          <span className="text-[9px] text-muted-foreground">Pendiente</span>
-        </div>
-        <div className="flex items-center gap-1.5 ml-auto">
-          <span className="size-2.5 rounded-sm bg-primary/10 border border-primary/30" />
-          <span className="text-[9px] text-muted-foreground">Hoy</span>
-        </div>
+    <div className="flex flex-col justify-center h-full gap-0.5">
+      <span className="font-medium text-[13px] truncate leading-none">{task?.text || "Tarea"}</span>
+      <div>
+        <span className={`text-[8px] px-1 py-[1px] rounded font-semibold tracking-wider uppercase ${bg} ${textColor}`}>
+          {label}
+        </span>
       </div>
     </div>
-  )
+  );
+};
+
+export function GanttChart({
+  tasks,
+  onTaskUpdate,
+  onTaskEdit,
+  onLinkAdd,
+  onLinkDelete,
+  onTaskDelete,
+}: GanttChartProps) {
+  const [ganttApi, setGanttApi] = useState<IApi | null>(null);
+
+  // Refs para evitar closures stale en callbacks
+  const onTaskUpdateRef = useRef(onTaskUpdate);
+  const onTaskEditRef   = useRef(onTaskEdit);
+  const onLinkAddRef    = useRef(onLinkAdd);
+  const onLinkDeleteRef = useRef(onLinkDelete);
+  const onTaskDeleteRef = useRef(onTaskDelete);
+  const tasksRef        = useRef(tasks);
+
+  onTaskUpdateRef.current = onTaskUpdate;
+  onTaskEditRef.current   = onTaskEdit;
+  onLinkAddRef.current    = onLinkAdd;
+  onLinkDeleteRef.current = onLinkDelete;
+  onTaskDeleteRef.current = onTaskDelete;
+  tasksRef.current        = tasks;
+
+  const handleInit = useCallback((api: IApi) => {
+    // Bloquear add-task interno (tenemos nuestro propio formulario)
+    api.intercept("add-task", () => false);
+
+    // Interceptar la apertura del editor de SVAR
+    // En su lugar, abrimos nuestro propio modal.
+    api.intercept("show-editor", (ev: any) => {
+      const strId = String(ev?.id ?? "");
+      if (isValidUUID(strId)) {
+        onTaskEditRef.current(strId);
+      }
+      return false; // bloquea el editor interno de SVAR
+    });
+
+    api.on("update-task", (ev: any) => {
+      const { id, task, inProgress } = ev;
+
+      // Ignorar eventos mid-drag
+      if (inProgress) return;
+
+      const strId = String(id);
+      if (!isValidUUID(strId)) return;
+
+      const domainTask = tasksRef.current.find((t) => t.id === strId);
+      const oldStart   = domainTask ? new Date(domainTask.start_date) : null;
+
+      const hasDateChange = task.start !== undefined || task.end !== undefined;
+
+      if (hasDateChange) {
+        const updates: GanttTaskUpdate = {};
+        if (task.start !== undefined) updates.start = task.start;
+        if (task.end   !== undefined) updates.end   = task.end;
+        onTaskUpdateRef.current(strId, updates, oldStart);
+      }
+    });
+
+    api.on("delete-task", (ev: any) => {
+      const strId = String(ev?.id ?? "");
+      if (isValidUUID(strId)) onTaskDeleteRef.current(strId);
+    });
+
+    api.on("add-link", (ev: any) => {
+      const link = ev?.link;
+      if (!link?.source || !link?.target) return;
+      const src = String(link.source);
+      const tgt = String(link.target);
+      if (isValidUUID(src) && isValidUUID(tgt)) onLinkAddRef.current(src, tgt);
+    });
+
+    api.on("delete-link", (ev: any) => {
+      try {
+        const state   = api.getState();
+        const deleted = state._links?.find((l: any) => l.id === ev?.id);
+        if (deleted) {
+          const src = String(deleted.source);
+          if (isValidUUID(src)) onLinkDeleteRef.current(src);
+        }
+      } catch { /* ignorar */ }
+    });
+
+    setGanttApi(api);
+  }, []);
+
+  const ganttTasks = useMemo<ITask[]>(() =>
+    tasks.map((task) => ({
+      id:       task.id,
+      text:     task.description,
+      start:    new Date(task.start_date),
+      end:      new Date(task.end_date),
+      progress: statusToProgress(task.status),
+      type:     "task" as const,
+      status_raw: task.status,
+    })), [tasks]);
+
+  const ganttLinks = useMemo(() =>
+    tasks
+      .filter((t) => t.next_task_id)
+      .map((t, i) => ({
+        id:     i + 1,
+        source: t.id,
+        target: t.next_task_id!,
+        type:   "e2s" as const,
+      })), [tasks]);
+
+  if (tasks.length === 0) {
+    return (
+      <div
+        className="flex flex-col items-center justify-center border border-border rounded-lg bg-card text-muted-foreground gap-2"
+        style={{ height: "calc(100vh - 340px)", minHeight: "300px" }}
+      >
+        <span className="text-sm">No hay tareas para este rig</span>
+        <span className="text-xs opacity-60">
+          Agrega una tarea con el botón "Nueva Tarea"
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="flex-1 rounded-lg border border-border w-full flex flex-col relative svar-custom-height"
+      style={{ 
+        height: "calc(100vh - 340px)", 
+        minHeight: "380px",
+        "--wx-gantt-row-height": "54px",
+        "--wx-grid-row-height": "54px",
+      } as React.CSSProperties}
+    >
+      <div className="absolute inset-0 overflow-hidden rounded-lg">
+        <WillowDark>
+          <Gantt
+          tasks={ganttTasks}
+          links={ganttLinks}
+          zoom={true}
+          cellBorders="column"
+          init={handleInit}
+          columns={[
+            { 
+              id: "desc", 
+              header: "Tarea", 
+              flexgrow: 1, 
+              resize: true,
+              cell: TaskBadgeCell
+            },
+            { 
+              id: "start", 
+              header: "Inicio", 
+              width: 120, 
+              resize: true,
+              cell: ({ row }: { row: any }) => {
+                if (!row.start) return <span>-</span>;
+                const date = new Date(row.start);
+                if (isNaN(date.getTime())) return <span>-</span>;
+                const pad = (n: number) => n.toString().padStart(2, "0");
+                const formatted = `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+                return <span className="text-[11px] text-muted-foreground whitespace-nowrap">{formatted}</span>;
+              }
+            },
+            { 
+              id: "end", // Añadimos la columna Fin para precisión
+              header: "Fin", 
+              width: 120, 
+              resize: true,
+              cell: ({ row }: { row: any }) => {
+                if (!row.end) return <span>-</span>;
+                const date = new Date(row.end);
+                if (isNaN(date.getTime())) return <span>-</span>;
+                const pad = (n: number) => n.toString().padStart(2, "0");
+                const formatted = `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+                return <span className="text-[11px] text-muted-foreground whitespace-nowrap">{formatted}</span>;
+              }
+            },
+            { id: "duration", header: "Duración", width: 80 },
+          ]}
+        />
+        </WillowDark>
+      </div>
+    </div>
+  );
 }
