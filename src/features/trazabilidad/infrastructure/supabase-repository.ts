@@ -1,8 +1,9 @@
 import { createClient } from "@/src/core/lib/supabase/client";
 import { 
-  Asset, 
-  TrazabilidadStats, 
-  AssetCertificate, 
+  Asset,
+  AssetStatus,
+  TrazabilidadStats,
+  AssetCertificate,
   JourneyStop,
   FunctionalPrincipleCatalog,
   AssetLocationStat
@@ -47,13 +48,8 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
     }));
   }
 
-  private mapAssetStatus(rawStatus: string): "Operativo" | "En mantenimiento" | "En tránsito" {
-    switch (rawStatus) {
-      case 'active': return "Operativo";
-      case 'under_inspection': return "En mantenimiento";
-      case 'rejected': return "En mantenimiento";
-      default: return "Operativo";
-    }
+  private mapAssetStatus(rawStatus: string): AssetStatus {
+    return (rawStatus || "active") as AssetStatus;
   }
 
   async getAssetList(): Promise<Asset[]> {
@@ -133,16 +129,15 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
       .from("assets")
       .select(`
         id, status, serial_number,
-        locations:current_location_id ( name )
+        locations:current_location_id ( id, name, type )
       `)
-      .neq("is_active", false);
+      .eq("is_active", true);
 
     if (error || !assets) {
       return {
         totalAssets: 0,
-        assetsInRig702: 0,
-        assetsInRig703: 0,
-        assetsInTransit: 0,
+        assetsInRigs: 0,
+        assetsUnderInspection: 0,
         assetsInProviderBase: 0,
         distributionByLocation: [],
         movementsLast30Days: [],
@@ -150,20 +145,19 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
       };
     }
 
-    let rig702Count = 0;
-    let rig703Count = 0;
+    let rigsCount = 0;
     let baseProveedorCount = 0;
-    let inTransitCount = 0;
+    let underInspectionCount = 0;
     const distributionMap: Record<string, number> = {};
 
     assets.forEach((a: any) => {
       const locName = a.locations?.name || "Sin Location";
-      if (locName.includes("702")) rig702Count++;
-      if (locName.includes("703")) rig703Count++;
-      if (locName.toLowerCase().includes("proveedor")) baseProveedorCount++;
+      const locType = a.locations?.type;
       
-      const st = this.mapAssetStatus(a.status);
-      if (st === "En tránsito") inTransitCount++;
+      if (locType === "rig") rigsCount++;
+      if (locType === "operating_base") baseProveedorCount++;
+      
+      if (a.status === "under_inspection") underInspectionCount++;
 
       distributionMap[locName] = (distributionMap[locName] || 0) + 1;
     });
@@ -172,9 +166,8 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
 
     return {
       totalAssets: assets.length,
-      assetsInRig702: rig702Count,
-      assetsInRig703: rig703Count,
-      assetsInTransit: inTransitCount,
+      assetsInRigs: rigsCount,
+      assetsUnderInspection: underInspectionCount,
       assetsInProviderBase: baseProveedorCount,
       distributionByLocation,
       movementsLast30Days: [], // Can be calculated from transactions

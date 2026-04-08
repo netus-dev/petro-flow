@@ -71,7 +71,7 @@ export function RegisterAssetModal({ mode = "create", assetToEdit, onRegister, o
     capacity: assetToEdit.capacity || "",
     serial_number: assetToEdit.serialNumber || "",
     last_inspection_code: assetToEdit.lastInspectionCode || "",
-    status: assetToEdit.status === "Operativo" ? "active" : assetToEdit.status === "En mantenimiento" ? "under_inspection" : "rejected",
+    status: assetToEdit.status,
     current_location_id: assetToEdit.current_location_id || "",
     current_ubication_id: assetToEdit.current_ubication_id || "",
     function_principle_id: assetToEdit.function_principle_id || "",
@@ -372,8 +372,8 @@ export function RegisterAssetModal({ mode = "create", assetToEdit, onRegister, o
                   <SelectValue placeholder="Seleccione estado" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="active">Activo</SelectItem>
-                  <SelectItem value="under_inspection">En Inspección</SelectItem>
+                  <SelectItem value="active">Operativo</SelectItem>
+                  <SelectItem value="under_inspection">Para inspección</SelectItem>
                   <SelectItem value="rejected">Rechazado</SelectItem>
                 </SelectContent>
               </Select>

@@ -29,7 +29,7 @@ import {
   Trash2,
   AlertCircle,
 } from "lucide-react";
-import { Asset } from "../../domain/entities";
+import { Asset, ASSET_STATUS_LABELS, ASSET_STATUS_COLORS } from "../../domain/entities";
 import { RegisterMovementModal } from "./register-movement-modal";
 import { AddCertificateModal } from "./add-certificate-modal";
 import { RegisterAssetModal } from "./register-asset-modal";
@@ -64,16 +64,7 @@ export function AssetDetail({
   onDisableAsset,
 }: Props) {
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Operativo":
-        return "bg-emerald-500/10 text-emerald-500 border-emerald-500/20";
-      case "En mantenimiento":
-        return "bg-red-500/10 text-red-500 border-red-500/20";
-      case "En tránsito":
-        return "bg-amber-500/10 text-amber-500 border-amber-500/20";
-      default:
-        return "bg-secondary text-muted-foreground";
-    }
+    return ASSET_STATUS_COLORS[status as keyof typeof ASSET_STATUS_COLORS] || "bg-secondary text-muted-foreground";
   };
 
   return (
@@ -107,7 +98,7 @@ export function AssetDetail({
               variant="outline"
               className={`h-6 px-3 font-semibold ${getStatusColor(asset.status)}`}
             >
-              {asset.status}
+              {ASSET_STATUS_LABELS[asset.status] || asset.status}
             </Badge>
           </div>
           <div className="flex flex-wrap items-center gap-6 text-sm text-muted-foreground">

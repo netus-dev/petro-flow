@@ -67,41 +67,35 @@ export function TrazabilidadDashboard({ stats }: Props) {
 
   const kpis = [
     {
-      label: "Total Activos",
+      label: "Total de Activos",
       value: stats.totalAssets,
       icon: Package,
       color: "text-foreground",
     },
     {
-      label: "En RIG 702",
-      value: stats.assetsInRig702,
+      label: "En Rigs",
+      value: stats.assetsInRigs,
       icon: HardHat,
       color: "text-[#0096C7]",
     },
     {
-      label: "En RIG 703",
-      value: stats.assetsInRig703,
-      icon: HardHat,
-      color: "text-[#17b983]",
-    },
-    {
-      label: "En Tránsito",
-      value: stats.assetsInTransit,
-      icon: Truck,
-      color: "text-amber-500",
-    },
-    {
-      label: "En Proveedor",
+      label: "En Bases Operativas",
       value: stats.assetsInProviderBase,
       icon: Package,
       color: "text-indigo-500",
+    },
+    {
+      label: "Para Inspección",
+      value: stats.assetsUnderInspection,
+      icon: AlertTriangle,
+      color: "text-amber-500",
     },
   ];
 
   return (
     <div className="flex flex-col gap-6">
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {kpis.map((kpi) => (
           <Card key={kpi.label} className="border-border bg-card">
             <CardContent className="flex items-center gap-3 p-4">

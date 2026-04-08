@@ -27,7 +27,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/src/core/presentation/components/ui/dropdown-menu";
-import { Asset } from "../../domain/entities";
+import { Asset, ASSET_STATUS_LABELS, ASSET_STATUS_COLORS } from "../../domain/entities";
 import { FileText } from "lucide-react";
 import { RegisterAssetModal } from "./register-asset-modal";
 
@@ -69,16 +69,7 @@ export function AssetTable({
   onEditAsset,
 }: Props) {
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Operativo":
-        return "bg-emerald-500/10 text-emerald-500 border-emerald-500/20";
-      case "En mantenimiento":
-        return "bg-red-500/10 text-red-500 border-red-500/20";
-      case "En tránsito":
-        return "bg-amber-500/10 text-amber-500 border-amber-500/20";
-      default:
-        return "bg-secondary text-muted-foreground";
-    }
+    return ASSET_STATUS_COLORS[status as keyof typeof ASSET_STATUS_COLORS] || "bg-secondary text-muted-foreground";
   };
 
   const filteredForLocation = locationFilter === "all" 
@@ -151,9 +142,9 @@ export function AssetTable({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="Operativo">Operativo</SelectItem>
-                <SelectItem value="En mantenimiento">En mantenimiento</SelectItem>
-                <SelectItem value="En tránsito">En tránsito</SelectItem>
+                <SelectItem value="active">Operativo</SelectItem>
+                <SelectItem value="under_inspection">Para inspección</SelectItem>
+                <SelectItem value="rejected">Rechazado</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -273,7 +264,7 @@ export function AssetTable({
                     variant="outline"
                     className={`text-[10px] px-2 py-0 h-5 font-semibold ${getStatusColor(asset.status)}`}
                   >
-                    {asset.status}
+                    {ASSET_STATUS_LABELS[asset.status] || asset.status}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">

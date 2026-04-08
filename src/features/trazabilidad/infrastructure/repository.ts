@@ -12,7 +12,7 @@ const assets: Asset[] = [
     serialNumber: "SN-702-001",
     currentLocation: "RIG 702",
     position: "Bodega A",
-    status: "Operativo",
+    status: "active",
     lastMovementDate: "2026-02-25",
     name: 'Tubería de Perforación 5"',
     type: "Tubería",
@@ -59,7 +59,7 @@ const assets: Asset[] = [
     serialNumber: "SN-MWD-42",
     currentLocation: "RIG 703",
     position: "Piso de perforación",
-    status: "En tránsito",
+    status: "active",
     lastMovementDate: "2026-02-27",
     name: "Herramienta MWD",
     type: "Herramienta",
@@ -78,7 +78,7 @@ const assets: Asset[] = [
       {
         id: "M2",
         provider: "RIG 703",
-        location: "En tránsito",
+        location: "RIG 703",
         service: "Traslado",
         dateIn: "2026-02-27",
         dateOut: null,
@@ -106,7 +106,7 @@ const assets: Asset[] = [
     serialNumber: "SN-TD-099",
     currentLocation: "Base Proveedor",
     position: "Taller Mecánico",
-    status: "En mantenimiento",
+    status: "under_inspection",
     lastMovementDate: "2026-02-15",
     name: "Componente Top Drive",
     type: "Componente",
@@ -149,14 +149,14 @@ export class MockTrazabilidadRepository implements ITrazabilidadRepository {
   }
 
   async getDashboardStats(): Promise<TrazabilidadStats> {
+    const activeAssets = assets.filter(a => a.is_active !== false);
+
     return {
-      totalAssets: assets.length,
-      assetsInRig702: assets.filter((a) => a.currentLocation === "RIG 702")
+      totalAssets: activeAssets.length,
+      assetsInRigs: activeAssets.filter((a) => a.currentLocation.includes("RIG"))
         .length,
-      assetsInRig703: assets.filter((a) => a.currentLocation === "RIG 703")
-        .length,
-      assetsInTransit: assets.filter((a) => a.status === "En tránsito").length,
-      assetsInProviderBase: assets.filter(
+      assetsUnderInspection: activeAssets.filter((a) => a.status === "under_inspection").length,
+      assetsInProviderBase: activeAssets.filter(
         (a) => a.currentLocation === "Base Proveedor",
       ).length,
       distributionByLocation: [
@@ -238,7 +238,7 @@ export class MockTrazabilidadRepository implements ITrazabilidadRepository {
       serialNumber: asset.serialNumber || "",
       currentLocation: asset.currentLocation || "Base Proveedor",
       position: asset.position || "N/A",
-      status: asset.status || "Operativo",
+      status: asset.status || "active",
       lastMovementDate: new Date().toISOString().split("T")[0],
       name: asset.name || "",
       type: asset.type || "",

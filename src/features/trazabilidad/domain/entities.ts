@@ -1,4 +1,17 @@
-export type AssetStatus = "Operativo" | "En mantenimiento" | "En tránsito";
+export type AssetStatus = "active" | "under_inspection" | "rejected";
+
+export const ASSET_STATUS_LABELS: Record<AssetStatus, string> = {
+  active: "Operativo",
+  under_inspection: "Para inspección",
+  rejected: "Rechazado",
+};
+
+export const ASSET_STATUS_COLORS: Record<AssetStatus, string> = {
+  active: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
+  under_inspection: "bg-amber-500/10 text-amber-500 border-amber-500/20",
+  rejected: "bg-red-500/10 text-red-500 border-red-500/20",
+};
+
 export type StopStatus = "completed" | "in-progress" | "pending";
 export type FunctionalPrinciple = "Tubular" | "Herramienta" | "Componente";
 
@@ -58,9 +71,8 @@ export interface Asset {
 
 export interface TrazabilidadStats {
   totalAssets: number;
-  assetsInRig702: number;
-  assetsInRig703: number;
-  assetsInTransit: number;
+  assetsInRigs: number;
+  assetsUnderInspection: number;
   assetsInProviderBase: number;
   distributionByLocation: { name: string; value: number }[];
   movementsLast30Days: { date: string; count: number }[];
