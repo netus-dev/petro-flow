@@ -155,7 +155,6 @@ export function TrazabilidadContent() {
           <AssetDetail
             asset={selectedAsset}
             onBack={() => setView("list")}
-            onRegisterMovement={handleRegisterMovement}
             onAddCertificate={handleAddCertificate}
             onEditAsset={handleEditAsset}
             onDisableAsset={handleDisableAsset}

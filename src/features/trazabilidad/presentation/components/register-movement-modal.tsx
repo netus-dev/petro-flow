@@ -25,9 +25,10 @@ import { Asset } from "../../domain/entities";
 interface Props {
   asset: Asset;
   onRegister: (assetId: string, movement: any) => Promise<void>;
+  trigger?: React.ReactNode;
 }
 
-export function RegisterMovementModal({ asset, onRegister }: Props) {
+export function RegisterMovementModal({ asset, onRegister, trigger }: Props) {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [destination, setDestination] = useState("");
@@ -61,9 +62,11 @@ export function RegisterMovementModal({ asset, onRegister }: Props) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="gap-2 bg-primary text-primary-foreground font-semibold">
-          Registrar Movimiento
-        </Button>
+        {trigger || (
+          <Button className="gap-2 bg-primary text-primary-foreground font-semibold">
+            Registrar Movimiento
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px] bg-card border-border">
         <DialogHeader>

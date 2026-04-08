@@ -29,10 +29,16 @@ import {
   Trash2,
   AlertCircle,
 } from "lucide-react";
-import { Asset, ASSET_STATUS_LABELS, ASSET_STATUS_COLORS } from "../../domain/entities";
-import { RegisterMovementModal } from "./register-movement-modal";
+import { Asset, ASSET_STATUS_LABELS, ASSET_STATUS_COLORS, AssetStatus } from "../../domain/entities";
 import { AddCertificateModal } from "./add-certificate-modal";
 import { RegisterAssetModal } from "./register-asset-modal";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/core/presentation/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -49,7 +55,6 @@ import {
 interface Props {
   asset: Asset;
   onBack: () => void;
-  onRegisterMovement: (assetId: string, movement: any) => Promise<void>;
   onAddCertificate: (assetId: string, certificate: any) => Promise<void>;
   onEditAsset: (id: string, asset: Partial<Asset>) => Promise<void>;
   onDisableAsset: (id: string) => Promise<void>;
@@ -58,7 +63,6 @@ interface Props {
 export function AssetDetail({
   asset,
   onBack,
-  onRegisterMovement,
   onAddCertificate,
   onEditAsset,
   onDisableAsset,
@@ -114,10 +118,26 @@ export function AssetDetail({
         </div>
 
         {asset.is_active !== false && (
-          <RegisterMovementModal
-            asset={asset}
-            onRegister={onRegisterMovement}
-          />
+          <div className="flex flex-col gap-1.5 w-full sm:w-48">
+            <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground px-1">
+              Estado del Activo
+            </span>
+            <Select
+              value={asset.status}
+              onValueChange={(value) => onEditAsset(asset.id, { status: value as AssetStatus })}
+            >
+              <SelectTrigger className="h-10 bg-secondary/30 border-border hover:bg-secondary/50 transition-colors">
+                <SelectValue placeholder="Cambiar estado" />
+              </SelectTrigger>
+              <SelectContent className="bg-card border-border">
+                {Object.entries(ASSET_STATUS_LABELS).map(([value, label]) => (
+                  <SelectItem key={value} value={value} className="focus:bg-primary/10">
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         )}
       </div>
 
