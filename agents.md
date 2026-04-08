@@ -103,7 +103,15 @@ export const GetUserProfileUseCase = async (userRepository) => {
 * **Razón:** Las pruebas automatizadas garantizan que la lógica de negocio funcione como se espera, previene regresiones en futuras actualizaciones y actúa como documentación viva de qué hace cada parte del sistema.
 * **Lineamiento:** No se considerará terminada ninguna tarea o implementación (Definition of Done) si el código introducido o modificado no está respaldado por pruebas que cubran escenarios de éxito (happy path) e interacciones de error.
 
-## 10. 🤖 Directivas de Comportamiento para la IA
+---
+
+## 11. Reglas de Negocio en Dashboards y KPIs
+
+**Regla: Integridad de Datos en Indicadores**
+*   **Filtrado por Defecto**: Todos los contadores de KPIs en dashboards operativos deberán excluir automáticamente los activos deshabilitados (`is_active: false`), a menos que el requerimiento especifique explícitamente la inclusión de inventario histórico.
+*   **Lógica de Categorización**: Para el cálculo de KPIs, se debe priorizar siempre el uso de enums o tipos definidos directamente en la base de datos (ej. `location_type`) sobre búsquedas de texto parciales en nombres (`.includes()`), para evitar discrepancias y garantizar que la suma de las partes coincida con los totales globales.
+
+## 12. 🤖 Directivas de Comportamiento para la IA
 
 1. **Analiza el código existente:** Al comenzar una nueva tarea, inspecciona en `src/features/` cómo están modeladas las otras funcionalidades para mantener la coherencia.
 2. **Respeto Absoluto a la Arquitectura:** NUNCA crees consultas directas a la base de datos (ej. `supabase.from(...)`) dentro de un componente UI. Sigue siempre la ruta: *Presentación -> Application (Use Case) -> Infrastructure (Repository)*.
