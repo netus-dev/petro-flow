@@ -114,7 +114,7 @@ export function AssetLocationChart({
   
   if (data.length === 0) {
     return (
-      <Card className="flex h-[400px] items-center justify-center border-dashed">
+      <Card className="flex h-[320px] items-center justify-center border-dashed">
         <div className="text-center">
           <p className="text-muted-foreground text-sm italic">No hay existencias para este principio funcional.</p>
         </div>
@@ -143,7 +143,7 @@ export function AssetLocationChart({
         />
       </CardHeader>
       <CardContent>
-        <div className="h-[400px] w-full">
+        <div className="h-[320px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               layout="vertical"
@@ -211,7 +211,7 @@ export function DashboardSkeleton() {
         <Skeleton className="h-6 w-1/4" />
         <Skeleton className="h-4 w-1/3" />
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="h-[320px] space-y-4">
         {Array.from({ length: 5 }).map((_, i) => (
           <div key={i} className="flex items-center gap-4">
             <Skeleton className="h-4 w-24" />

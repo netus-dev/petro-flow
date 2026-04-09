@@ -124,44 +124,46 @@ export function TrazabilidadDashboard({ stats }: Props) {
               Distribución por Ubicación
             </CardTitle>
           </CardHeader>
-          <CardContent className="h-[250px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={stats.distributionByLocation}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {stats.distributionByLocation.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={COLORS[index % COLORS.length]}
-                    />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#1e293b",
-                    border: "none",
-                    borderRadius: "8px",
-                    fontSize: "12px",
-                  }}
-                  itemStyle={{ color: "#fff" }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="flex justify-center gap-4 mt-2">
+          <CardContent className="h-[320px] flex flex-col">
+            <div className="flex-1 min-h-0">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={stats.distributionByLocation}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {stats.distributionByLocation.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS[index % COLORS.length]}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#1e293b",
+                      border: "none",
+                      borderRadius: "8px",
+                      fontSize: "12px",
+                    }}
+                    itemStyle={{ color: "#fff" }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-4 pt-2 border-t border-border/50">
               {stats.distributionByLocation.map((entry, index) => (
                 <div key={entry.name} className="flex items-center gap-1.5">
                   <div
                     className="size-2 rounded-full"
                     style={{ backgroundColor: COLORS[index % COLORS.length] }}
                   />
-                  <span className="text-[10px] text-muted-foreground uppercase">
+                  <span className="text-[10px] text-muted-foreground uppercase font-medium">
                     {entry.name}
                   </span>
                 </div>
