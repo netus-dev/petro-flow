@@ -118,6 +118,12 @@ export function RegisterAssetModal({ mode = "create", assetToEdit, onRegister, o
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!company_id) {
+      alert("No se pudo determinar la compañía del usuario. Por favor, intente iniciar sesión de nuevo.");
+      return;
+    }
+
     setIsLoading(true);
     try {
       let finalBrandId = formData.brand_id;

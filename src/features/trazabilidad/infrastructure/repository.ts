@@ -148,6 +148,10 @@ export class MockTrazabilidadRepository implements ITrazabilidadRepository {
     return assets.find((a) => a.id === id);
   }
 
+  async getAssetsUnderInspection(): Promise<Asset[]> {
+    return assets.filter((a) => a.status === "under_inspection" && a.is_active !== false);
+  }
+
   async getDashboardStats(): Promise<TrazabilidadStats> {
     const activeAssets = assets.filter(a => a.is_active !== false);
 

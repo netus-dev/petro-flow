@@ -59,20 +59,7 @@ export function AppSidebar() {
         email: profile.profile.email,
       });
     } else {
-      const storedProfile = localStorage.getItem("profile");
-      if (storedProfile) {
-        try {
-          const parsed = JSON.parse(storedProfile);
-          if (parsed?.profile) {
-            setUserData({
-              name: parsed.profile.name || "",
-              email: parsed.profile.email || "",
-            });
-          }
-        } catch (e) {
-          console.error("Error parsing profile cache", e);
-        }
-      }
+      setUserData({ name: "", email: "" });
     }
   }, [profile]);
 

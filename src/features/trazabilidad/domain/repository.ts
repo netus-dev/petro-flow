@@ -10,6 +10,7 @@ import {
 export interface ITrazabilidadRepository {
   getAssetList(): Promise<Asset[]>;
   getAssetById(id: string): Promise<Asset | undefined>;
+  getAssetsUnderInspection(): Promise<Asset[]>;
   getDashboardStats(): Promise<TrazabilidadStats>;
   getFunctionalPrinciples(): Promise<FunctionalPrincipleCatalog[]>;
   getAssetStatsByFunctionalPrinciple(fpId: string): Promise<AssetLocationStat[]>;

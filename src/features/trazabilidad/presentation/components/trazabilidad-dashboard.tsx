@@ -30,6 +30,7 @@ import { useTrazabilidadDashboard } from "../hooks/use-trazabilidad-dashboard";
 import { 
   AssetLocationChart 
 } from "./dashboard/trazabilidad-chart-components";
+import { TrazabilidadAssetsInspection } from "./trazabilidad-assets-inspection";
 
 const COLORS = ["#0096C7", "#17b983", "#f59e0b", "#6366f1"];
 
@@ -172,6 +173,9 @@ export function TrazabilidadDashboard({ stats }: Props) {
         {/* Dynamic Asset Stats Section */}
         <AssetStatsDashboardSection className="md:col-span-12 lg:col-span-8" />
       </div>
+
+      {/* Assets for Inspection List */}
+      <TrazabilidadAssetsInspection />
 
       {/* Alerts */}
       {/* <Card className="border-border bg-card">

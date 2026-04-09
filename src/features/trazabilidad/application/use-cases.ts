@@ -17,6 +17,14 @@ export class GetAssetByIdUseCase {
   }
 }
 
+export class GetAssetsUnderInspectionUseCase {
+  constructor(private repository: ITrazabilidadRepository) {}
+
+  async execute(): Promise<Asset[]> {
+    return this.repository.getAssetsUnderInspection();
+  }
+}
+
 export class GetDashboardStatsUseCase {
   constructor(private repository: ITrazabilidadRepository) {}
 

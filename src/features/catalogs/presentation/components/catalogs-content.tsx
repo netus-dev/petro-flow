@@ -108,22 +108,17 @@ export function CatalogsContent() {
 
     const payloadToSave = { ...newItemPayload };
 
-    let companyId = profile?.company?.id;
-    if (!companyId) {
-      const storedProfile = localStorage.getItem("profile");
-      if (storedProfile) {
-        try {
-          companyId = JSON.parse(storedProfile)?.company?.id;
-        } catch (e) {
-          console.error("Error parsing profile cache", e);
-        }
-      }
-    }
+    const companyId = profile?.company?.id;
 
     const catalogsRequireCompany = [
       "locations", "functional_principles", "ubications", 
       "suppliers", "wells", "brands", "models"
     ];
+
+    if (catalogsRequireCompany.includes(activeCatalog) && !companyId) {
+      alert("No se pudo determinar la compañía del usuario. Por favor, intente iniciar sesión de nuevo.");
+      return;
+    }
 
     if (catalogsRequireCompany.includes(activeCatalog) && companyId) {
       payloadToSave.company_id = companyId;

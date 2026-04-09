@@ -86,6 +86,28 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
     return Promise.all((data || []).map((row: any) => this.mapRowToAsset(row)));
   }
 
+  async getAssetsUnderInspection(): Promise<Asset[]> {
+    const { data, error } = await this.supabase
+      .from("assets")
+      .select(`
+        *,
+        brands:brand_id ( name ),
+        models:model_id ( name ),
+        functional_principles:function_principle_id ( name ),
+        locations:current_location_id ( name ),
+        ubications:current_ubication_id ( name )
+      `)
+      .eq("status", "under_inspection")
+      .eq("is_active", true);
+
+    if (error) {
+      console.error("Error fetching assets under inspection", error);
+      return [];
+    }
+
+    return Promise.all((data || []).map((row: any) => this.mapRowToAsset(row)));
+  }
+
   async getAssetById(id: string): Promise<Asset | undefined> {
     const { data, error } = await this.supabase
       .from("assets")
