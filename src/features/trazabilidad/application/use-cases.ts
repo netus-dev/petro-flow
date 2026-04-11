@@ -96,3 +96,11 @@ export class GetAssetStatsUseCase {
     return this.repository.getAssetStatsByFunctionalPrinciple(fpId);
   }
 }
+
+export class RegisterReplacementUseCase {
+  constructor(private repository: ITrazabilidadRepository) {}
+
+  async execute(payload: any): Promise<void> {
+    return this.repository.registerReplacementMovement(payload);
+  }
+}

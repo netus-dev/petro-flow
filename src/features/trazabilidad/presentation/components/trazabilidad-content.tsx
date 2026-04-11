@@ -51,6 +51,7 @@ export function TrazabilidadContent() {
     handleDisableAsset,
     handleRegisterMovement,
     handleRegisterBulkMovement,
+    handleRegisterReplacementMovement,
     handleAddCertificate,
     navigateToDetail,
   } = useTrazabilidad();
@@ -158,6 +159,7 @@ export function TrazabilidadContent() {
             onAddCertificate={handleAddCertificate}
             onEditAsset={handleEditAsset}
             onDisableAsset={handleDisableAsset}
+            onRegisterReplacement={handleRegisterReplacementMovement}
           />
         )}
       </div>

@@ -76,6 +76,10 @@ export const useAuthStore = create<AuthState>()(
           if (response.error) {
             set({ error: response.error, isLoading: false });
           } else {
+            // Cleanup legacy storage key if exists
+            if (typeof window !== "undefined") {
+              localStorage.removeItem("profile");
+            }
             set({ profile: response.data, isLoading: false });
             return response.data;
           }

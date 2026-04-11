@@ -64,6 +64,7 @@ export interface Asset {
   createdAt?: string;
   name: string; // Keep for compatibility
   type: string; // Keep for compatibility
+  type_code?: string;
   properties: AssetProperty[];
   journey: JourneyStop[];
   certificates: AssetCertificate[];
@@ -83,7 +84,7 @@ export interface TrazabilidadStats {
   }[];
 }
 
-export type TransactionType = "transfer" | "reubication";
+export type TransactionType = "transfer" | "reubication" | "replacement";
 
 export interface Transaction {
   id: string;
@@ -124,6 +125,16 @@ export interface AssetMovementPayload {
 export interface FunctionalPrincipleCatalog {
   id: string;
   name: string;
+  type_code?: string;
+}
+
+export interface ReplacementMovementPayload {
+  type: "replacement";
+  location_id: string;
+  asset_a_id: string;
+  asset_b_id: string;
+  asset_b_destination_ubication_id: string;
+  justification: string;
 }
 
 export interface AssetLocationStat {

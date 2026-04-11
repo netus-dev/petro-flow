@@ -97,11 +97,11 @@ export function RegisterAssetModal({ mode = "create", assetToEdit, onRegister, o
     if (open) {
       console.log("company_id:", company_id);
       Promise.all([
-        catalogsRepository.getItems("functional_principles"),
-        catalogsRepository.getItems("locations"),
-        catalogsRepository.getItems("ubications"),
-        catalogsRepository.getItems("brands"),
-        catalogsRepository.getItems("models"),
+        catalogsRepository.getItems("functional_principles", company_id),
+        catalogsRepository.getItems("locations", company_id),
+        catalogsRepository.getItems("ubications", company_id),
+        catalogsRepository.getItems("brands", company_id),
+        catalogsRepository.getItems("models", company_id),
       ])
         .then(([fps, locs, ubis, brs, mods]) => {
           setFunctionalPrinciples(fps);

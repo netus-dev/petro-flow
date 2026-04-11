@@ -58,13 +58,22 @@ export function CatalogsContent() {
   }, [loadItems]);
 
   useEffect(() => {
-    if (activeCatalog === "locations") {
-      catalogsRepository.getItems("wells").then(setWellsList).catch(console.error);
-      catalogsRepository.getItems("suppliers").then(setSuppliersList).catch(console.error);
-    } else if (activeCatalog === "models") {
-      catalogsRepository.getItems("brands").then(setBrandsList).catch(console.error);
+    if (activeCatalog === "companies") return;
+    const companyId = profile?.company?.id;
+    if (companyId) {
+      loadItems(activeCatalog, companyId);
     }
-  }, [activeCatalog]);
+  }, [activeCatalog, profile, loadItems]);
+
+  useEffect(() => {
+    const companyId = profile?.company?.id;
+    if (activeCatalog === "locations") {
+      catalogsRepository.getItems("wells", companyId).then(setWellsList).catch(console.error);
+      catalogsRepository.getItems("suppliers", companyId).then(setSuppliersList).catch(console.error);
+    } else if (activeCatalog === "models") {
+      catalogsRepository.getItems("brands", companyId).then(setBrandsList).catch(console.error);
+    }
+  }, [activeCatalog, profile]);
 
   const openCreateDialog = () => {
     setEditItemId(null);
@@ -157,6 +166,10 @@ export function CatalogsContent() {
       await updateItem(editItemId, payloadToSave);
     } else {
       await createItem(payloadToSave);
+    }
+
+    if (companyId) {
+      loadItems(activeCatalog, companyId);
     }
     
     setNewItemPayload({ name: "", is_active: true });
@@ -413,7 +426,11 @@ export function CatalogsContent() {
                       <Button variant="outline" size="sm" onClick={() => openEditDialog(item)}>
                         Editar
                       </Button>
-                      <Button variant="destructive" size="sm" onClick={() => deleteItem(item.id)}>
+                      <Button variant="destructive" size="sm" onClick={async () => {
+                        await deleteItem(item.id);
+                        const companyId = profile?.company?.id;
+                        if (companyId) loadItems(activeCatalog, companyId);
+                      }}>
                         Eliminar
                       </Button>
                     </TableCell>

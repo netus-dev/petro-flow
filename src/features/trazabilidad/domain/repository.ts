@@ -4,7 +4,8 @@ import {
   TrazabilidadStats, 
   AssetCertificate,
   FunctionalPrincipleCatalog,
-  AssetLocationStat
+  AssetLocationStat,
+  ReplacementMovementPayload
 } from "./entities";
 
 export interface ITrazabilidadRepository {
@@ -16,6 +17,7 @@ export interface ITrazabilidadRepository {
   getAssetStatsByFunctionalPrinciple(fpId: string): Promise<AssetLocationStat[]>;
   registerMovement(assetId: string, movement: any): Promise<void>;
   registerBulkMovement(payload: AssetMovementPayload): Promise<void>;
+  registerReplacementMovement(payload: ReplacementMovementPayload): Promise<void>;
   addCertificate(
     assetId: string,
     certificates: { file: File; name: string }[],

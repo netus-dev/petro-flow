@@ -21,11 +21,11 @@ export function useCatalogs() {
   const updateItemUseCase = useMemo(() => new UpdateCatalogItemUseCase(catalogsRepository), []);
   const deleteItemUseCase = useMemo(() => new DeleteCatalogItemUseCase(catalogsRepository), []);
 
-  const loadItems = useCallback(async (catalog: CatalogType) => {
+  const loadItems = useCallback(async (catalog: CatalogType, companyId?: string) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await getItemsUseCase.execute(catalog);
+      const data = await getItemsUseCase.execute(catalog, companyId);
       setItems(data);
     } catch (err: any) {
       setError(err.message || "Error al cargar los catálogos");
@@ -35,16 +35,14 @@ export function useCatalogs() {
   }, [getItemsUseCase]);
 
   const handleTabChange = (val: string) => {
-    const newCatalog = val as CatalogType;
-    setActiveCatalog(newCatalog);
-    loadItems(newCatalog);
+    setActiveCatalog(val as CatalogType);
   };
 
   const createItem = async (payload: Partial<BaseCatalogItem>) => {
     setLoading(true);
     try {
       await createItemUseCase.execute(activeCatalog, payload);
-      await loadItems(activeCatalog);
+      // Reload will be handled by the component or useEffect
     } catch (err: any) {
       setError(err.message || "Error al crear elemento");
     } finally {
@@ -56,7 +54,7 @@ export function useCatalogs() {
     setLoading(true);
     try {
       await updateItemUseCase.execute(activeCatalog, id, payload);
-      await loadItems(activeCatalog);
+      // Reload will be handled by the component or useEffect
     } catch (err: any) {
       setError(err.message || "Error al actualizar elemento");
     } finally {
@@ -68,7 +66,7 @@ export function useCatalogs() {
     setLoading(true);
     try {
       await deleteItemUseCase.execute(activeCatalog, id);
-      await loadItems(activeCatalog);
+      // Reload will be handled by the component or useEffect
     } catch (err: any) {
       setError(err.message || "Error al eliminar elemento");
     } finally {

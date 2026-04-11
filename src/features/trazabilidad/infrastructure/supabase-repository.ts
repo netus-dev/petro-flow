@@ -6,7 +6,8 @@ import {
   AssetCertificate,
   JourneyStop,
   FunctionalPrincipleCatalog,
-  AssetLocationStat
+  AssetLocationStat,
+  ReplacementMovementPayload
 } from "../domain/entities";
 import { ITrazabilidadRepository } from "../domain/repository";
 
@@ -16,7 +17,7 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
   async getFunctionalPrinciples(): Promise<FunctionalPrincipleCatalog[]> {
     const { data, error } = await this.supabase
       .from("functional_principles")
-      .select("id, name, assets!inner(id)")
+      .select("id, name, scopes:functional_principle_scopes(code), assets!inner(id)")
       .eq("is_active", true)
       .eq("assets.is_active", true)
       .order("name");
@@ -27,9 +28,13 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
     }
 
     // Deduplicate as !inner may return multiple rows per principle if many assets exist
-    const unique = Array.from(new Map((data || []).map((item: any) => [item.id, { id: item.id, name: item.name }])).values());
+    const unique = Array.from(new Map((data || []).map((item: any) => [item.id, { 
+      id: item.id, 
+      name: item.name,
+      type_code: Array.isArray(item.scopes) ? item.scopes[0]?.code : item.scopes?.code
+    }])).values());
 
-    return unique;
+    return unique as FunctionalPrincipleCatalog[];
   }
 
   async getAssetStatsByFunctionalPrinciple(fpId: string): Promise<AssetLocationStat[]> {
@@ -59,7 +64,7 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
         *,
         brands:brand_id ( * ),
         models:model_id ( * ),
-        functional_principles:function_principle_id ( * ),
+        functional_principles:function_principle_id ( *, scopes:functional_principle_scopes(code) ),
         locations:current_location_id ( * ),
         ubications:current_ubication_id ( * ),
         assets_certificates (
@@ -115,7 +120,7 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
         *,
         brands:brand_id ( name ),
         models:model_id ( name ),
-        functional_principles:function_principle_id ( * ),
+        functional_principles:function_principle_id ( *, scopes:functional_principle_scopes(code) ),
         locations:current_location_id ( name ),
         ubications:current_ubication_id ( name ),
         assets_certificates (
@@ -306,6 +311,102 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
           if (linksError) throw linksError;
        }
     }
+  }
+
+  async registerReplacementMovement(payload: ReplacementMovementPayload): Promise<void> {
+    const { data: { user } } = await this.supabase.auth.getUser();
+    if (!user) throw new Error("No user authenticated");
+
+    // Fetch assets to get their current ubications
+    const { data: assets, error: assetsError } = await this.supabase
+      .from("assets")
+      .select("id, current_ubication_id")
+      .in("id", [payload.asset_a_id, payload.asset_b_id]);
+
+    if (assetsError || !assets) throw assetsError || new Error("Assets not found");
+
+    const assetA = assets.find((a: any) => a.id === payload.asset_a_id);
+    const assetB = assets.find((a: any) => a.id === payload.asset_b_id);
+
+    if (!assetA || !assetB) throw new Error("Asset missing");
+
+    const dateStr = new Date().toISOString();
+
+    // Create transaction for A
+    const { data: txAData, error: txAError } = await this.supabase
+      .from("transactions")
+      .insert({
+        origin_location_id: payload.location_id,
+        destination_location_id: payload.location_id,
+        origin_ubication_id: assetA.current_ubication_id,
+        destination_ubication_id: assetB.current_ubication_id, // A moves to B's previous ubication
+        date: dateStr,
+        type: payload.type,
+        created_by: user.id,
+        justification: payload.justification,
+      })
+      .select("id")
+      .single();
+
+    if (txAError || !txAData) throw txAError || new Error("Transaction A creation failed");
+
+    // Detail for A
+    const { error: detailAError } = await this.supabase
+      .from("transaction_details")
+      .insert({
+        transaction_id: txAData.id,
+        asset_id: payload.asset_a_id,
+      });
+
+    if (detailAError) throw detailAError;
+
+    // Create transaction for B
+    const { data: txBData, error: txBError } = await this.supabase
+      .from("transactions")
+      .insert({
+        origin_location_id: payload.location_id,
+        destination_location_id: payload.location_id,
+        origin_ubication_id: assetB.current_ubication_id,
+        destination_ubication_id: payload.asset_b_destination_ubication_id, // B moves to the new multi-asset ubication
+        date: dateStr,
+        type: payload.type,
+        created_by: user.id,
+        justification: payload.justification,
+      })
+      .select("id")
+      .single();
+
+    if (txBError || !txBData) throw txBError || new Error("Transaction B creation failed");
+
+    // Detail for B
+    const { error: detailBError } = await this.supabase
+      .from("transaction_details")
+      .insert({
+        transaction_id: txBData.id,
+        asset_id: payload.asset_b_id,
+      });
+
+    if (detailBError) throw detailBError;
+
+    // Update Asset A
+    const { error: updateAError } = await this.supabase
+      .from("assets")
+      .update({
+         current_ubication_id: assetB.current_ubication_id
+      })
+      .eq("id", payload.asset_a_id);
+
+    if (updateAError) throw updateAError;
+
+    // Update Asset B
+    const { error: updateBError } = await this.supabase
+      .from("assets")
+      .update({
+         current_ubication_id: payload.asset_b_destination_ubication_id
+      })
+      .eq("id", payload.asset_b_id);
+
+    if (updateBError) throw updateBError;
   }
 
   private async uploadCertificates(certificates: { file: File; name: string }[], userId: string): Promise<string[]> {
@@ -535,6 +636,9 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
       createdAt: row.created_at ? row.created_at.split("T")[0] : "N/A",
       name: `${brand} ${model}`,
       type: functionalPrinciple,
+      type_code: Array.isArray(row.functional_principles?.scopes) 
+        ? row.functional_principles?.scopes[0]?.code 
+        : row.functional_principles?.scopes?.code,
       properties,
       journey,
       certificates

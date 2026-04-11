@@ -4,7 +4,7 @@ export interface ICatalogsRepository {
   /**
    * Obtiene todos los elementos de un catálogo específico.
    */
-  getItems(catalog: CatalogType): Promise<BaseCatalogItem[]>;
+  getItems(catalog: CatalogType, companyId?: string): Promise<BaseCatalogItem[]>;
   
   /**
    * Obtiene un elemento por ID.

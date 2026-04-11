@@ -10,6 +10,7 @@ import {
   RegisterAssetUseCase,
   EditAssetUseCase,
   DisableAssetUseCase,
+  RegisterReplacementUseCase,
 } from "../../application/use-cases";
 
 export type TrazabilidadView = "dashboard" | "list" | "detail";
@@ -71,6 +72,11 @@ export function useTrazabilidad() {
     [repository],
   );
 
+  const registerReplacementUseCase = useMemo(
+    () => new RegisterReplacementUseCase(repository),
+    [repository],
+  );
+
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
@@ -127,6 +133,11 @@ export function useTrazabilidad() {
 
   const handleRegisterBulkMovement = async (payload: AssetMovementPayload) => {
     await registerBulkMovementUseCase.execute(payload);
+    await fetchData(); // Refresh data
+  };
+
+  const handleRegisterReplacementMovement = async (payload: any) => {
+    await registerReplacementUseCase.execute(payload);
     await fetchData(); // Refresh data
   };
 
@@ -190,6 +201,7 @@ export function useTrazabilidad() {
     loading,
     handleRegisterMovement,
     handleRegisterBulkMovement,
+    handleRegisterReplacementMovement,
     handleAddCertificate,
     handleRegisterAsset,
     handleEditAsset,

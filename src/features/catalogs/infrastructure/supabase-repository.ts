@@ -5,11 +5,21 @@ import { CatalogType, BaseCatalogItem } from "../domain/entities";
 export class SupabaseCatalogsRepository implements ICatalogsRepository {
   private supabase = createClient();
 
-  async getItems(catalog: CatalogType): Promise<BaseCatalogItem[]> {
+  async getItems(catalog: CatalogType, companyId?: string): Promise<BaseCatalogItem[]> {
     let query = this.supabase.from(catalog).select("*").order("created_at", { ascending: false });
 
     if (catalog === "locations") {
       query = this.supabase.from("locations").select("*, rigs(current_well_id), operating_bases(supplier_id)") as any;
+    }
+
+    // Apply company filter if provided and applicable
+    const catalogsWithCompany = [
+      "locations", "functional_principles", "ubications", 
+      "suppliers", "wells", "brands", "models"
+    ];
+
+    if (companyId && catalogsWithCompany.includes(catalog)) {
+      query = query.eq("company_id", companyId) as any;
     }
 
     const { data, error } = await query;

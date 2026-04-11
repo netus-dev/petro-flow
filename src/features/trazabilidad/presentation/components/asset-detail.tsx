@@ -32,6 +32,7 @@ import {
 import { Asset, ASSET_STATUS_LABELS, ASSET_STATUS_COLORS, AssetStatus } from "../../domain/entities";
 import { AddCertificateModal } from "./add-certificate-modal";
 import { RegisterAssetModal } from "./register-asset-modal";
+import { RegisterReplacementModal } from "./register-replacement-modal";
 import {
   Select,
   SelectContent,
@@ -58,6 +59,7 @@ interface Props {
   onAddCertificate: (assetId: string, certificate: any) => Promise<void>;
   onEditAsset: (id: string, asset: Partial<Asset>) => Promise<void>;
   onDisableAsset: (id: string) => Promise<void>;
+  onRegisterReplacement: (payload: any) => Promise<void>;
 }
 
 export function AssetDetail({
@@ -66,7 +68,9 @@ export function AssetDetail({
   onAddCertificate,
   onEditAsset,
   onDisableAsset,
+  onRegisterReplacement,
 }: Props) {
+  console.log("DEBUG: Asset Detail - type_code:", asset.type_code, "for asset:", asset.serialNumber);
   const getStatusColor = (status: string) => {
     return ASSET_STATUS_COLORS[status as keyof typeof ASSET_STATUS_COLORS] || "bg-secondary text-muted-foreground";
   };
@@ -118,25 +122,30 @@ export function AssetDetail({
         </div>
 
         {asset.is_active !== false && (
-          <div className="flex flex-col gap-1.5 w-full sm:w-48">
-            <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground px-1">
-              Estado del Activo
-            </span>
-            <Select
-              value={asset.status}
-              onValueChange={(value) => onEditAsset(asset.id, { status: value as AssetStatus })}
-            >
-              <SelectTrigger className="h-10 bg-secondary/30 border-border hover:bg-secondary/50 transition-colors">
-                <SelectValue placeholder="Cambiar estado" />
-              </SelectTrigger>
-              <SelectContent className="bg-card border-border">
-                {Object.entries(ASSET_STATUS_LABELS).map(([value, label]) => (
-                  <SelectItem key={value} value={value} className="focus:bg-primary/10">
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="flex items-center gap-4">
+            {asset.type_code === 'land_rigs' && (
+              <RegisterReplacementModal asset={asset} onRegister={onRegisterReplacement} />
+            )}
+            <div className="flex flex-col gap-1.5 w-full sm:w-48">
+              <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground px-1">
+                Estado del Activo
+              </span>
+              <Select
+                value={asset.status}
+                onValueChange={(value) => onEditAsset(asset.id, { status: value as AssetStatus })}
+              >
+                <SelectTrigger className="h-10 bg-secondary/30 border-border hover:bg-secondary/50 transition-colors">
+                  <SelectValue placeholder="Cambiar estado" />
+                </SelectTrigger>
+                <SelectContent className="bg-card border-border">
+                  {Object.entries(ASSET_STATUS_LABELS).map(([value, label]) => (
+                    <SelectItem key={value} value={value} className="focus:bg-primary/10">
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         )}
       </div>

@@ -4,8 +4,8 @@ import { BaseCatalogItem, CatalogType } from "../domain/entities";
 export class GetCatalogItemsUseCase {
   constructor(private repository: ICatalogsRepository) {}
 
-  async execute(catalog: CatalogType): Promise<BaseCatalogItem[]> {
-    return this.repository.getItems(catalog);
+  async execute(catalog: CatalogType, companyId?: string): Promise<BaseCatalogItem[]> {
+    return this.repository.getItems(catalog, companyId);
   }
 }
 
