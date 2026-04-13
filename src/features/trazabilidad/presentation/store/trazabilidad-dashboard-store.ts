@@ -1,39 +1,47 @@
 import { create } from "zustand";
 import { 
   FunctionalPrincipleCatalog, 
-  AssetLocationStat 
+  AssetLocationStat,
+  Asset
 } from "../../domain/entities";
-import { trazabilidadRepository } from "../../infrastructure/repository";
+import { SupabaseTrazabilidadRepository } from "../../infrastructure/supabase-repository";
 import { 
-  GetFunctionalPrinciplesUseCase, 
-  GetAssetStatsUseCase 
+  GetFunctionalPrinciplesUseCase,
+  GetAssetStatsUseCase,
+  GetAssetsUnderInspectionUseCase
 } from "../../application/use-cases";
 
 // Dependency Injection
-const repository = trazabilidadRepository;
+const repository = new SupabaseTrazabilidadRepository();
 const getPrinciplesUseCase = new GetFunctionalPrinciplesUseCase(repository);
 const getAssetStatsUseCase = new GetAssetStatsUseCase(repository);
+const getAssetsUnderInspectionUseCase = new GetAssetsUnderInspectionUseCase(repository);
 
 interface TrazabilidadDashboardState {
   principles: FunctionalPrincipleCatalog[];
   selectedPrincipleId: string | null;
   stats: AssetLocationStat[];
+  assetsUnderInspection: Asset[];
   isLoading: boolean;
   isInitialLoading: boolean;
+  isInspectionLoading: boolean;
   error: string | null;
 
   // Actions
   fetchInitialData: () => Promise<void>;
   setSelectedPrinciple: (id: string) => Promise<void>;
   fetchStats: (id: string) => Promise<void>;
+  fetchAssetsUnderInspection: () => Promise<void>;
 }
 
 export const useTrazabilidadDashboardStore = create<TrazabilidadDashboardState>((set, get) => ({
   principles: [],
   selectedPrincipleId: null,
   stats: [],
+  assetsUnderInspection: [],
   isLoading: false,
   isInitialLoading: false,
+  isInspectionLoading: false,
   error: null,
 
   fetchInitialData: async () => {
@@ -68,6 +76,16 @@ export const useTrazabilidadDashboardStore = create<TrazabilidadDashboardState>(
       set({ stats, isLoading: false });
     } catch (err: any) {
       set({ error: err.message || "Error al actualizar estadísticas", isLoading: false });
+    }
+  },
+
+  fetchAssetsUnderInspection: async () => {
+    set({ isInspectionLoading: true });
+    try {
+      const data = await getAssetsUnderInspectionUseCase.execute();
+      set({ assetsUnderInspection: data, isInspectionLoading: false });
+    } catch (err: any) {
+      set({ error: err.message || "No se pudieron cargar los activos para inspección", isInspectionLoading: false });
     }
   }
 }));

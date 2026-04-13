@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { AssetMovementPayload, Asset, TrazabilidadStats } from "../../domain/entities";
-import { trazabilidadRepository } from "../../infrastructure/repository";
+import { SupabaseTrazabilidadRepository } from "../../infrastructure/supabase-repository";
 import {
   AddCertificateUseCase,
   GetAssetListUseCase,
@@ -30,8 +30,11 @@ export function useTrazabilidad() {
   const [filterUbication, setFilterUbication] = useState<string>("all");
   const [filterDisabled, setFilterDisabled] = useState<boolean>(false);
 
-  const repository = trazabilidadRepository;
-
+  const repository = useMemo(() =>
+    new SupabaseTrazabilidadRepository()
+    ,[],
+  );
+  
   const getAssetListUseCase = useMemo(
     () => new GetAssetListUseCase(repository),
     [repository],

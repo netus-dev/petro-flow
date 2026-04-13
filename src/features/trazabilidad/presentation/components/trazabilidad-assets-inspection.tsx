@@ -27,11 +27,7 @@ import {
 import { Badge } from "@/src/core/presentation/components/ui/badge";
 import { Skeleton } from "@/src/core/presentation/components/ui/skeleton";
 import { Asset } from "../../domain/entities";
-import { GetAssetsUnderInspectionUseCase } from "../../application/use-cases";
-import { trazabilidadRepository } from "../../infrastructure/repository";
-
-// Dependency Injection
-const getAssetsUnderInspectionUseCase = new GetAssetsUnderInspectionUseCase(trazabilidadRepository);
+import { useTrazabilidadDashboardStore } from "../store/trazabilidad-dashboard-store";
 
 /**
  * TrazabilidadAssetsInspection Component
@@ -39,27 +35,14 @@ const getAssetsUnderInspectionUseCase = new GetAssetsUnderInspectionUseCase(traz
  * Following Clean Architecture: UI -> Use Case -> Repository
  */
 export function TrazabilidadAssetsInspection() {
-  const [assets, setAssets] = useState<Asset[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const assets = useTrazabilidadDashboardStore(state => state.assetsUnderInspection);
+  const isLoading = useTrazabilidadDashboardStore(state => state.isInspectionLoading);
+  const error = useTrazabilidadDashboardStore(state => state.error);
+  const fetchAssetsUnderInspection = useTrazabilidadDashboardStore(state => state.fetchAssetsUnderInspection);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true);
-        const data = await getAssetsUnderInspectionUseCase.execute();
-        setAssets(data);
-        setError(null);
-      } catch (err: any) {
-        console.error("Error fetching assets under inspection:", err);
-        setError("No se pudieron cargar los activos para inspección.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
+    fetchAssetsUnderInspection();
+  }, [fetchAssetsUnderInspection]);
 
   if (error) {
     return (
