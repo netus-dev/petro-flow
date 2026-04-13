@@ -595,7 +595,7 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
       let locationDisplay = dName;
       let originDisplay = oName !== dName ? oName : undefined;
 
-      if (tx.type === 'reubication') {
+      if (tx.type === 'reubication' || tx.type === 'replacement') {
         locationDisplay = dUbication || "Destino";
         originDisplay = `${oName} | ${oUbication || "Origen"}`;
       }
@@ -605,7 +605,7 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
         provider: dName,
         location: locationDisplay,
         originLocation: originDisplay,
-        service: tx.type === 'transfer' ? "Traslado" : "Reubicación",
+        service: tx.type === 'transfer' ? "Traslado" : tx.type === 'replacement' ? "Reemplazo" : "Reubicación",
         dateIn: tx.date ? tx.date.split("T")[0] : "",
         dateOut: null,
         status: "completed",
