@@ -7,7 +7,8 @@ import {
   JourneyStop,
   FunctionalPrincipleCatalog,
   AssetLocationStat,
-  ReplacementMovementPayload
+  ReplacementMovementPayload,
+  Movement
 } from "../domain/entities";
 import { ITrazabilidadRepository } from "../domain/repository";
 
@@ -525,6 +526,54 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
       console.error("Error disabling asset:", error);
       throw error;
     }
+  }
+
+  async getMovementList(): Promise<Movement[]> {
+    const { data, error } = await this.supabase
+      .from("transactions")
+      .select(`
+        id, type, date, justification, created_at,
+        origin:locations!fk_origin_location(name),
+        destination:locations!fk_destination_location(name),
+        origin_ubication:ubications!transactions_origin_ubication_id_fkey(name),
+        destination_ubication:ubications!transactions_destination_ubication_id_fkey(name),
+        users:created_by(name),
+        transaction_details (
+          comments,
+          assets ( id, serial_number, brands:brand_id(name), models:model_id(name) )
+        )
+      `)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching movements from Supabase", error);
+      return [];
+    }
+
+    return (data || []).map((row: any) => {
+      const details = row.transaction_details || [];
+      const assetsInvolved = details.map((d: any) => ({
+        asset_id: d.assets?.id || "",
+        asset_code: d.assets?.serial_number || "Sin SN",
+        asset_name: `${d.assets?.brands?.name || ""} ${d.assets?.models?.name || ""}`.trim() || "Activo",
+        comments: d.comments
+      }));
+
+      return {
+        id: row.id,
+        type: row.type,
+        date: row.date || row.created_at,
+        justification: row.justification || "",
+        originLocationName: row.origin?.name || "Sin origen",
+        originUbicationName: row.origin_ubication?.name || "Sin base",
+        destinationLocationName: row.destination?.name || "Sin destino",
+        destinationUbicationName: row.destination_ubication?.name || "Sin destino ub.",
+        assetsInvolvedCount: assetsInvolved.length,
+        assetsInvolved,
+        createdBy: row.users?.name || "Sistema",
+        certificates: [] // We skip certificates at the list view if there's no transactions_certificates yet
+      };
+    });
   }
 
   private async mapRowToAsset(row: any): Promise<Asset> {

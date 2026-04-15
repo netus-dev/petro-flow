@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { AssetMovementPayload, Asset, TrazabilidadStats } from "../../domain/entities";
+import { AssetMovementPayload, Asset, TrazabilidadStats, Movement } from "../../domain/entities";
 import { SupabaseTrazabilidadRepository } from "../../infrastructure/supabase-repository";
 import {
   AddCertificateUseCase,
@@ -11,9 +11,10 @@ import {
   EditAssetUseCase,
   DisableAssetUseCase,
   RegisterReplacementUseCase,
+  GetMovementListUseCase
 } from "../../application/use-cases";
 
-export type TrazabilidadView = "dashboard" | "list" | "detail";
+export type TrazabilidadView = "dashboard" | "list" | "detail" | "movement_list" | "movement_detail";
 
 export function useTrazabilidad() {
   const [view, setView] = useState<TrazabilidadView>("dashboard");
@@ -21,6 +22,8 @@ export function useTrazabilidad() {
   const [stats, setStats] = useState<TrazabilidadStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
+  const [movementList, setMovementList] = useState<Movement[]>([]);
+  const [selectedMovement, setSelectedMovement] = useState<Movement | null>(null);
 
   // Filters
   const [search, setSearch] = useState("");
@@ -80,21 +83,28 @@ export function useTrazabilidad() {
     [repository],
   );
 
+  const getMovementListUseCase = useMemo(
+    () => new GetMovementListUseCase(repository),
+    [repository]
+  );
+
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [assetsData, statsData] = await Promise.all([
+      const [assetsData, statsData, movementsData] = await Promise.all([
         getAssetListUseCase.execute(),
         getDashboardStatsUseCase.execute(),
+        getMovementListUseCase.execute(),
       ]);
       setAssetList(assetsData);
       setStats(statsData);
+      setMovementList(movementsData);
     } catch (error) {
       console.error("Error fetching trazabilidad data:", error);
     } finally {
       setLoading(false);
     }
-  }, [getAssetListUseCase, getDashboardStatsUseCase]);
+  }, [getAssetListUseCase, getDashboardStatsUseCase, getMovementListUseCase]);
 
   useEffect(() => {
     fetchData();
@@ -181,6 +191,11 @@ export function useTrazabilidad() {
     setView("detail");
   };
 
+  const navigateToMovementDetail = (movement: Movement) => {
+    setSelectedMovement(movement);
+    setView("movement_detail");
+  };
+
   return {
     view,
     setView,
@@ -188,6 +203,9 @@ export function useTrazabilidad() {
     filteredAssets,
     selectedAsset,
     setSelectedAsset,
+    movementList,
+    selectedMovement,
+    setSelectedMovement,
     search,
     setSearch,
     filterLocation,
@@ -210,6 +228,7 @@ export function useTrazabilidad() {
     handleEditAsset,
     handleDisableAsset,
     navigateToDetail,
+    navigateToMovementDetail,
     refresh: fetchData,
   };
 }

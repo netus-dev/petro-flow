@@ -5,7 +5,8 @@ import {
   AssetCertificate,
   FunctionalPrincipleCatalog,
   AssetLocationStat,
-  ReplacementMovementPayload
+  ReplacementMovementPayload,
+  Movement
 } from "./entities";
 
 export interface ITrazabilidadRepository {
@@ -25,4 +26,5 @@ export interface ITrazabilidadRepository {
   registerAsset(asset: Partial<Asset>): Promise<void>;
   updateAsset(id: string, asset: Partial<Asset>): Promise<void>;
   disableAsset(id: string): Promise<void>;
+  getMovementList(): Promise<Movement[]>;
 }

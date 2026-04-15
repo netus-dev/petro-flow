@@ -13,6 +13,8 @@ import { useTrazabilidad } from "../hooks/use-trazabilidad";
 import { TrazabilidadDashboard } from "./trazabilidad-dashboard";
 import { AssetTable } from "./asset-table";
 import { AssetDetail } from "./asset-detail";
+import { MovementTable } from "./movement-table";
+import { MovementDetail } from "./movement-detail";
 import { RegisterAssetModal } from "./register-asset-modal";
 import { RegisterBatchMovementModal } from "./register-batch-movement-modal";
 import {
@@ -32,6 +34,8 @@ export function TrazabilidadContent() {
     filteredAssets,
     selectedAsset,
     setSelectedAsset,
+    movementList,
+    selectedMovement,
     search,
     setSearch,
     filterLocation,
@@ -54,6 +58,7 @@ export function TrazabilidadContent() {
     handleRegisterReplacementMovement,
     handleAddCertificate,
     navigateToDetail,
+    navigateToMovementDetail,
   } = useTrazabilidad();
 
   if (loading) {
@@ -104,7 +109,7 @@ export function TrazabilidadContent() {
       </div>
 
       {/* Navigation Tabs (View Switcher) */}
-      {view !== "detail" && (
+      {(view !== "detail" && view !== "movement_detail") && (
         <div className="flex items-center gap-2 bg-secondary/20 p-1 rounded-lg border border-border w-fit">
           <Button
             variant={view === "dashboard" ? "default" : "ghost"}
@@ -123,6 +128,15 @@ export function TrazabilidadContent() {
           >
             <Database className="size-3.5" />
             Listado de Activos
+          </Button>
+          <Button
+            variant={view === "movement_list" ? "default" : "ghost"}
+            size="sm"
+            className="h-8 gap-2 text-xs px-4"
+            onClick={() => setView("movement_list")}
+          >
+            <Route className="size-3.5" />
+            Listado de Movimientos
           </Button>
         </div>
       )}
@@ -160,6 +174,20 @@ export function TrazabilidadContent() {
             onEditAsset={handleEditAsset}
             onDisableAsset={handleDisableAsset}
             onRegisterReplacement={handleRegisterReplacementMovement}
+          />
+        )}
+
+        {view === "movement_list" && (
+          <MovementTable
+            movements={movementList}
+            onViewDetail={navigateToMovementDetail}
+          />
+        )}
+
+        {view === "movement_detail" && selectedMovement && (
+          <MovementDetail
+            movement={selectedMovement}
+            onBack={() => setView("movement_list")}
           />
         )}
       </div>

@@ -1,5 +1,5 @@
 import { ITrazabilidadRepository } from "../domain/repository";
-import { Asset, TrazabilidadStats } from "../domain/entities";
+import { Asset, TrazabilidadStats, Movement } from "../domain/entities";
 
 export class GetAssetListUseCase {
   constructor(private repository: ITrazabilidadRepository) {}
@@ -102,5 +102,13 @@ export class RegisterReplacementUseCase {
 
   async execute(payload: any): Promise<void> {
     return this.repository.registerReplacementMovement(payload);
+  }
+}
+
+export class GetMovementListUseCase {
+  constructor(private repository: ITrazabilidadRepository) {}
+
+  async execute(): Promise<Movement[]> {
+    return this.repository.getMovementList();
   }
 }

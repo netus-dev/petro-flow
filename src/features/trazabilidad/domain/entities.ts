@@ -142,3 +142,25 @@ export interface AssetLocationStat {
   location_type: string;
   total_assets: number;
 }
+
+export interface MovementAsset {
+  asset_id: string;
+  asset_code: string;
+  asset_name: string;
+  comments?: string;
+}
+
+export interface Movement {
+  id: string;
+  type: TransactionType;
+  date: string;
+  justification: string;
+  originLocationName: string;
+  originUbicationName: string;
+  destinationLocationName: string;
+  destinationUbicationName: string;
+  assetsInvolvedCount: number;
+  assetsInvolved: MovementAsset[];
+  createdBy: string;
+  certificates: AssetCertificate[];
+}
