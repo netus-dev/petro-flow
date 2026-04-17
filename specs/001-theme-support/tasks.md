@@ -64,7 +64,7 @@
 
 ### Implementation for User Story 1
 
-- [ ] T009 [P] [US1] Create the `ThemeToggle` UI generic atom component (matching current design constraints and iconography) in `src/presentation/components/ui/ThemeToggle.tsx`
+- [ ] T009 [P] [US1] Create the `ThemeToggle` UI generic atom component (matching current design constraints and iconography) in `src/core/presentation/components/ui/ThemeToggle.tsx`
 - [ ] T010 [US1] Replace the native HTML toggle in lines ~117-129 of `src/features/dashboard/presentation/components/dashboard-navbar.tsx` with the new React `<ThemeToggle />` component.
 
 **Checkpoint**: All user stories should now be independently functional.

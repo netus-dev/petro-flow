@@ -46,20 +46,26 @@ specs/001-theme-support/
 ```text
 # General Web Application
 src/
-├── presentation/
-│   ├── providers/
-│   │   └── ThemeProvider.tsx          # Wrapper para next-themes
-│   └── components/
-│       ├── ui/
-│       │   └── ThemeToggle.tsx        # Componente de interfaz de Switch
-│       └── layouts/
-│           └── RootLayout.tsx         # Inyección del provider a la app
+├── app/
+│   └── layout.tsx                     # Inyección del provider a la app
+├── core/
+│   └── presentation/
+│       ├── providers/
+│       │   └── ThemeProvider.tsx      # Wrapper para next-themes
+│       └── components/
+│           └── ui/
+│               └── ThemeToggle.tsx    # Componente base de interfaz de Switch
+├── features/
+│   └── dashboard/
+│       └── presentation/
+│           └── components/
+│               └── dashboard-navbar.tsx # Reemplazo y consumo del toggle HTML nativo
 ├── application/
 │   └── stores/
 │       └── useThemeStore.ts           # Estado global Zustand (opcional/sincronizado)
 ```
 
-**Structure Decision**: La estructura se alinea con la Clean Architecture recomendada por el documento `agents.md`, ubicando los componentes visuales en `presentation` y la orquestación del Store en `application` (o presentation si se trata de un simple hook de capa UI).
+**Structure Decision**: La estructura se alinea con la Clean Architecture recomendada por el documento `agents.md`, ubicando los componentes visuales inyectables directamente en las _features_ correspondientes (como el dashboard), inyectando lógica global en `core` y la orquestación del Store en `application`.
 
 ## Complexity Tracking
 
