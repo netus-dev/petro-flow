@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/src/core/presentation/components/ui/dropdown-menu"
 import { useApp } from "@/src/core/presentation/providers/providers"
+import { ThemeToggle } from "@/src/core/presentation/components/ui/ThemeToggle"
 
 export function DashboardNavbar() {
   const { theme, toggleTheme, locale, setLocale, t } = useApp()
@@ -114,19 +115,7 @@ export function DashboardNavbar() {
         </DropdownMenu>
 
         {/* Theme Toggle */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-9 text-muted-foreground hover:text-foreground"
-          onClick={toggleTheme}
-          aria-label={theme === "dark" ? t("theme.light") : t("theme.dark")}
-        >
-          {theme === "dark" ? (
-            <Sun className="size-4" />
-          ) : (
-            <Moon className="size-4" />
-          )}
-        </Button>
+        <ThemeToggle />
 
         {/* Fullscreen */}
         <Button

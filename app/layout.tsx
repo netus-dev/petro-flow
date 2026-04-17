@@ -28,17 +28,21 @@ export const viewport: Viewport = {
   userScalable: false,
 };
 
+import { ThemeProvider } from "@/src/core/presentation/providers/ThemeProvider";
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es">
+    <html lang="es" suppressHydrationWarning>
       <body
         className={`${_inter.variable} ${_spaceGrotesk.variable} font-sans antialiased`}
       >
-        {children}
+        <ThemeProvider>
+          {children}
+        </ThemeProvider>
         <Analytics />
       </body>
     </html>

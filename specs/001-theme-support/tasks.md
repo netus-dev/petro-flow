@@ -8,8 +8,8 @@
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Install `next-themes` and `lucide-react` (for generic UI icons) into `package.json` dependencies
-- [ ] T002 [P] Update `tailwind.config.ts` to support `darkMode: 'class'` directive
+- [x] T001 Install `next-themes` and `lucide-react` (for generic UI icons) into `package.json` dependencies
+- [x] T002 [P] Update `tailwind.config.ts` to support `darkMode: 'class'` directive
 
 ---
 
@@ -19,8 +19,8 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T003 Create `ThemeAlias` and `IThemeStore` types in `src/application/stores/theme.types.ts`
-- [ ] T004 Create `useThemeStore` Zustand store mapped to LocalStorage via `persist` middleware in `src/application/stores/useThemeStore.ts`
+- [x] T003 Create `ThemeAlias` and `IThemeStore` types in `src/application/stores/theme.types.ts`
+- [x] T004 Create `useThemeStore` Zustand store mapped to LocalStorage via `persist` middleware in `src/application/stores/useThemeStore.ts`
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -34,8 +34,8 @@
 
 ### Implementation for User Story 3
 
-- [ ] T005 [P] [US3] Create `ThemeProvider` component wrapping `next-themes` with `enableSystem={true}` and `defaultTheme="system"` inside `src/presentation/providers/ThemeProvider.tsx`
-- [ ] T006 [US3] Update `src/app/layout.tsx` to inject `ThemeProvider` in its body content and add `suppressHydrationWarning` strictly to the root `<html>` tag
+- [x] T005 [P] [US3] Create `ThemeProvider` component wrapping `next-themes` with `enableSystem={true}` and `defaultTheme="system"` inside `src/core/presentation/providers/ThemeProvider.tsx`
+- [x] T006 [US3] Update `src/app/layout.tsx` to inject `ThemeProvider` in its body content and add `suppressHydrationWarning` strictly to the root `<html>` tag
 
 **Checkpoint**: El tema adopta automáticamente variables de CSS de acuerdo al SO.
 
@@ -49,8 +49,8 @@
 
 ### Implementation for User Story 2
 
-- [ ] T007 [P] [US2] Create sync hook or component `ThemeSync.tsx` inside `src/presentation/providers/ThemeSync.tsx` to listen to `onLoad/effect` of `useTheme` from `next-themes` and synchronize strictly downwards to `useThemeStore`.
-- [ ] T008 [US2] Mount `<ThemeSync />` safely inside the DOM structure alongside `<ThemeProvider />`.
+- [x] T007 [P] [US2] Create sync hook or component `ThemeSync.tsx` inside `src/core/presentation/providers/ThemeSync.tsx` to listen to `onLoad/effect` of `useTheme` from `next-themes` and synchronize strictly downwards to `useThemeStore`.
+- [x] T008 [US2] Mount `<ThemeSync />` safely inside the DOM structure alongside `<ThemeProvider />`.
 
 **Checkpoint**: At this point, the backend configurations are completely stored locally.
 
@@ -64,8 +64,8 @@
 
 ### Implementation for User Story 1
 
-- [ ] T009 [P] [US1] Create the `ThemeToggle` UI generic atom component (matching current design constraints and iconography) in `src/core/presentation/components/ui/ThemeToggle.tsx`
-- [ ] T010 [US1] Replace the native HTML toggle in lines ~117-129 of `src/features/dashboard/presentation/components/dashboard-navbar.tsx` with the new React `<ThemeToggle />` component.
+- [x] T009 [P] [US1] Create the `ThemeToggle` UI generic atom component (matching current design constraints and iconography) in `src/core/presentation/components/ui/ThemeToggle.tsx`
+- [x] T010 [US1] Replace the native HTML toggle in lines ~117-129 of `src/features/dashboard/presentation/components/dashboard-navbar.tsx` with the new React `<ThemeToggle />` component.
 
 **Checkpoint**: All user stories should now be independently functional.
 
@@ -75,8 +75,8 @@
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T011 [P] Validar el contrato de componentes en el Header o Panel principal para certificar relación de contraste WCAG > 4.5:1 en ambos temas.
-- [ ] T012 Run performance build (`npm run build && npm start`) local verification covering hard reloads to verify zero FOUC frames matching SC-003.
+- [x] T011 [P] Validar el contrato de componentes en el Header o Panel principal para certificar relación de contraste WCAG > 4.5:1 en ambos temas.
+- [x] T012 Run performance build (`npm run build && npm start`) local verification covering hard reloads to verify zero FOUC frames matching SC-003.
 
 ---
 
