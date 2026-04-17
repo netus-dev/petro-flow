@@ -7,6 +7,11 @@
 ## Contexto
 El objetivo principal es asegurar una experiencia de usuario (UX) impecable, garantizando la accesibilidad visual (alto contraste) y la persistencia de las preferencias del usuario para Temas Claro y Oscuro.
 
+## Clarifications
+
+### Session 2026-04-17
+- Q: ¿Adoptar `next-themes` como estándar para evitar FOUC o usar script manual? → A: Adoptar `next-themes` e integrarlo con Zustand para sincronización de estado.
+
 ## Requisitos de Diseño
 
 - **Paleta de Colores y Contraste:**
@@ -28,8 +33,8 @@ El objetivo principal es asegurar una experiencia de usuario (UX) impecable, gar
 
 ## Resolución FOUC e Hidratación
 
-- **Prevención de Flashes Iniciales:** Implementar la técnica adecuada para establecer el modo de pre-renderizado del tema antes de que la página sea visualizada, logrando mitigar el temido parpadeo blanco (FOUC).
-- **Manejo Renderizado del Servidor y Cliente:** Respetar la arquitectura de renderizado híbrido para que la lectura de la preferencia de tema no genere conflictos ni mismatches de hidratación.
+- **Prevención de Flashes Iniciales y SSR:** Se utilizará la librería `next-themes` como estándar del proyecto para inyectar y gestionar las variables de tema (clases o atributos data) antes de la finalización del renderizado.
+- **Manejo Renderizado del Servidor y Cliente:** Se evitarán mismatches de hidratación utilizando el componente `ThemeProvider` de `next-themes` envolviendo la raíz de la aplicación, y cualquier manipulación de preferencias visuales personalizadas se coordinará indirectamente a través del store de Zustand.
 
 ## User Scenarios & Testing *(mandatory)*
 
