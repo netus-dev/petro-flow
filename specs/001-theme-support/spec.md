@@ -11,6 +11,7 @@ El objetivo principal es asegurar una experiencia de usuario (UX) impecable, gar
 
 ### Session 2026-04-17
 - Q: ¿Adoptar `next-themes` como estándar para evitar FOUC o usar script manual? → A: Adoptar `next-themes` e integrarlo con Zustand para sincronización de estado.
+- Q: ¿Posición e implementación del componente UI? → A: Reemplazar el interruptor HTML puro existente en `src/features/dashboard/presentation/components/dashboard-navbar.tsx` por un componente React, manteniendo su ubicación e iconografía original.
 
 ## Requisitos de Diseño
 
@@ -40,11 +41,11 @@ El objetivo principal es asegurar una experiencia de usuario (UX) impecable, gar
 
 ### User Story 1 - Cambio Manual de Tema (Priority: P1)
 
-Como usuario del sistema, quiero usar un interruptor para cambiar entre modo claro y oscuro, para que el diseño mantenga contraste adecuado a mi preferencia.
+Como usuario del sistema, quiero usar un interruptor (reemplazando el actual componente HTML puro nativo ubicado en la barra de navegación del dashboard principal) para cambiar entre modo claro y oscuro, para que el diseño mantenga contraste adecuado a mi preferencia.
 
 **Why this priority**: Es la funcionalidad principal solicitada por el negocio.
 
-**Independent Test**: Se puede probar haciendo clic en el interruptor y observando que todos los fondos, textos e íconos cambian a la paleta correcta.
+**Independent Test**: Se puede probar haciendo clic en el interruptor ubicado en el navbar y observando que todos los fondos, textos e íconos cambian a la paleta correcta.
 
 **Acceptance Scenarios**:
 
