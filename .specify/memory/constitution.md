@@ -58,6 +58,17 @@ Sync Impact Report:
 
 ## Governance
 
-All PRs/reviews must verify compliance. Use `agents.md` rulebook for runtime development guidance.
+Esta constitución tiene precedencia sobre cualquier guía de estilo, preferencia personal o convención implícita, no documentada. Cualquier excepción DEBE estar justificada explícitamente en el código (comentario) o en la documentación del PR.
+
+**Proceso de enmienda**:
+1. Proponer el cambio con justificación de por qué el principio actual es insuficiente.
+2. Incrementar la versión según semver:
+  - MAJOR: eliminación o redefinición incompatible de un principio.
+  - MINOR: nuevo principio o sección añadida.
+  - PATCH: clarificaciones, correcciones de redacción.
+3. Actualizar `LAST_AMENDED_DATE` Con la fecha ISO del cambio.
+4. Propagar cambios a los templates en `specify/templates` si corresponde.
+
+**Revisión de cumplimiento**: todo PR DEBE verificar que no viola ningún principio de esta constitución antes de merge.
 
 **Version**: 1.1.0 | **Ratified**: 2026-04-17 | **Last Amended**: 2026-04-17
