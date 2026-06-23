@@ -30,7 +30,7 @@ description: "Task list for Panel de Plan de Mantenimiento en Dashboard de Horó
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
 - [ ] T002 [P] Create Maintenance Domain Entities (`MaintenancePlan`, `MaintenanceActivity`, `ResolvedMaintenancePlan`, `MaintenanceCategory`) in `src/features/hour-meters/domain/entities.ts`
-- [ ] T002b [P] Define `Result<T, E>` / `Either` type to comply with Constitution §IV for Use Cases in `src/core/utils/either.ts` (or similar core location, or document technical compromise explicitly)
+- [ ] T002b [P] Define `Result<T, E>` / `Either` type to comply with Constitution §IV for Use Cases in `src/core/utils/either.ts`
 - [ ] T003 [P] Create Domain Repository Interface (`IMaintenancePlanRepository`) in `src/features/hour-meters/domain/repositories/maintenance.repository.ts`
 - [ ] T004 Create Mock Datasource with required test coverage scenarios in `src/features/hour-meters/infrastructure/datasources/maintenance.datasource.ts`
 - [ ] T005 Create Repository Implementation in `src/features/hour-meters/infrastructure/repositories/maintenance.repository.impl.ts`
@@ -52,7 +52,7 @@ description: "Task list for Panel de Plan de Mantenimiento en Dashboard de Horó
 - [ ] T008 [P] [US1] Create `MaintenancePanel` container component explicitly handling the skeleton loading state (isLoading) and empty state (resolvedPlan === null) (FR-010, Constitution §III) in `src/features/hour-meters/presentation/components/maintenance-panel/maintenance-panel.tsx`
 - [ ] T009 [US1] Implement `useMaintenancePanel` hook for local state management (selection toggle) in `src/features/hour-meters/presentation/hooks/use-maintenance-panel.ts`
 - [ ] T010 [US1] Integrate `HourMeterCard`, `MaintenancePanel` and `useMaintenancePanel` layout in `src/features/hour-meters/presentation/components/hour-meters-content.tsx`. Ensure content replaces without close/open animations (FR-009).
-- [ ] T010b [US1] Implement responsive layout on mobile (drawer behavior) (FR-012) in `src/features/hour-meters/presentation/components/hour-meters-content.tsx`
+- [ ] T010b [US1] Implement responsive layout on mobile (drawer behavior) (FR-012) in `src/features/hour-meters/presentation/components/hour-meters-content.tsx` (Requires T010. Implement via media queries/conditional rendering, do not duplicate integration logic)
 
 **Checkpoint**: At this point, User Story 1 should be fully functional with UI interaction.
 
@@ -99,6 +99,7 @@ description: "Task list for Panel de Plan de Mantenimiento en Dashboard de Horó
 
 - [ ] T017 Code cleanup and ensure JSDoc exists in all new entities and use cases
 - [ ] T018 Implement feature flag or `NODE_ENV` guard for mock datasource to prevent it reaching production (Constitution §V) in `src/features/hour-meters/infrastructure/repository.ts`
+- [ ] T019 Validar manualmente que el panel lateral se abre en menos de 300ms tras hacer clic en una tarjeta (SC-001)
 
 ---
 
@@ -130,7 +131,7 @@ description: "Task list for Panel de Plan de Mantenimiento en Dashboard de Horó
 ```bash
 # Launch components for User Story 1 together:
 Task: "Extract and create HourMeterCard component..."
-Task: "Create basic MaintenancePanel container component..."
+Task: "Create MaintenancePanel container component explicitly handling the skeleton loading state..."
 ```
 
 ---
