@@ -1,27 +1,22 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Activity, Clock } from "lucide-react";
-import { Card, CardContent } from "@/src/core/presentation/components/ui/card";
-import { Badge } from "@/src/core/presentation/components/ui/badge";
+import { Clock } from "lucide-react";
 import { useHourMeters } from "../hooks/use-hour-meters";
+import { HourMeterCard, EnhancedHourMeterRecord } from "./hour-meter-card";
+import { MaintenancePanel } from "./maintenance-panel/maintenance-panel";
+import { useMaintenancePanel } from "../hooks/use-maintenance-panel";
 
-// Type definition from entities but not exported, so inferring or redeclaring is fine, but we have records array
-type HourMeterRecord = {
-  id: string;
-  platform: string;
-  equipment: string;
-  currentReading: number;
-  previousReading: number;
-  unit: string;
-  lastUpdated: string;
-  maxThreshold: number;
-  status: "normal" | "warning" | "critical";
-};
-
+/**
+ * Componente principal de presentación (Page/Organism) que representa la vista
+ * del Dashboard de Horómetros con telemetría en tiempo real y panel de mantenimiento.
+ */
 export function HourMeterContent() {
-  const { records, loading } = useHourMeters() as { records: HourMeterRecord[]; loading: boolean };
+  const { records, loading } = useHourMeters() as { records: any[]; loading: boolean };
   const [lastSync, setLastSync] = useState("hace 1 min");
+  
+  // Hook de estado para el panel lateral de mantenimiento
+  const { selectedEquipmentId, resolvedPlan, isLoading, selectEquipment, closePanel } = useMaintenancePanel();
 
   // Subtle live update simulation effect
   useEffect(() => {
@@ -36,7 +31,10 @@ export function HourMeterContent() {
     return (
       <div className="flex h-[calc(100vh-4rem)] w-full items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
-          <Activity className="size-8 animate-pulse text-primary" />
+          <span className="relative flex size-6">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75"></span>
+            <span className="relative inline-flex size-6 rounded-full bg-primary"></span>
+          </span>
           <p className="font-mono text-sm tracking-widest text-muted-foreground uppercase">
             CARGANDO TELEMETRÍA...
           </p>
@@ -45,8 +43,8 @@ export function HourMeterContent() {
     );
   }
 
-  // Calculate specific thresholds required by the new logic
-  const enhancedRecords = records.map((record) => {
+  // Mapear los registros a registros enriquecidos para las tarjetas
+  const enhancedRecords: EnhancedHourMeterRecord[] = records.map((record) => {
     const remainingHours = record.maxThreshold - record.currentReading;
     const isCritical = remainingHours <= 250;
     const isWarning = remainingHours > 250 && remainingHours <= 500;
@@ -136,93 +134,46 @@ export function HourMeterContent() {
         </div>
       </div>
 
-      {/* Main Grid - Fills remaining space dynamically */}
-      <div className="flex-1 min-h-0 min-w-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-3 md:gap-4 overflow-hidden">
-        {enhancedRecords.map((record) => {
-          let cardBg = "bg-card border-border/50 hover:border-border";
-          let textColor = "text-foreground";
-          let badgeText = "Normal";
-          let progressIndicatorColor = "bg-primary";
-
-          if (record.isCritical) {
-            cardBg = "bg-orange-950/20 border-orange-500/30 shadow-[0_0_15px_rgba(249,115,22,0.05)]";
-            textColor = "text-orange-500";
-            badgeText = "Mantenimiento Crítico";
-            progressIndicatorColor = "bg-orange-500";
-          } else if (record.isWarning) {
-            cardBg = "bg-amber-950/20 border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.05)]";
-            textColor = "text-amber-500";
-            badgeText = "Próximo a Mantenimiento";
-            progressIndicatorColor = "bg-amber-500";
-          }
-
-          return (
-            <Card
+      {/* Main Container - Fills remaining space dynamically */}
+      <div className="flex-1 min-h-0 flex flex-row gap-4 overflow-hidden relative">
+        {/* Grid original — se contrae cuando el panel está abierto */}
+        <div className={`min-h-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 overflow-y-auto transition-all duration-300 ${selectedEquipmentId ? 'flex-1' : 'w-full'}`}>
+          {enhancedRecords.map((record) => (
+            <HourMeterCard
               key={record.id}
-              className={`transition-colors duration-500 ${cardBg} h-full overflow-hidden flex flex-col`}
-            >
-              <CardContent className="p-4 md:p-5 flex flex-col h-full grow">
-                {/* Upper Section */}
-                <div className="flex flex-col items-start gap-1 pb-2 border-b border-border/40">
-                  <h3 className="text-base md:text-lg font-bold tracking-tight text-foreground line-clamp-1">
-                    {record.equipment}
-                  </h3>
-                  <div className="flex items-center gap-2">
-                    <p className="text-[10px] font-mono opacity-70 tracking-widest uppercase">
-                      {record.id}
-                    </p>
-                    {record.isWarning ? (
-                      <span className="text-amber-500 text-[9px] font-medium tracking-wider uppercase bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
-                        {badgeText}
-                      </span>
-                    ) : record.isCritical ? (
-                      <span className="text-orange-500 text-[9px] font-medium tracking-wider uppercase bg-orange-500/10 px-1.5 py-0.5 rounded border border-orange-500/20 animate-pulse">
-                        {badgeText}
-                      </span>
-                    ) : (
-                      <span className="text-emerald-500 text-[9px] font-medium tracking-wider uppercase bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
-                        {badgeText}
-                      </span>
-                    )}
-                  </div>
-                </div>
+              record={record}
+              isSelected={selectedEquipmentId === record.id}
+              onClick={() => selectEquipment(record)}
+            />
+          ))}
+        </div>
 
-                {/* Main Focus */}
-                <div className="flex-1 flex flex-col justify-center min-h-0">
-                  <div className="flex items-baseline gap-1.5 justify-center py-2">
-                    <span className="text-4xl md:text-5xl lg:text-6xl font-black font-mono tabular-nums tracking-tighter text-foreground drop-shadow-sm leading-none">
-                      {record.currentReading.toLocaleString()}
-                    </span>
-                    <span className="text-lg md:text-xl font-mono text-muted-foreground font-bold">
-                      h
-                    </span>
-                  </div>
-                </div>
-
-                {/* Lower Section */}
-                <div className="mt-auto shrink-0 pt-3 border-t border-border/40">
-                  <p className={`text-xs md:text-sm font-medium mb-3 ${textColor}`}>
-                    Faltan <span className="font-bold font-mono text-base">{record.remainingHours.toLocaleString()}</span> hrs para límite de {record.maxThreshold.toLocaleString()}h
-                  </p>
-
-                  <div className="space-y-1.5">
-                    <div className="flex justify-between text-[9px] font-mono font-medium tracking-widest text-muted-foreground uppercase">
-                      <span>{record.currentReading.toLocaleString()}h</span>
-                      <span>{record.maxThreshold.toLocaleString()}h</span>
-                    </div>
-                    <div className="h-1.5 w-full bg-secondary/60 overflow-hidden rounded-full">
-                      <div
-                        className={`h-full rounded-full transition-all duration-1000 ease-out ${progressIndicatorColor}`}
-                        style={{ width: `${record.progressValue}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+        {/* Panel lateral - visible en pantallas grandes (desktop) */}
+        {selectedEquipmentId && (
+          <div className="hidden lg:block h-full animate-in slide-in-from-right duration-300">
+            <MaintenancePanel
+              resolvedPlan={resolvedPlan}
+              isLoading={isLoading}
+              onClose={closePanel}
+            />
+          </div>
+        )}
       </div>
+
+      {/* Panel responsivo en móvil/tablet - Drawer/Overlay superpuesto (pantallas < lg) */}
+      {selectedEquipmentId && (
+        <div className="lg:hidden fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-end justify-center p-4">
+          <div className="w-full max-h-[85vh] bg-card border border-border rounded-t-2xl shadow-2xl overflow-hidden flex flex-col relative animate-in slide-in-from-bottom duration-300">
+            <div className="flex-1 overflow-y-auto min-h-0">
+              <MaintenancePanel
+                resolvedPlan={resolvedPlan}
+                isLoading={isLoading}
+                onClose={closePanel}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
