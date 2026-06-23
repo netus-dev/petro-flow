@@ -1,6 +1,6 @@
 # Feature Specification: Panel de Plan de Mantenimiento en Dashboard de Horómetros
 
-**Feature Branch**: `003-horometros-panel-mantenimiento`  
+**Feature Branch**: `002-horometros-panel-mantenimiento`  
 **Created**: 2026-06-23  
 **Status**: Draft  
 **Input**: User description: "Cuando demos click en una de las tarjetas que muestran los horómetros de los activos, se debe aperturar a la derecha del grid de tarjetas un contenedor con la información del plan de mantenimiento a realizarle al activo."
