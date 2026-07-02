@@ -71,7 +71,7 @@ export function HourMeterContent() {
   };
 
   return (
-    <div className="flex flex-col h-screen max-h-screen w-full bg-background overflow-hidden p-4 md:p-6 lg:p-8">
+    <div className="flex flex-col h-[calc(100vh-7rem)] w-full bg-background overflow-hidden p-4 md:p-6 lg:p-8">
       {/* Top Header Panel (Fixed Height) */}
       <header className="shrink-0 mb-4 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/40 pb-4">
         <div className="flex items-center gap-4">
