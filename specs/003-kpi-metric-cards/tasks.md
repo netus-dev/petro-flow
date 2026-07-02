@@ -17,9 +17,9 @@
 
 **Purpose**: Extend the domain and create the infrastructure skeleton for the KPI feature. These tasks are pure additions with no modifications to existing files — can be done safely in parallel.
 
-- [ ] T001 [P] Add `EquipmentKpi`, `FailureEvent`, `ReliabilityPeriod`, `RELIABILITY_PERIOD_HOURS`, and `RELIABILITY_PERIOD_LABELS` types and constants to `src/features/hour-meters/domain/entities.ts`
-- [ ] T002 [P] Add `IEquipmentKpiRepository` interface to `src/features/hour-meters/domain/repositories/kpi.repository.ts` (new file)
-- [ ] T003 [P] Create `MockKpiDatasource` class with static mock data for all 12 assetIds (ODO-001 to ODO-012) — including one entry with null values for an asset with 0 registered failures (e.g., ODO-006) to demonstrate the N/A case. Include a lint guard/comment (e.g. `// TODO: Replace with SupabaseKpiDatasource before production`) to prevent mock data leakage — in `src/features/hour-meters/infrastructure/datasources/kpi.datasource.ts`
+- [x] T001 [P] Add `EquipmentKpi`, `FailureEvent`, `ReliabilityPeriod`, `RELIABILITY_PERIOD_HOURS`, and `RELIABILITY_PERIOD_LABELS` types and constants to `src/features/hour-meters/domain/entities.ts`
+- [x] T002 [P] Add `IEquipmentKpiRepository` interface to `src/features/hour-meters/domain/repositories/kpi.repository.ts` (new file)
+- [x] T003 [P] Create `MockKpiDatasource` class with static mock data for all 12 assetIds (ODO-001 to ODO-012) — including one entry with null values for an asset with 0 registered failures (e.g., ODO-006) to demonstrate the N/A case. Include a lint guard/comment (e.g. `// TODO: Replace with SupabaseKpiDatasource before production`) to prevent mock data leakage — in `src/features/hour-meters/infrastructure/datasources/kpi.datasource.ts`
 
 **Checkpoint**: Domain types defined and mock data available — Application layer can now begin.
 
@@ -31,10 +31,10 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T004 Create `KpiRepository` class implementing `IEquipmentKpiRepository` using `MockKpiDatasource` in `src/features/hour-meters/infrastructure/repositories/kpi.repository.ts`
-- [ ] T005 Create `GetEquipmentKpiUseCase` class with `execute(assetId: string): Promise<Either<Failure, EquipmentKpi | null>>` in `src/features/hour-meters/application/usecases/kpi.usecases.ts`
-- [ ] T006 Write unit tests for `GetEquipmentKpiUseCase` covering: happy path (activo con datos), activo sin datos → `right(null)`, y falla del repositorio → `left(RepositoryFailure)` in `src/features/hour-meters/application/usecases/kpi.usecases.test.ts`
-- [ ] T007 Create `useEquipmentKpi(assetId: string | null)` hook with `{ kpi, isLoading, reliabilityPeriod, setReliabilityPeriod }` in `src/features/hour-meters/presentation/hooks/use-equipment-kpi.ts` (Note: Full reactivity and race-condition guards will be established later in T011-T012)
+- [x] T004 Create `KpiRepository` class implementing `IEquipmentKpiRepository` using `MockKpiDatasource` in `src/features/hour-meters/infrastructure/repositories/kpi.repository.ts`
+- [x] T005 Create `GetEquipmentKpiUseCase` class with `execute(assetId: string): Promise<Either<Failure, EquipmentKpi | null>>` in `src/features/hour-meters/application/usecases/kpi.usecases.ts`
+- [x] T006 Write unit tests for `GetEquipmentKpiUseCase` covering: happy path (activo con datos), activo sin datos → `right(null)`, y falla del repositorio → `left(RepositoryFailure)` in `src/features/hour-meters/application/usecases/kpi.usecases.test.ts`
+- [x] T007 Create `useEquipmentKpi(assetId: string | null)` hook with `{ kpi, isLoading, reliabilityPeriod, setReliabilityPeriod }` in `src/features/hour-meters/presentation/hooks/use-equipment-kpi.ts` (Note: Full reactivity and race-condition guards will be established later in T011-T012)
 
 **Checkpoint**: Foundation ready — US1, US2, and US3 can now proceed.
 
@@ -48,9 +48,9 @@
 
 ### Implementation for User Story 1
 
-- [ ] T008 [P] [US1] Create `KpiMetricCard` molecule component with props `{ label, fullName, value, unit, isLoading, period?, onPeriodChange? }` — incluye estado skeleton `animate-pulse` y estado N/A `"—"` — in `src/features/hour-meters/presentation/components/maintenance-panel/kpi-metric-card.tsx`
-- [ ] T009 [P] [US1] Create `KpiMetricGrid` organism component with props `{ kpi, isLoading, reliabilityPeriod, onReliabilityPeriodChange }` — grilla 2×2: Fila 1 MTBF/MTTR, Fila 2 Disponibilidad/Confiabilidad — incluyendo estado skeleton completo de las 4 cards — in `src/features/hour-meters/presentation/components/maintenance-panel/kpi-metric-grid.tsx`
-- [ ] T010 [US1] Integrate `useEquipmentKpi` hook and render `<KpiMetricGrid>` inside `MaintenancePanel` (after header `<header>` with its `border-b` divider, before the "Próximo Límite" `bg-muted/40` block) in `src/features/hour-meters/presentation/components/maintenance-panel/maintenance-panel.tsx`
+- [x] T008 [P] [US1] Create `KpiMetricCard` molecule component with props `{ label, fullName, value, unit, isLoading, period?, onPeriodChange? }` — incluye estado skeleton `animate-pulse` y estado N/A `"—"` — in `src/features/hour-meters/presentation/components/maintenance-panel/kpi-metric-card.tsx`
+- [x] T009 [P] [US1] Create `KpiMetricGrid` organism component with props `{ kpi, isLoading, reliabilityPeriod, onReliabilityPeriodChange }` — grilla 2×2: Fila 1 MTBF/MTTR, Fila 2 Disponibilidad/Confiabilidad — incluyendo estado skeleton completo de las 4 cards — in `src/features/hour-meters/presentation/components/maintenance-panel/kpi-metric-grid.tsx`
+- [x] T010 [US1] Integrate `useEquipmentKpi` hook and render `<KpiMetricGrid>` inside `MaintenancePanel` (after header `<header>` with its `border-b` divider, before the "Próximo Límite" `bg-muted/40` block) in `src/features/hour-meters/presentation/components/maintenance-panel/maintenance-panel.tsx`
 
 **Checkpoint**: User Story 1 independently functional. Abrir panel de cualquier activo → 4 tarjetas KPI visibles en posición correcta.
 
@@ -64,9 +64,9 @@
 
 ### Implementation for User Story 2
 
-- [ ] T011 [US2] Verify and adjust the `useEquipmentKpi` hook race-condition guard (using `useRef` or `useCallback` pattern matching `use-maintenance-panel.ts`) so that rapid asset switching cancels in-flight loads — update `src/features/hour-meters/presentation/hooks/use-equipment-kpi.ts` if needed
-- [ ] T012 [US2] Pass `assetId` reactively from `MaintenancePanel` props (or from the resolved plan) into `useEquipmentKpi` so the hook re-fires on every asset change — update `src/features/hour-meters/presentation/components/maintenance-panel/maintenance-panel.tsx`
-- [ ] T013 [US2] Revisar `KpiMetricGrid` skeleton: asegurar `animate-pulse` en 4 placeholders sin valores cero visibles — update `src/features/hour-meters/presentation/components/maintenance-panel/kpi-metric-grid.tsx`
+- [x] T011 [US2] Verify and adjust the `useEquipmentKpi` hook race-condition guard (using `useRef` or `useCallback` pattern matching `use-maintenance-panel.ts`) so that rapid asset switching cancels in-flight loads — update `src/features/hour-meters/presentation/hooks/use-equipment-kpi.ts` if needed
+- [x] T012 [US2] Pass `assetId` reactively from `MaintenancePanel` props (or from the resolved plan) into `useEquipmentKpi` so the hook re-fires on every asset change — update `src/features/hour-meters/presentation/components/maintenance-panel/maintenance-panel.tsx`
+- [x] T013 [US2] Revisar `KpiMetricGrid` skeleton: asegurar `animate-pulse` en 4 placeholders sin valores cero visibles — update `src/features/hour-meters/presentation/components/maintenance-panel/kpi-metric-grid.tsx`
 
 **Checkpoint**: User Stories 1 AND 2 functional. Cambiar de activo → skeleton → datos actualizados en < 2s.
 
@@ -80,9 +80,9 @@
 
 ### Implementation for User Story 3
 
-- [ ] T014 [US3] Add Dropdown UI (using Radix UI `<Select>`) inside `KpiMetricCard` component, shown only when `period` prop is provided — options from `RELIABILITY_PERIOD_LABELS` — in `src/features/hour-meters/presentation/components/maintenance-panel/kpi-metric-card.tsx`
-- [ ] T015 [US3] Pass `reliabilityPeriod` and `onReliabilityPeriodChange` from `useEquipmentKpi` through `KpiMetricGrid` props down to the Confiabilidad `KpiMetricCard` — update `src/features/hour-meters/presentation/components/maintenance-panel/kpi-metric-grid.tsx`
-- [ ] T016 [US3] Ensure `reliabilityPeriod` state is stored in `useEquipmentKpi` independently of `assetId` so period selection is preserved across asset changes — verify behavior in `src/features/hour-meters/presentation/hooks/use-equipment-kpi.ts`
+- [x] T014 [US3] Add Dropdown UI (using Radix UI `<Select>`) inside `KpiMetricCard` component, shown only when `period` prop is provided — options from `RELIABILITY_PERIOD_LABELS` — in `src/features/hour-meters/presentation/components/maintenance-panel/kpi-metric-card.tsx`
+- [x] T015 [US3] Pass `reliabilityPeriod` and `onReliabilityPeriodChange` from `useEquipmentKpi` through `KpiMetricGrid` props down to the Confiabilidad `KpiMetricCard` — update `src/features/hour-meters/presentation/components/maintenance-panel/kpi-metric-grid.tsx`
+- [x] T016 [US3] Ensure `reliabilityPeriod` state is stored in `useEquipmentKpi` independently of `assetId` so period selection is preserved across asset changes — verify behavior in `src/features/hour-meters/presentation/hooks/use-equipment-kpi.ts`
 
 **Checkpoint**: All 3 user stories functional. Dropdown de período opera correctamente y persiste entre activos.
 
@@ -92,11 +92,11 @@
 
 **Purpose**: Responsive layout, visual refinement, and JSDoc documentation across all new files.
 
-- [ ] T017 [P] Add responsive grid behavior to `KpiMetricGrid`: grilla 2×2 en pantallas `md` y superiores, grilla de 1 columna en pantallas `< md` — update `src/features/hour-meters/presentation/components/maintenance-panel/kpi-metric-grid.tsx`
-- [ ] T018 [P] Add JSDoc comments to all new files: `entities.ts` (additions), `domain/repositories/kpi.repository.ts`, `kpi.datasource.ts`, `infrastructure/repositories/kpi.repository.ts`, `kpi.usecases.ts`, `use-equipment-kpi.ts`, `kpi-metric-card.tsx`, `kpi-metric-grid.tsx`
-- [ ] T019 Validate mock data math: verify that computed Disponibilidad (100 × (1 - failureHours/totalHours)) and Confiabilidad (e^(-t/MTBF) × 100) values in `MockKpiDatasource` match expected output (e.g. for ODO-001: MTBF=420, MTTR=3.5h, Disponibilidad≈99.03%, Confiabilidad_1w≈67%) — update `src/features/hour-meters/infrastructure/datasources/kpi.datasource.ts` if corrections needed
-- [ ] T020 Manual end-to-end walkthrough per Verification Plan in `specs/003-kpi-metric-cards/plan.md` (7 pasos: ODO-001, ODO-002, ODO-006, dropdown, persistencia, móvil)
-- [ ] T021 Add timing test scenario to `src/features/hour-meters/application/usecases/kpi.usecases.test.ts` verifying that `GetEquipmentKpiUseCase.execute()` resolves within the simulated latency threshold (< 2s), consistent with SC-002
+- [x] T017 [P] Add responsive grid behavior to `KpiMetricGrid`: grilla 2×2 en pantallas `md` y superiores, grilla de 1 columna en pantallas `< md` — update `src/features/hour-meters/presentation/components/maintenance-panel/kpi-metric-grid.tsx`
+- [x] T018 [P] Add JSDoc comments to all new files: `entities.ts` (additions), `domain/repositories/kpi.repository.ts`, `kpi.datasource.ts`, `infrastructure/repositories/kpi.repository.ts`, `kpi.usecases.ts`, `use-equipment-kpi.ts`, `kpi-metric-card.tsx`, `kpi-metric-grid.tsx`
+- [x] T019 Validate mock data math: verify that computed Disponibilidad (100 × (1 - failureHours/totalHours)) and Confiabilidad (e^(-t/MTBF) × 100) values in `MockKpiDatasource` match expected output (e.g. for ODO-001: MTBF=420, MTTR=3.5h, Disponibilidad≈99.03%, Confiabilidad_1w≈67%) — update `src/features/hour-meters/infrastructure/datasources/kpi.datasource.ts` if corrections needed
+- [x] T020 Manual end-to-end walkthrough per Verification Plan in `specs/003-kpi-metric-cards/plan.md` (7 pasos: ODO-001, ODO-002, ODO-006, dropdown, persistencia, móvil)
+- [x] T021 Add timing test scenario to `src/features/hour-meters/application/usecases/kpi.usecases.test.ts` verifying that `GetEquipmentKpiUseCase.execute()` resolves within the simulated latency threshold (< 2s), consistent with SC-002
 
 ---
 

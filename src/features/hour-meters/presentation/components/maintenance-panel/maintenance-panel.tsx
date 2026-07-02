@@ -3,6 +3,9 @@
 import { X, Clock, AlertTriangle, Settings } from "lucide-react";
 import { ResolvedMaintenancePlan } from "../../../domain/entities";
 import { ActivityList } from "./activity-list";
+import { useEquipmentKpi } from "../../hooks/use-equipment-kpi";
+import { KpiMetricGrid } from "./kpi-metric-grid";
+
 
 /**
  * Props para el componente MaintenancePanel.
@@ -21,6 +24,10 @@ export interface MaintenancePanelProps {
  * y próximo de un activo. Maneja estados de carga (Skeleton) y estados vacíos.
  */
 export function MaintenancePanel({ resolvedPlan, isLoading, onClose }: MaintenancePanelProps) {
+  const { kpi, isLoading: isKpiLoading, reliabilityPeriod, setReliabilityPeriod } = useEquipmentKpi(
+    resolvedPlan?.equipmentId ?? null
+  );
+
   // 1. Estado de carga (Skeleton Screen)
   if (isLoading) {
     return (
@@ -32,6 +39,16 @@ export function MaintenancePanel({ resolvedPlan, isLoading, onClose }: Maintenan
             <div className="h-4 bg-muted rounded w-1/2"></div>
           </div>
           <div className="size-8 bg-muted rounded-full"></div>
+        </div>
+
+        {/* KPI Skeleton Grid */}
+        <div className="mb-5 shrink-0">
+          <KpiMetricGrid
+            kpi={null}
+            isLoading={true}
+            reliabilityPeriod="1m"
+            onReliabilityPeriodChange={() => {}}
+          />
         </div>
 
         {/* Focus Stats Skeleton */}
@@ -121,6 +138,16 @@ export function MaintenancePanel({ resolvedPlan, isLoading, onClose }: Maintenan
           <X className="size-5" />
         </button>
       </header>
+
+      {/* KPI Metric Grid */}
+      <div className="shrink-0 mb-4">
+        <KpiMetricGrid
+          kpi={kpi}
+          isLoading={isKpiLoading}
+          reliabilityPeriod={reliabilityPeriod}
+          onReliabilityPeriodChange={setReliabilityPeriod}
+        />
+      </div>
 
       {/* Target Info Summary Block */}
       <div className="shrink-0 bg-muted/40 border border-border/60 rounded-lg p-4 mb-4">
