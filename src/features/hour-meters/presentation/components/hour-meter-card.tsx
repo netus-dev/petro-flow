@@ -60,20 +60,17 @@ export function HourMeterCard({ record, isSelected, onClick }: HourMeterCardProp
   return (
     <Card
       onClick={() => onClick(record.id)}
-      className={`transition-all duration-300 cursor-pointer ${cardBg} h-full overflow-hidden flex flex-col ${isSelected ? "ring-2 ring-primary ring-offset-2 ring-offset-background scale-[1.01]" : ""
+      className={`transition-all duration-300 cursor-pointer ${cardBg} h-full overflow-hidden flex flex-col p-0 ${isSelected ? "ring-2 ring-primary ring-offset-2 ring-offset-background scale-[1.01]" : ""
         }`}
     >
 
-      <CardContent className="p-4 flex flex-col justify-between h-full gap-3">
+      <CardContent className="p-4 flex flex-col justify-between h-full">
         {/* Nivel 1: Encabezado compacto (Título + ID a la izquierda, Badge a la derecha) */}
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <h3 className="text-sm md:text-base font-bold tracking-tight text-foreground truncate">
               {record.equipment}
             </h3>
-            <span className="text-[10px] font-mono opacity-70 tracking-widest uppercase block mt-0.5">
-              {record.id}
-            </span>
           </div>
 
           <span className={`shrink-0 text-[9px] font-medium tracking-wider uppercase px-2 py-0.5 rounded border ${record.isWarning
