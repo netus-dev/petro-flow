@@ -60,68 +60,74 @@ export function HourMeterCard({ record, isSelected, onClick }: HourMeterCardProp
   return (
     <Card
       onClick={() => onClick(record.id)}
-      className={`transition-all duration-300 cursor-pointer ${cardBg} h-full overflow-hidden flex flex-col ${
-        isSelected ? "ring-2 ring-primary ring-offset-2 ring-offset-background scale-[1.01]" : ""
-      }`}
+      className={`transition-all duration-300 cursor-pointer ${cardBg} h-full overflow-hidden flex flex-col ${isSelected ? "ring-2 ring-primary ring-offset-2 ring-offset-background scale-[1.01]" : ""
+        }`}
     >
-      <CardContent className="p-4 md:p-5 flex flex-col h-full grow">
-        {/* Upper Section */}
-        <div className="flex flex-col items-start gap-1 pb-2 border-b border-border/40">
-          <h3 className="text-base md:text-lg font-bold tracking-tight text-foreground line-clamp-1">
-            {record.equipment}
-          </h3>
-          <div className="flex items-center gap-2">
-            <p className="text-[10px] font-mono opacity-70 tracking-widest uppercase">
+
+      <CardContent className="p-4 flex flex-col justify-between h-full gap-3">
+        {/* Nivel 1: Encabezado compacto (Título + ID a la izquierda, Badge a la derecha) */}
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <h3 className="text-sm md:text-base font-bold tracking-tight text-foreground truncate">
+              {record.equipment}
+            </h3>
+            <span className="text-[10px] font-mono opacity-70 tracking-widest uppercase block mt-0.5">
               {record.id}
-            </p>
-            {record.isWarning ? (
-              <span className="text-amber-500 text-[9px] font-medium tracking-wider uppercase bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
-                {badgeText}
+            </span>
+          </div>
+
+          <span className={`shrink-0 text-[9px] font-medium tracking-wider uppercase px-2 py-0.5 rounded border ${record.isWarning
+            ? "text-amber-500 bg-amber-500/10 border-amber-500/20"
+            : record.isCritical
+              ? "text-orange-500 bg-orange-500/10 border-orange-500/20 animate-pulse"
+              : "text-emerald-500 bg-emerald-500/10 border-emerald-500/20"
+            }`}>
+            {badgeText}
+          </span>
+        </div>
+
+        {/* Nivel 2: Métricas Principales en 2 columnas (Lectura Actual vs Horas Restantes) */}
+        <div className="grid grid-cols-2 gap-2 py-1 my-auto items-baseline">
+          <div>
+            <span className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground block">
+              Lectura Actual
+            </span>
+            <div className="flex items-baseline gap-1 mt-0.5">
+              <span className="text-2xl md:text-3xl font-black font-mono tabular-nums tracking-tight text-foreground">
+                {record.currentReading.toLocaleString()}
               </span>
-            ) : record.isCritical ? (
-              <span className="text-orange-500 text-[9px] font-medium tracking-wider uppercase bg-orange-500/10 px-1.5 py-0.5 rounded border border-orange-500/20 animate-pulse">
-                {badgeText}
+              <span className="text-xs font-mono font-bold text-muted-foreground">h</span>
+            </div>
+          </div>
+
+          <div className="text-right">
+            <span className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground block">
+              Faltan
+            </span>
+            <div className="flex items-baseline justify-end gap-1 mt-0.5">
+              <span className={`text-xl md:text-2xl font-black font-mono tabular-nums tracking-tight ${textColor}`}>
+                {record.remainingHours.toLocaleString()}
               </span>
-            ) : (
-              <span className="text-emerald-500 text-[9px] font-medium tracking-wider uppercase bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
-                {badgeText}
-              </span>
-            )}
+              <span className={`text-xs font-mono font-bold ${textColor}`}>h</span>
+            </div>
           </div>
         </div>
 
-        {/* Main Focus */}
-        <div className="flex-1 flex flex-col justify-center min-h-[70px]">
-          <div className="flex items-baseline gap-1.5 justify-center py-2">
-            <span className="text-4xl md:text-5xl lg:text-6xl font-black font-mono tabular-nums tracking-tighter text-foreground drop-shadow-sm leading-none">
-              {record.currentReading.toLocaleString()}
-            </span>
-            <span className="text-lg md:text-xl font-mono text-muted-foreground font-bold">
-              h
-            </span>
+        {/* Nivel 3: Indicador de progreso consolidado con el Límite */}
+        <div className="space-y-1.5 pt-1">
+          <div className="flex justify-between text-[10px] font-mono tracking-wider text-muted-foreground">
+            <span>Progreso ({Math.round(record.progressValue)}%)</span>
+            <span>Límite: <strong className="text-foreground">{record.maxThreshold.toLocaleString()}h</strong></span>
           </div>
-        </div>
-
-        {/* Lower Section */}
-        <div className="mt-auto shrink-0 pt-3 border-t border-border/40">
-          <p className={`text-xs md:text-sm font-medium mb-3 ${textColor}`}>
-            Faltan <span className="font-bold font-mono text-base">{record.remainingHours.toLocaleString()}</span> hrs para límite de {record.maxThreshold.toLocaleString()}h
-          </p>
-
-          <div className="space-y-1.5">
-            <div className="flex justify-between text-[9px] font-mono font-medium tracking-widest text-muted-foreground uppercase">
-              <span>{record.currentReading.toLocaleString()}h</span>
-              <span>{record.maxThreshold.toLocaleString()}h</span>
-            </div>
-            <div className="h-1.5 w-full bg-secondary/60 overflow-hidden rounded-full">
-              <div
-                className={`h-full rounded-full transition-all duration-1000 ease-out ${progressIndicatorColor}`}
-                style={{ width: `${record.progressValue}%` }}
-              ></div>
-            </div>
+          <div className="h-2 w-full bg-secondary/60 overflow-hidden rounded-full">
+            <div
+              className={`h-full rounded-full transition-all duration-1000 ease-out ${progressIndicatorColor}`}
+              style={{ width: `${record.progressValue}%` }}
+            />
           </div>
         </div>
       </CardContent>
+
     </Card>
   );
 }
