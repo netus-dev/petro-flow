@@ -6,6 +6,16 @@
 **Input**: User description: "Reorganizar la estructura de navegación y la seguridad de PetroFlow para que el Dashboard sea un módulo analítico independiente, cada módulo operativo tenga su propia URL de primer nivel, compartan la misma interfaz de navegación lateral y barra superior, y cualquier acceso no autorizado sea bloqueado y redirigido automáticamente al inicio de sesión."
 
 ---
+## Clarifications
+
+### Session 2026-07-14
+- Q: ¿Qué debe ocurrir cuando un usuario no autenticado intenta acceder a una ruta protegida, es redirigido a login y luego inicia sesión exitosamente? → A: Redirigir al usuario a la URL original que intentaba visitar (Option A).
+- Q: ¿Cómo manejar el soporte/redirecciones de las URLs antiguas del estilo `/dashboard/[módulo]`? → A: Ignorar el soporte y redirecciones de URLs antiguas; los usuarios accederán usando las nuevas rutas limpias directamente.
+- Q: ¿Qué comportamiento o interfaz visual debe mostrar el sistema mientras verifica el estado de autenticación (loading state)? → A: Mostrar una pantalla de carga simplificada (loader/logo) consistente con el tema visual (Option A).
+
+### Session 2026-07-19
+- Q: ¿Deben los intentos de acceso a rutas protegidas sin sesión activa quedar registrados en algún sistema de auditoría? → A: No, el registro de auditoría queda fuera del alcance de esta feature (Option B).
+- Q: ¿El módulo de Administración (y cualquier otro módulo restringido) debe tener control de acceso por rol además de requerir autenticación? → A: Sí, la restricción de acceso por rol que ya existe en el módulo Admin se respeta sin cambios (Option A).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -21,7 +31,6 @@ Como operador de campo, quiero poder acceder directamente al módulo de Requisic
 
 1. **Given** un usuario autenticado en el sistema, **When** navega directamente a la dirección del módulo de Requisiciones (e.g., `/requisitions`), **Then** el sistema muestra la pantalla de Requisiciones con la barra lateral de navegación y la barra superior activas y sin errores.
 2. **Given** un usuario autenticado en el sistema, **When** navega directamente a la dirección del módulo de Timesheet (e.g., `/timesheet`), **Then** el sistema muestra la pantalla de Timesheet con la barra lateral y la barra superior activas.
-3. **Given** un usuario autenticado en el sistema, **When** accede a una dirección antigua del estilo `/dashboard/requisitions`, **Then** el sistema muestra la pantalla correcta del módulo (con redirección o por compatibilidad) sin generar un error 404.
 
 ---
 
@@ -67,7 +76,7 @@ Como administrador del sistema, quiero que cualquier intento de acceder a cualqu
 
 1. **Given** un usuario que no ha iniciado sesión, **When** intenta acceder directamente a cualquier módulo del sistema (e.g., `/dashboard`, `/requisitions`, `/timesheet`, `/settings`), **Then** el sistema lo redirige automáticamente a la pantalla de inicio de sesión (`/auth/login`) antes de mostrar cualquier contenido protegido.
 2. **Given** un usuario que ya inició sesión correctamente, **When** intenta acceder a la pantalla de inicio de sesión (`/auth/login`), **Then** el sistema lo redirige automáticamente a su espacio de trabajo principal (`/dashboard`), evitando que vea la pantalla de acceso innecesariamente.
-3. **Given** un usuario no autenticado que es redirigido a `/auth/login`, **When** inicia sesión exitosamente, **Then** el sistema lo lleva a la pantalla de inicio de su espacio de trabajo.
+3. **Given** un usuario no autenticado que es redirigido a `/auth/login` al intentar acceder a una URL protegida (e.g., `/requisitions`), **When** inicia sesión exitosamente, **Then** el sistema lo lleva automáticamente a la URL original que solicitó en lugar de siempre enviarlo a `/dashboard`.
 
 ---
 
@@ -75,9 +84,9 @@ Como administrador del sistema, quiero que cualquier intento de acceder a cualqu
 
 - ¿Qué ocurre si un usuario con sesión activa pero expirada intenta navegar entre módulos? El sistema debe detectarlo y redirigirlo al inicio de sesión sin mostrar contenido protegido.
 - ¿Qué sucede si el usuario intenta acceder a una URL de módulo que no existe? El sistema debe mostrar una pantalla de error estándar (no encontrado) sin exponer rutas del sistema.
-- ¿Qué ocurre con las URLs antiguas del estilo `/dashboard/requisitions` que puedan estar guardadas en marcadores de los usuarios? El sistema no debe mostrar un error 404 abrupto; debe redirigir o resolver correctamente.
 
 ---
+
 
 ## Requirements *(mandatory)*
 
@@ -91,6 +100,8 @@ Como administrador del sistema, quiero que cualquier intento de acceder a cualqu
 - **FR-006**: El sistema DEBE redirigir al espacio de trabajo principal (`/dashboard`) a cualquier usuario autenticado que intente acceder a la pantalla de inicio de sesión.
 - **FR-007**: El sistema DEBE actualizar todos los enlaces de navegación interna (barra lateral, tarjetas de módulo, botones de acción) para reflejar las nuevas URLs de primer nivel.
 - **FR-008**: El sistema DEBE manejar adecuadamente las sesiones de usuario expiradas, forzando la re-autenticación sin exponer datos protegidos.
+- **FR-009**: El sistema DEBE mostrar una pantalla de carga simplificada consistente con el tema visual (loader/logo) mientras se valida el estado de sesión y se resuelven redirecciones.
+- **FR-010**: El sistema DEBE recordar la URL de destino protegida original e intentar redirigir al usuario allí inmediatamente después de un inicio de sesión exitoso.
 
 ### Key Entities
 
@@ -118,6 +129,7 @@ Como administrador del sistema, quiero que cualquier intento de acceder a cualqu
 - El sistema de autenticación actual (gestión de sesiones mediante Supabase) se mantiene sin cambios en su lógica de negocio; solo se reorganiza dónde y cuándo se verifica el estado de sesión.
 - Los módulos actuales que se encuentran bajo `app/dashboard/` en la estructura del proyecto son: `admin`, `e-learning`, `hour-meters`, `look-a-head`, `notificaciones`, `requisitions`, `settings`, `soporte`, `timesheet` y `trazabilidad`.
 - La pantalla del Dashboard Principal (`app/dashboard/page.tsx`) conserva su URL `/dashboard` y su contenido actual; no se migra ni renombra.
-- Las URLs antiguas del estilo `/dashboard/[módulo]` no requieren redirecciones permanentes de tipo 301 en esta iteración, pero no deben generar errores 404 críticos. Se asume que los usuarios adoptarán las nuevas URLs a través del menú de navegación actualizado.
-- Todos los usuarios del sistema (operadores, supervisores, administradores) requieren autenticación para acceder a cualquier módulo; no existe contenido parcialmente público dentro de los módulos operativos.
+- Las URLs antiguas del estilo `/dashboard/[módulo]` quedan fuera del alcance de esta feature. No se implementará soporte ni redirecciones para ellas; los usuarios accederán directamente a las nuevas URLs de primer nivel a través del menú de navegación actualizado.
+- Todos los usuarios del sistema (operadores, supervisores, administradores) requieren autenticación para acceder a cualquier módulo; las restricciones específicas por rol (como las del módulo Admin) se mantienen intactas en su lógica interna actual sin alteraciones por parte de esta feature.
 - El alcance de esta especificación es la restructuración de navegación y la capa de seguridad de acceso. Los cambios en el contenido, datos o lógica de negocio de cada módulo quedan fuera del alcance de esta feature.
+- El registro detallado e historial de auditoría de intentos de acceso fallidos/denegados queda explícitamente fuera del alcance de esta iteración.

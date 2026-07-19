@@ -52,8 +52,26 @@ export function HourMeterCard({ record, isSelected, onClick }: HourMeterCardProp
     badgeText = "Próximo a Mantenimiento";
     progressIndicatorColor = "bg-amber-500";
   } else {
+    const eqName = record.equipment.toLowerCase();
+    if (eqName.includes("generador")) {
+      cardBg = "bg-blue-100/80 border-blue-300 hover:bg-blue-200 dark:bg-blue-900/30 dark:border-blue-800/60";
+      progressIndicatorColor = "bg-blue-500";
+    } else if (eqName.includes("bomba de lodo")) {
+      cardBg = "bg-teal-100/80 border-teal-300 hover:bg-teal-200 dark:bg-teal-900/30 dark:border-teal-800/60";
+      progressIndicatorColor = "bg-teal-500";
+    } else if (eqName.includes("malacate")) {
+      cardBg = "bg-indigo-100/80 border-indigo-300 hover:bg-indigo-200 dark:bg-indigo-900/30 dark:border-indigo-800/60";
+      progressIndicatorColor = "bg-indigo-500";
+    } else if (eqName.includes("hpu")) {
+      cardBg = "bg-sky-100/80 border-sky-300 hover:bg-sky-200 dark:bg-sky-900/30 dark:border-sky-800/60";
+      progressIndicatorColor = "bg-sky-500";
+    } else if (eqName.includes("koomey")) {
+      cardBg = "bg-rose-100/80 border-rose-300 hover:bg-rose-200 dark:bg-rose-900/30 dark:border-rose-800/60";
+      progressIndicatorColor = "bg-rose-500";
+    }
+
     if (isSelected) {
-      cardBg = "bg-card border-primary shadow-[0_0_15px_rgba(var(--primary),0.1)] ring-1 ring-primary/30";
+      cardBg += " border-primary shadow-[0_0_15px_rgba(var(--primary),0.2)] ring-2 ring-primary/40";
     }
   }
 
