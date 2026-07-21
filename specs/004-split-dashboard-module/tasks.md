@@ -24,7 +24,7 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T003 Create `middleware.ts` at the project root implementing the full auth flow: validate session with `createServerClient` from `src/core/lib/supabase/middleware.ts`, redirect unauthenticated users to `/auth/login?redirectTo={pathname}`, redirect authenticated users away from `/auth/*` to `/dashboard`, and refresh session cookies on every pass-through request
+- [ ] T003 Create `middleware.ts` at the project root implementing the full auth flow: validate session with `createServerClient` from `src/core/lib/supabase/middleware.ts`, redirect unauthenticated or expired-session users (`user === null`) to `/auth/login?redirectTo={pathname}`, redirect authenticated users away from `/auth/*` to `/dashboard`, and refresh session cookies on every pass-through request
 - [ ] T004 Configure the middleware `matcher` in `middleware.ts` to exclude static assets (`_next/static`, `_next/image`, `favicon.ico`, `.svg`, `.png`, `.jpg`, `.ico`) and apply to all other routes
 
 **Checkpoint**: Abrir el navegador sin sesión e intentar acceder a `/dashboard` debe redirigir a `/auth/login?redirectTo=/dashboard`.
@@ -48,7 +48,7 @@
 
 ## Phase 4: User Story 1 — Acceso Directo a un Módulo Operativo (Priority: P1) 🎯
 
-**Goal**: Mover todos los módulos operativos a URLs de primer nivel bajo un Route Group `(authenticated)` que comparte el layout de Sidebar + Navbar.
+**Goal**: Mover todos los módulos operativos a URLs de primer level bajo un Route Group `(authenticated)` que comparte el layout de Sidebar + Navbar.
 
 **Independent Test**: Navegar directamente a `/requisitions` (con sesión activa) → muestra la pantalla de Requisiciones con Sidebar y Navbar activos, sin redirigir ni generar 404.
 
@@ -66,7 +66,7 @@
 - [ ] T016 [P] [US1] Move `app/dashboard/soporte/` directory to `app/(authenticated)/soporte/` (preserving all nested files)
 - [ ] T017 [P] [US1] Move `app/dashboard/admin/` directory to `app/(authenticated)/admin/` (preserving all nested files)
 - [ ] T018 [US1] Move `app/dashboard/page.tsx` to `app/(authenticated)/dashboard/page.tsx` — the Dashboard module becomes a sibling of the rest within the Route Group
-- [ ] T019 [US1] Delete `app/dashboard/layout.tsx` and the now-empty `app/dashboard/` directory (fully superseded by `app/(authenticated)/`)
+- [ ] T019 [US1] Delete `app/dashboard/layout.tsx` and the now-empty `app/dashboard/` directory (⚠️ MUST execute AFTER T007 has copied layout.tsx to `app/(authenticated)/`)
 
 **Checkpoint**: `app/dashboard/` no existe como carpeta de primer nivel. Todos los módulos están bajo `app/(authenticated)/`. Navegar a `/requisitions`, `/timesheet` y `/dashboard` funciona con el layout compartido.
 
@@ -98,6 +98,7 @@
 
 - [ ] T023 [P] [US3] Update `src/features/requisitions/presentation/components/requisitions-list.tsx`: change hrefs from `/dashboard/requisitions/new` to `/requisitions/new` and from `/dashboard/requisitions/${req.id}` to `/requisitions/${req.id}`
 - [ ] T024 [P] [US3] Update `src/features/requisitions/presentation/components/new-requisition-form.tsx`: change the post-creation redirect from `/dashboard/requisitions/${newReq.id}` to `/requisitions/${newReq.id}`
+- [ ] T025 [P] [US3] Audit `src/features/trazabilidad/presentation/components/trazabilidad-content.tsx`: verify `/dashboard` reference to ensure it points correctly to the main Dashboard module and contains no legacy sub-module paths
 
 **Checkpoint**: Flujo completo Sidebar → Requisiciones → New → Detail funciona sin ninguna URL con prefijo `/dashboard/`.
 
@@ -107,10 +108,10 @@
 
 **Purpose**: Tests unitarios obligatorios (Constitución VI), limpieza de código legado y validación final de compilación.
 
-- [ ] T025 [P] Create unit tests for middleware logic in `src/core/lib/supabase/__tests__/middleware.test.ts`: cover — unauthenticated user + protected route (expect redirect to `/auth/login?redirectTo=...`), authenticated user + `/auth/login` (expect redirect to `/dashboard`), authenticated user + protected route (expect pass-through), expired session + protected route (expect redirect to login)
-- [ ] T026 [P] Create unit tests for `LoginForm` redirect logic in `src/features/auth/presentation/components/__tests__/login-form.test.tsx`: cover — `redirectTo` present and valid (expect redirect there), `redirectTo` absent (expect `/dashboard`), `redirectTo` pointing to `/auth/login` (expect safety fallback to `/dashboard`)
-- [ ] T027 Remove hardcoded credential values from `src/features/auth/presentation/components/login-form.tsx` lines 18–19: replace pre-filled `email` and `password` state with empty strings
-- [ ] T028 Run `npx tsc --noEmit` at the project root to verify TypeScript compilation is clean after all route moves and file changes
+- [ ] T026 [P] Create unit tests for middleware logic in `src/core/lib/supabase/__tests__/middleware.test.ts`: cover — unauthenticated user + protected route (expect redirect to `/auth/login?redirectTo=...`), authenticated user + `/auth/login` (expect redirect to `/dashboard`), authenticated user + protected route (expect pass-through), expired session + protected route (expect redirect to login)
+- [ ] T027 [P] Create unit tests for `LoginForm` redirect logic in `src/features/auth/presentation/components/__tests__/login-form.test.tsx`: cover — `redirectTo` present and valid (expect redirect there), `redirectTo` absent (expect `/dashboard`), `redirectTo` pointing to `/auth/login` (expect safety fallback to `/dashboard`)
+- [ ] T028 Remove hardcoded credential values from `src/features/auth/presentation/components/login-form.tsx` lines 18–19: replace pre-filled `email` and `password` state with empty strings
+- [ ] T029 Run `npx tsc --noEmit` at the project root to verify TypeScript compilation is clean after all route moves and file changes
 
 **Checkpoint Final**: Todos los success criteria del spec son verificables. Build limpio. Tests pasando.
 
@@ -133,8 +134,8 @@
 - T001, T002 (Setup): Paralelos entre sí.
 - T008–T017 (movimiento de módulos en US1): Todos paralelos entre sí.
 - T020, T021, T022 (hrefs en US2): Paralelos entre sí.
-- T023, T024 (hrefs en US3): Paralelos entre sí.
-- T025, T026 (tests en Polish): Paralelos entre sí.
+- T023, T024, T025 (hrefs y audit en US3): Paralelos entre sí.
+- T026, T027 (tests en Polish): Paralelos entre sí.
 
 ---
 
