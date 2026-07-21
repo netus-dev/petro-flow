@@ -11,8 +11,8 @@
 
 **Purpose**: Crear el cliente Supabase para Edge Runtime y el componente de carga visual, pre-requisitos compartidos por múltiples user stories.
 
-- [ ] T001 [P] Create Supabase middleware client factory in `src/core/lib/supabase/middleware.ts` using `createServerClient` from `@supabase/ssr`, wiring request/response cookies for Edge Runtime
-- [ ] T002 [P] Create `AppLoader` atom in `src/core/presentation/components/ui/app-loader.tsx` — full-screen centered loader displaying the PetroFlow logo with a CSS pulse animation, consistent with the dark theme
+- [x] T001 [P] Create Supabase middleware client factory in `src/core/lib/supabase/middleware.ts` using `createServerClient` from `@supabase/ssr`, wiring request/response cookies for Edge Runtime
+- [x] T002 [P] Create `AppLoader` atom in `src/core/presentation/components/ui/app-loader.tsx` — full-screen centered loader displaying the PetroFlow logo with a CSS pulse animation, consistent with the dark theme
 
 **Checkpoint**: Los dos artefactos de infraestructura compartida están disponibles para ser usados por el middleware y el layout.
 
@@ -24,8 +24,8 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T003 Create `middleware.ts` at the project root implementing the full auth flow: validate session with `createServerClient` from `src/core/lib/supabase/middleware.ts`, redirect unauthenticated or expired-session users (`user === null`) to `/auth/login?redirectTo={pathname}`, redirect authenticated users away from `/auth/*` to `/dashboard`, and refresh session cookies on every pass-through request
-- [ ] T004 Configure the middleware `matcher` in `middleware.ts` to exclude static assets (`_next/static`, `_next/image`, `favicon.ico`, `.svg`, `.png`, `.jpg`, `.ico`) and apply to all other routes
+- [x] T003 Create `middleware.ts` at the project root implementing the full auth flow: validate session with `createServerClient` from `src/core/lib/supabase/middleware.ts`, redirect unauthenticated or expired-session users (`user === null`) to `/auth/login?redirectTo={pathname}`, redirect authenticated users away from `/auth/*` to `/dashboard`, and refresh session cookies on every pass-through request
+- [x] T004 Configure the middleware `matcher` in `middleware.ts` to exclude static assets (`_next/static`, `_next/image`, `favicon.ico`, `.svg`, `.png`, `.jpg`, `.ico`) and apply to all other routes
 
 **Checkpoint**: Abrir el navegador sin sesión e intentar acceder a `/dashboard` debe redirigir a `/auth/login?redirectTo=/dashboard`.
 
@@ -39,8 +39,8 @@
 
 ### Implementation for User Story 4
 
-- [ ] T005 [US4] Update `src/features/auth/presentation/components/login-form.tsx`: read `searchParams.get('redirectTo')` from the page URL, validate it is a relative path starting with `/` and not pointing to `/auth/*`; after a successful login, call `router.push(redirectTo ?? '/dashboard')` instead of the hardcoded `/dashboard`
-- [ ] T006 [US4] Update `app/auth/login/page.tsx` to accept and pass `searchParams` down to `LoginForm` as a prop so the redirect param is accessible from the Server Component page
+- [x] T005 [US4] Update `src/features/auth/presentation/components/login-form.tsx`: read `searchParams.get('redirectTo')` from the page URL, validate it is a relative path starting with `/` and not pointing to `/auth/*`; after a successful login, call `router.push(redirectTo ?? '/dashboard')` instead of the hardcoded `/dashboard`
+- [x] T006 [US4] Update `app/auth/login/page.tsx` to accept and pass `searchParams` down to `LoginForm` as a prop so the redirect param is accessible from the Server Component page
 
 **Checkpoint**: Flujo completo acceso denegado → login → redirección al destino original funciona. User Story 4 verificable independientemente.
 
@@ -54,19 +54,19 @@
 
 ### Implementation for User Story 1
 
-- [ ] T007 [US1] Create `app/(authenticated)/layout.tsx` by moving the full content of `app/dashboard/layout.tsx` into it — this becomes the shared layout wrapper (Sidebar + Navbar) for all authenticated modules; import and add `<Suspense fallback={<AppLoader />}>` wrapping children using the atom from T002
-- [ ] T008 [P] [US1] Move `app/dashboard/trazabilidad/` directory to `app/(authenticated)/trazabilidad/` (preserving all nested files)
-- [ ] T009 [P] [US1] Move `app/dashboard/timesheet/` directory to `app/(authenticated)/timesheet/` (preserving all nested files)
-- [ ] T010 [P] [US1] Move `app/dashboard/requisitions/` directory to `app/(authenticated)/requisitions/` (preserving all nested files)
-- [ ] T011 [P] [US1] Move `app/dashboard/e-learning/` directory to `app/(authenticated)/e-learning/` (preserving all nested files)
-- [ ] T012 [P] [US1] Move `app/dashboard/hour-meters/` directory to `app/(authenticated)/hour-meters/` (preserving all nested files)
-- [ ] T013 [P] [US1] Move `app/dashboard/look-a-head/` directory to `app/(authenticated)/look-a-head/` (preserving all nested files)
-- [ ] T014 [P] [US1] Move `app/dashboard/notificaciones/` directory to `app/(authenticated)/notificaciones/` (preserving all nested files)
-- [ ] T015 [P] [US1] Move `app/dashboard/settings/` directory to `app/(authenticated)/settings/` (preserving all nested files)
-- [ ] T016 [P] [US1] Move `app/dashboard/soporte/` directory to `app/(authenticated)/soporte/` (preserving all nested files)
-- [ ] T017 [P] [US1] Move `app/dashboard/admin/` directory to `app/(authenticated)/admin/` (preserving all nested files)
-- [ ] T018 [US1] Move `app/dashboard/page.tsx` to `app/(authenticated)/dashboard/page.tsx` — the Dashboard module becomes a sibling of the rest within the Route Group
-- [ ] T019 [US1] Delete `app/dashboard/layout.tsx` and the now-empty `app/dashboard/` directory (⚠️ MUST execute AFTER T007 has copied layout.tsx to `app/(authenticated)/`)
+- [x] T007 [US1] Create `app/(authenticated)/layout.tsx` by moving the full content of `app/dashboard/layout.tsx` into it — this becomes the shared layout wrapper (Sidebar + Navbar) for all authenticated modules; import and add `<Suspense fallback={<AppLoader />}>` wrapping children using the atom from T002
+- [x] T008 [P] [US1] Move `app/dashboard/trazabilidad/` directory to `app/(authenticated)/trazabilidad/` (preserving all nested files)
+- [x] T009 [P] [US1] Move `app/dashboard/timesheet/` directory to `app/(authenticated)/timesheet/` (preserving all nested files)
+- [x] T010 [P] [US1] Move `app/dashboard/requisitions/` directory to `app/(authenticated)/requisitions/` (preserving all nested files)
+- [x] T011 [P] [US1] Move `app/dashboard/e-learning/` directory to `app/(authenticated)/e-learning/` (preserving all nested files)
+- [x] T012 [P] [US1] Move `app/dashboard/hour-meters/` directory to `app/(authenticated)/hour-meters/` (preserving all nested files)
+- [x] T013 [P] [US1] Move `app/dashboard/look-a-head/` directory to `app/(authenticated)/look-a-head/` (preserving all nested files)
+- [x] T014 [P] [US1] Move `app/dashboard/notificaciones/` directory to `app/(authenticated)/notificaciones/` (preserving all nested files)
+- [x] T015 [P] [US1] Move `app/dashboard/settings/` directory to `app/(authenticated)/settings/` (preserving all nested files)
+- [x] T016 [P] [US1] Move `app/dashboard/soporte/` directory to `app/(authenticated)/soporte/` (preserving all nested files)
+- [x] T017 [P] [US1] Move `app/dashboard/admin/` directory to `app/(authenticated)/admin/` (preserving all nested files)
+- [x] T018 [US1] Move `app/dashboard/page.tsx` to `app/(authenticated)/dashboard/page.tsx` — the Dashboard module becomes a sibling of the rest within the Route Group
+- [x] T019 [US1] Delete `app/dashboard/layout.tsx` and the now-empty `app/dashboard/` directory (⚠️ MUST execute AFTER T007 has copied layout.tsx to `app/(authenticated)/`)
 
 **Checkpoint**: `app/dashboard/` no existe como carpeta de primer nivel. Todos los módulos están bajo `app/(authenticated)/`. Navegar a `/requisitions`, `/timesheet` y `/dashboard` funciona con el layout compartido.
 
@@ -80,9 +80,9 @@
 
 ### Implementation for User Story 2
 
-- [ ] T020 [P] [US2] Update `src/core/presentation/components/layout/app-sidebar.tsx`: change all module hrefs from `/dashboard/[module]` to `/[module]` (e.g. `/dashboard/timesheet` → `/timesheet`). The `/dashboard` href stays unchanged
-- [ ] T021 [P] [US2] Update `src/features/dashboard/presentation/components/dashboard-module-cards.tsx`: change all card hrefs from `/dashboard/[module]` to `/[module]`
-- [ ] T022 [P] [US2] Update `src/features/dashboard/presentation/components/dashboard-navbar.tsx`: change the notifications link from `/dashboard/notificaciones` to `/notificaciones`
+- [x] T020 [P] [US2] Update `src/core/presentation/components/layout/app-sidebar.tsx`: change all module hrefs from `/dashboard/[module]` to `/[module]` (e.g. `/dashboard/timesheet` → `/timesheet`). The `/dashboard` href stays unchanged
+- [x] T021 [P] [US2] Update `src/features/dashboard/presentation/components/dashboard-module-cards.tsx`: change all card hrefs from `/dashboard/[module]` to `/[module]`
+- [x] T022 [P] [US2] Update `src/features/dashboard/presentation/components/dashboard-navbar.tsx`: change the notifications link from `/dashboard/notificaciones` to `/notificaciones`
 
 **Checkpoint**: La barra lateral muestra Dashboard como elemento activo al mismo nivel visual que el resto de los módulos.
 
@@ -96,9 +96,9 @@
 
 ### Implementation for User Story 3
 
-- [ ] T023 [P] [US3] Update `src/features/requisitions/presentation/components/requisitions-list.tsx`: change hrefs from `/dashboard/requisitions/new` to `/requisitions/new` and from `/dashboard/requisitions/${req.id}` to `/requisitions/${req.id}`
-- [ ] T024 [P] [US3] Update `src/features/requisitions/presentation/components/new-requisition-form.tsx`: change the post-creation redirect from `/dashboard/requisitions/${newReq.id}` to `/requisitions/${newReq.id}`
-- [ ] T025 [P] [US3] Audit `src/features/trazabilidad/presentation/components/trazabilidad-content.tsx`: verify `/dashboard` reference to ensure it points correctly to the main Dashboard module and contains no legacy sub-module paths
+- [x] T023 [P] [US3] Update `src/features/requisitions/presentation/components/requisitions-list.tsx`: change hrefs from `/dashboard/requisitions/new` to `/requisitions/new` and from `/dashboard/requisitions/${req.id}` to `/requisitions/${req.id}`
+- [x] T024 [P] [US3] Update `src/features/requisitions/presentation/components/new-requisition-form.tsx`: change the post-creation redirect from `/dashboard/requisitions/${newReq.id}` to `/requisitions/${newReq.id}`
+- [x] T025 [P] [US3] Audit `src/features/trazabilidad/presentation/components/trazabilidad-content.tsx`: verify `/dashboard` reference to ensure it points correctly to the main Dashboard module and contains no legacy sub-module paths
 
 **Checkpoint**: Flujo completo Sidebar → Requisiciones → New → Detail funciona sin ninguna URL con prefijo `/dashboard/`.
 
@@ -108,10 +108,10 @@
 
 **Purpose**: Tests unitarios obligatorios (Constitución VI), limpieza de código legado y validación final de compilación.
 
-- [ ] T026 [P] Create unit tests for middleware logic in `src/core/lib/supabase/__tests__/middleware.test.ts`: cover — unauthenticated user + protected route (expect redirect to `/auth/login?redirectTo=...`), authenticated user + `/auth/login` (expect redirect to `/dashboard`), authenticated user + protected route (expect pass-through), expired session + protected route (expect redirect to login)
-- [ ] T027 [P] Create unit tests for `LoginForm` redirect logic in `src/features/auth/presentation/components/__tests__/login-form.test.tsx`: cover — `redirectTo` present and valid (expect redirect there), `redirectTo` absent (expect `/dashboard`), `redirectTo` pointing to `/auth/login` (expect safety fallback to `/dashboard`)
-- [ ] T028 Remove hardcoded credential values from `src/features/auth/presentation/components/login-form.tsx` lines 18–19: replace pre-filled `email` and `password` state with empty strings
-- [ ] T029 Run `npx tsc --noEmit` at the project root to verify TypeScript compilation is clean after all route moves and file changes
+- [x] T026 [P] Create unit tests for middleware logic in `src/core/lib/supabase/__tests__/middleware.test.ts`: cover — unauthenticated user + protected route (expect redirect to `/auth/login?redirectTo=...`), authenticated user + `/auth/login` (expect redirect to `/dashboard`), authenticated user + protected route (expect pass-through), expired session + protected route (expect redirect to login)
+- [x] T027 [P] Create unit tests for `LoginForm` redirect logic in `src/features/auth/presentation/components/__tests__/login-form.test.tsx`: cover — `redirectTo` present and valid (expect redirect there), `redirectTo` absent (expect `/dashboard`), `redirectTo` pointing to `/auth/login` (expect safety fallback to `/dashboard`)
+- [x] T028 Remove hardcoded credential values from `src/features/auth/presentation/components/login-form.tsx` lines 18–19: replace pre-filled `email` and `password` state with empty strings
+- [x] T029 Run `npx tsc --noEmit` at the project root to verify TypeScript compilation is clean after all route moves and file changes
 
 **Checkpoint Final**: Todos los success criteria del spec son verificables. Build limpio. Tests pasando.
 

@@ -96,7 +96,7 @@ export const NewRequisitionForm: React.FC<NewRequisitionFormProps> = ({ currentU
             });
 
             // In a real app we would use sonner/toast here
-            router.push(`/dashboard/requisitions/${newReq.id}`);
+            router.push(`/requisitions/${newReq.id}`);
         } catch (error) {
             console.error(error);
             alert("Error al crear la requisición");

@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import {
   SidebarProvider,
   SidebarInset,
@@ -6,8 +7,9 @@ import { AppSidebar } from "@/src/core/presentation/components/layout/app-sideba
 import { DashboardNavbar } from "@/src/features/dashboard/presentation/components/dashboard-navbar";
 import { DashboardFooter } from "@/src/features/dashboard/presentation/components/dashboard-footer";
 import { AppProvider } from "@/src/core/presentation/providers/providers";
+import { AppLoader } from "@/src/core/presentation/components/ui/app-loader";
 
-export default function DashboardLayout({
+export default function AuthenticatedLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -18,7 +20,9 @@ export default function DashboardLayout({
         <AppSidebar />
         <SidebarInset>
           <DashboardNavbar />
-          <div className="flex-1 overflow-auto min-w-0">{children}</div>
+          <div className="flex-1 overflow-auto min-w-0">
+            <Suspense fallback={<AppLoader />}>{children}</Suspense>
+          </div>
           <DashboardFooter />
         </SidebarInset>
       </SidebarProvider>

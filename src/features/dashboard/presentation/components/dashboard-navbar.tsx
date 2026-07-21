@@ -188,7 +188,7 @@ export function DashboardNavbar() {
             ))}
             <div className="border-t border-border p-2">
               <Link
-                href="/dashboard/notificaciones"
+                href="/notificaciones"
                 className="block w-full text-center text-[11px] font-medium text-primary hover:text-primary/80 py-1 transition-colors"
               >
                 {t("nav.view_all")}

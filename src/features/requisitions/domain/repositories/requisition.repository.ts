@@ -1,4 +1,4 @@
-import { Requisition, RequisitionStatus, RequisitionFilters } from '../entities/requisition';
+import { Requisition, RequisitionStatus } from '../entities/requisition';
 
 export interface RequisitionFilters {
     status?: RequisitionStatus[];

@@ -18,7 +18,7 @@ const modules = [
     description:
       "Seguimiento integral de materiales, equipos y procesos a lo largo de toda la cadena operativa.",
     icon: Route,
-    href: "/dashboard/trazabilidad",
+    href: "/trazabilidad",
     badge: "12 activos",
     badgeVariant: "default" as const,
     stat: "98.7% cobertura",
@@ -28,7 +28,7 @@ const modules = [
     description:
       "Registro y control de horas laborales del personal en campo y oficinas centrales.",
     icon: Clock,
-    href: "/dashboard/timesheet",
+    href: "/timesheet",
     badge: "342 registros",
     badgeVariant: "secondary" as const,
     stat: "Semana 9, 2026",
@@ -38,7 +38,7 @@ const modules = [
     description:
       "Plataforma de capacitacion y certificacion continua para personal operativo y tecnico.",
     icon: GraduationCap,
-    href: "/dashboard/e-learning",
+    href: "/e-learning",
     badge: "5 cursos nuevos",
     badgeVariant: "default" as const,
     stat: "87% completado",
@@ -48,7 +48,7 @@ const modules = [
     description:
       "Monitoreo en tiempo real de instrumentacion y horometros de maquinaria y equipos.",
     icon: Gauge,
-    href: "/dashboard/hour-meters",
+    href: "/hour-meters",
     badge: "En vivo",
     badgeVariant: "default" as const,
     stat: "204 sensores",
@@ -58,7 +58,7 @@ const modules = [
     description:
       "Planificacion y proyeccion de operaciones futuras con analisis de tendencias y cronogramas.",
     icon: CalendarRange,
-    href: "/dashboard/look-a-head",
+    href: "/look-a-head",
     badge: "Q1 2026",
     badgeVariant: "secondary" as const,
     stat: "14 proyectos",

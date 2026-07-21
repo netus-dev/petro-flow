@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, Loader2, ArrowRight } from "lucide-react";
 import { Input } from "@/src/core/presentation/components/ui/input";
 import { Label } from "@/src/core/presentation/components/ui/label";
@@ -9,21 +9,36 @@ import { Button } from "@/src/core/presentation/components/ui/button";
 
 import { useAuth } from "../hooks/use-auth";
 import { useAuthStore } from "../store/auth-store";
-import { useEffect } from "react";
 
 export function LoginForm() {
   const { login, isLoading, error, user, getProfile } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState("cjuan2921@gmail.com");
-  const [password, setPassword] = useState("Ghx35put-");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const getValidRedirectPath = (): string => {
+    const rawRedirect = searchParams.get("redirectTo");
+    if (
+      rawRedirect &&
+      rawRedirect.startsWith("/") &&
+      !rawRedirect.startsWith("//") &&
+      !rawRedirect.startsWith("/auth")
+    ) {
+      return rawRedirect;
+    }
+    return "/dashboard";
+  };
+
+  const targetPath = getValidRedirectPath();
 
   useEffect(() => {
-    // Si ya existe un usuario al cargar el componente, redirigir al dashboard
+    // Si ya existe un usuario al cargar el componente, redirigir al destino o dashboard
     if (user) {
-      router.push("/dashboard");
+      router.push(targetPath);
     }
-  }, [user, router]);
+  }, [user, router, targetPath]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,9 +46,7 @@ export function LoginForm() {
     // 1. Iniciamos sesión
     await login({ email, password });
     
-    // 2. Si el login fue exitoso (el estado 'user' de la store se actualizó), 
-    // procedemos a obtener el perfil y redirigir.
-    // Accederemos al estado actual de la store para validar el éxito
+    // 2. Si el login fue exitoso, procedemos a obtener perfil y redirigir al destino original
     const { user: authUser } = useAuthStore.getState();
 
     if (authUser) {
@@ -41,7 +54,7 @@ export function LoginForm() {
       if (profileData) {
         console.log("Información del profile recibida y guardada:", profileData);
       }
-      router.push("/dashboard");
+      router.push(targetPath);
     }
   };
 

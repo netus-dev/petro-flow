@@ -56,9 +56,8 @@ export const RequisitionsList: React.FC<RequisitionsListProps> = ({ currentUserI
                 <div className="flex gap-2">
                     <Button variant="outline">
                         <Download className="mr-2 h-4 w-4" /> Exportar
-                    </Button>
-                    <Button asChild>
-                        <Link href="/dashboard/requisitions/new">
+                    </Button>                    <Button asChild>
+                        <Link href="/requisitions/new">
                             Nueva Requisición
                         </Link>
                     </Button>
@@ -134,7 +133,7 @@ export const RequisitionsList: React.FC<RequisitionsListProps> = ({ currentUserI
                                                         <TableCell>{new Date(req.fechaCreacion).toLocaleDateString()}</TableCell>
                                                         <TableCell className="text-center">
                                                             <Button variant="ghost" size="icon" asChild>
-                                                                <Link href={`/dashboard/requisitions/${req.id}`}>
+                                                                <Link href={`/requisitions/${req.id}`}>
                                                                     <Eye className="h-4 w-4" />
                                                                 </Link>
                                                             </Button>

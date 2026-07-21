@@ -74,37 +74,37 @@ export function AppSidebar() {
       titleKey: "sidebar.traceability",
       label: t("sidebar.traceability"),
       icon: Route,
-      href: "/dashboard/trazabilidad",
+      href: "/trazabilidad",
     },
     {
       titleKey: "sidebar.timesheet",
       label: t("sidebar.timesheet"),
       icon: Clock,
-      href: "/dashboard/timesheet",
+      href: "/timesheet",
     },
     {
       titleKey: "sidebar.requisitions",
       label: t("requisitions"),
       icon: ClipboardList,
-      href: "/dashboard/requisitions",
+      href: "/requisitions",
     },
     {
       titleKey: "sidebar.elearning",
       label: t("sidebar.elearning"),
       icon: GraduationCap,
-      href: "/dashboard/e-learning",
+      href: "/e-learning",
     },
     {
       titleKey: "sidebar.hourMeters",
       label: t("sidebar.hourMeters"),
       icon: Gauge,
-      href: "/dashboard/hour-meters",
+      href: "/hour-meters",
     },
     {
       titleKey: "sidebar.lookahead",
       label: t("sidebar.lookahead"),
       icon: CalendarRange,
-      href: "/dashboard/look-a-head",
+      href: "/look-a-head",
     },
   ];
 
@@ -113,13 +113,13 @@ export function AppSidebar() {
       titleKey: "sidebar.settings",
       label: t("sidebar.settings"),
       icon: Settings,
-      href: "/dashboard/settings",
+      href: "/settings",
     },
     {
       titleKey: "sidebar.support",
       label: t("sidebar.support"),
       icon: HelpCircle,
-      href: "/dashboard/soporte",
+      href: "/soporte",
     },
   ];
 
@@ -128,7 +128,7 @@ export function AppSidebar() {
       titleKey: "sidebar.catalogs",
       label: "Catálogos",
       icon: Database,
-      href: "/dashboard/admin/catalogs",
+      href: "/admin/catalogs",
     },
   ];
 
