@@ -43,25 +43,21 @@ import {
   AvatarFallback,
 } from "@/src/core/presentation/components/ui/avatar";
 import { useApp } from "@/src/core/presentation/providers/providers";
-import { useAuth } from "@/src/features/auth/presentation/hooks/use-auth";
+import { useAuthStore } from "@/src/features/auth/presentation/store/auth-store";
 
-export function AppSidebar() {
+interface AppSidebarProps {
+  initialUser: {
+    name: string;
+    email: string;
+  }
+}
+
+export function AppSidebar({ initialUser }: AppSidebarProps) {
   const pathname = usePathname();
   const { t } = useApp();
-  const { logout, profile } = useAuth();
 
-  const [userData, setUserData] = useState({ name: "", email: "" });
-
-  useEffect(() => {
-    if (profile?.profile) {
-      setUserData({
-        name: profile.profile.name,
-        email: profile.profile.email,
-      });
-    } else {
-      setUserData({ name: "", email: "" });
-    }
-  }, [profile]);
+  // Usar selector atómico directo de Zustand para funciones de cliente
+  const logout = useAuthStore((state) => state.logout);
 
   const mainModules = [
     {
@@ -210,8 +206,8 @@ export function AppSidebar() {
                         <item.icon className="size-4" />
                         <span>{item.label}</span>
                       </Link>
-                     </SidebarMenuButton>
-                   </SidebarMenuItem>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
                 );
               })}
             </SidebarMenu>
@@ -260,15 +256,15 @@ export function AppSidebar() {
                 >
                   <Avatar className="size-8 rounded-lg">
                     <AvatarFallback className="rounded-lg bg-primary/10 text-primary text-xs font-bold">
-                      CM
+                      {initialUser.name.substring(0,2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col gap-0.5 leading-none overflow-hidden group-data-[collapsible=icon]:hidden">
                     <span className="text-sm font-semibold text-sidebar-foreground truncate">
-                      {userData.name || "Cargando..."}
+                      {initialUser.name || "Cargando..."}
                     </span>
                     <span className="text-[10px] text-muted-foreground truncate">
-                      {userData.email}
+                      {initialUser.email}
                     </span>
                   </div>
                   <ChevronDown className="ml-auto size-4 text-muted-foreground group-data-[collapsible=icon]:hidden" />
@@ -288,10 +284,10 @@ export function AppSidebar() {
                   </Avatar>
                   <div className="flex flex-col">
                     <span className="text-sm font-semibold text-foreground">
-                      {userData.name || "Cargando..."}
+                      {initialUser.name || "Cargando..."}
                     </span>
                     <span className="text-[10px] text-muted-foreground">
-                      {userData.email}
+                      {initialUser.email}
                     </span>
                   </div>
                 </div>
