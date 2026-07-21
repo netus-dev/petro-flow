@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
-import { middleware } from "@/middleware-trash";
+import { proxy } from "@/proxy";
 import * as supabaseMiddleware from "@/src/core/lib/supabase/middleware";
 
 vi.mock("@/src/core/lib/supabase/middleware", () => ({
@@ -19,7 +19,7 @@ describe("Middleware Authentication", () => {
     });
 
     const request = new NextRequest("http://localhost:3000/requisitions");
-    const response = await middleware(request);
+    const response = await proxy(request);
 
     expect(response.status).toBe(307);
     expect(response.headers.get("location")).toBe(
@@ -34,7 +34,7 @@ describe("Middleware Authentication", () => {
     });
 
     const request = new NextRequest("http://localhost:3000/auth/login");
-    const response = await middleware(request);
+    const response = await proxy(request);
 
     expect(response.status).toBe(307);
     expect(response.headers.get("location")).toBe("http://localhost:3000/dashboard");
@@ -48,7 +48,7 @@ describe("Middleware Authentication", () => {
     });
 
     const request = new NextRequest("http://localhost:3000/timesheet");
-    const response = await middleware(request);
+    const response = await proxy(request);
 
     expect(response).toBe(mockResponse);
   });
@@ -60,7 +60,7 @@ describe("Middleware Authentication", () => {
     });
 
     const request = new NextRequest("http://localhost:3000/hour-meters");
-    const response = await middleware(request);
+    const response = await proxy(request);
 
     expect(response.status).toBe(307);
     expect(response.headers.get("location")).toContain("/auth/login?redirectTo=%2Fhour-meters");
