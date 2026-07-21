@@ -136,8 +136,8 @@ export function HourMeterContent() {
 
       {/* Main Container - Fills remaining space dynamically */}
       <div className="flex-1 min-h-0 flex flex-row gap-4 overflow-hidden relative">
-        {/* Grid original — se contrae cuando el panel está abierto */}
-        <div className={`min-h-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 overflow-y-auto transition-all duration-300 ${selectedEquipmentId ? 'flex-1' : 'w-full'}`}>
+        {/* Grid de tarjetas — se ajusta automáticamente al espacio disponible */}
+        <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 overflow-y-auto">
           {enhancedRecords.map((record) => (
             <HourMeterCard
               key={record.id}
@@ -148,16 +148,22 @@ export function HourMeterContent() {
           ))}
         </div>
 
-        {/* Panel lateral - visible en pantallas grandes (desktop) */}
-        {selectedEquipmentId && (
-          <div className="hidden lg:block h-full animate-in slide-in-from-right duration-300">
+        {/* Panel lateral - animación suave de derecha a izquierda desplegando ancho (desktop) */}
+        <div
+          className={`hidden lg:block h-full shrink-0 transition-all duration-300 ease-in-out overflow-hidden ${
+            selectedEquipmentId
+              ? "w-[400px] opacity-100"
+              : "w-0 opacity-0 pointer-events-none"
+          }`}
+        >
+          <div className="w-[400px] h-full">
             <MaintenancePanel
               resolvedPlan={resolvedPlan}
               isLoading={isLoading}
               onClose={closePanel}
             />
           </div>
-        )}
+        </div>
       </div>
 
       {/* Panel responsivo en móvil/tablet - Drawer/Overlay superpuesto (pantallas < lg) */}
