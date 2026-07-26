@@ -17,6 +17,7 @@ Cada módulo funcional debe contener las siguientes 4 capas:
 Para mantener un flujo de datos predecible y reactivo:
 
 * **Zustand como Singleton:** Se utilizará Zustand para crear almacenes globales que actúen como puntos de entrada únicos para llamar a los `Use Cases`.
+* **Custom Selector Hooks Obligatorios:** Queda estrictamente prohibido destructurar directamente el objeto completo de la tienda en los componentes UI (`const { ... } = useAuthStore()`). Cada tienda DEBE exportar "Custom Selector Hooks" atómicos para datos y acciones (ej: `export const useLogout = () => useAuthStore((state) => state.logout)`). Los componentes UI consumirán únicamente estos hooks para asegurar suscripciones de grano fino y optimización de renderizado.
 * **RxJS (Reactividad):** Se integrará RxJS para manejar flujos de datos complejos, eventos asíncronos o comunicación entre componentes que requieran un enfoque reactivo (Streams).
 * **Exposición al Front:** El estado de Zustand expone los datos procesados por los Use Cases directamente a los componentes de la capa de presentación.
 

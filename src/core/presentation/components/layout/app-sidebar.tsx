@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
 import {
   Route,
   Clock,
@@ -43,7 +42,7 @@ import {
   AvatarFallback,
 } from "@/src/core/presentation/components/ui/avatar";
 import { useApp } from "@/src/core/presentation/providers/providers";
-import { useAuthStore } from "@/src/features/auth/presentation/store/auth-store";
+import { useLogout } from "@/src/features/auth/presentation/store/auth-store";
 
 interface AppSidebarProps {
   initialUser: {
@@ -56,8 +55,8 @@ export function AppSidebar({ initialUser }: AppSidebarProps) {
   const pathname = usePathname();
   const { t } = useApp();
 
-  // Usar selector atómico directo de Zustand para funciones de cliente
-  const logout = useAuthStore((state) => state.logout);
+  // Usar selector atómico directo de la Store de Zustand
+  const logout = useLogout();
 
   const mainModules = [
     {

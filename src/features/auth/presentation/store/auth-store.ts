@@ -155,3 +155,7 @@ export const useAuthStore = create<AuthState>()(
     }
   )
 );
+
+// Exportas hooks específicos para acciones o datos
+export const useLogout = () => useAuthStore((state) => state.logout);
+export const useUser = () => useAuthStore((state) => state.user);
