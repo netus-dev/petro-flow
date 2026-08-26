@@ -11,8 +11,8 @@ insert into public.rbac_principals (user_id, is_active) values
 insert into public.rbac_companies (id, name) values
   ('20000000-0000-0000-0000-000000000001', 'Fixture Company A'),
   ('20000000-0000-0000-0000-000000000002', 'Fixture Company B');
-insert into public.rbac_roles (id, name) values
-  ('30000000-0000-0000-0000-000000000001', 'fixture-editor');
+insert into public.rbac_roles (id, name, company_id) values
+  ('30000000-0000-0000-0000-000000000001', 'fixture-editor', '20000000-0000-0000-0000-000000000001');
 insert into public.rbac_permissions (id, action, resource) values
   ('40000000-0000-0000-0000-000000000001', 'read', 'documents'),
   ('40000000-0000-0000-0000-000000000002', 'update', 'documents');
