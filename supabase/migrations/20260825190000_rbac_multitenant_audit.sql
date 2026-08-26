@@ -135,6 +135,11 @@ create policy rbac_audit_select on public.rbac_audit_events for select to authen
 );
 
 -- Administration is capability-gated; tenant mutations still require an active membership.
+create policy rbac_companies_admin on public.rbac_companies for all to authenticated using (
+  public.rbac_has_capability(public.rbac_request_company_id(), 'manage', 'access-control')
+) with check (
+  public.rbac_has_capability(public.rbac_request_company_id(), 'manage', 'access-control')
+);
 create policy rbac_roles_admin on public.rbac_roles for all to authenticated using (
   public.rbac_has_capability(public.rbac_request_company_id(), 'manage', 'access-control')
 ) with check (

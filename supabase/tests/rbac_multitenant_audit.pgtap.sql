@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(12);
+select plan(13);
 
 insert into auth.users (id, email) values
   ('10000000-0000-0000-0000-000000000001', 'rbac-active@example.test'),
@@ -48,12 +48,13 @@ select is(public.authorization_projection('20000000-0000-0000-0000-000000000002'
 select ok(not public.rbac_has_capability('20000000-0000-0000-0000-000000000002', 'read', 'documents', 'operations'), 'disabled company module denies capable user');
 select ok(not public.rbac_has_capability('20000000-0000-0000-0000-000000000001', 'delete', 'documents', 'operations'), 'missing action-resource pair denies by default');
 select ok(not public.rbac_has_capability('20000000-0000-0000-0000-000000000001', 'read', 'unknown', 'operations'), 'unknown resource denies by default');
+select throws_ok($$update public.rbac_audit_events set target='{}' where id is not null$$, '42501', 'permission denied for table rbac_audit_events', 'audit events cannot be updated');
+select throws_ok($$delete from public.rbac_audit_events where id is not null$$, '42501', 'permission denied for table rbac_audit_events', 'audit events cannot be deleted');
 
 select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000002', true);
 select ok(not public.rbac_renew_authorization('20000000-0000-0000-0000-000000000001'), 'deactivated principal fails renewal');
 select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000001', true);
 select ok(not public.rbac_renew_authorization('20000000-0000-0000-0000-000000000002'), 'stale company context fails renewal');
-select throws_ok($$update public.rbac_audit_events set outcome='allowed'$$, '42501', 'permission denied for table rbac_audit_events', 'audit events are immutable to authenticated callers');
 select is((
   select count(*) from (
     select table_name as object_name from information_schema.tables where table_schema='public'
