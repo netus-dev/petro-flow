@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { updateSession } from "@/src/core/lib/supabase/middleware";
+import { COMPANY_CONTEXT_COOKIE } from "@/src/features/authorization/infrastructure/server/company-context";
 
 export async function proxy(request: NextRequest) {
   const { supabaseResponse, user } = await updateSession(request);
@@ -9,6 +10,7 @@ export async function proxy(request: NextRequest) {
 
   // Case 1: Unauthenticated or expired session attempting to access protected routes
   if (!user && !isAuthRoute) {
+    supabaseResponse.cookies?.delete?.(COMPANY_CONTEXT_COOKIE);
     const url = request.nextUrl.clone();
     url.pathname = "/auth/login";
     url.searchParams.set("redirectTo", pathname);
