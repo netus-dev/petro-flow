@@ -2,6 +2,16 @@ begin;
 create extension if not exists pgtap with schema extensions;
 select plan(13);
 
+delete from public.rbac_role_permissions;
+delete from public.rbac_assignments;
+delete from public.rbac_memberships;
+delete from public.rbac_company_modules;
+delete from public.rbac_documents;
+delete from public.rbac_roles;
+delete from public.rbac_permissions;
+delete from public.rbac_companies;
+delete from public.rbac_principals;
+
 insert into auth.users (id, email) values
   ('10000000-0000-0000-0000-000000000001', 'rbac-active@example.test'),
   ('10000000-0000-0000-0000-000000000002', 'rbac-inactive@example.test');

@@ -66,7 +66,7 @@ begin
   from public.permissions p
   where position('.' in p.name) > 0
   order by p.name, p.id
-  on conflict (id) do update set action = excluded.action, resource = excluded.resource;
+   on conflict (action, resource) do nothing;
 
   insert into public.rbac_role_permissions (role_id, permission_id)
   select rp.role_id, rp.permission_id
