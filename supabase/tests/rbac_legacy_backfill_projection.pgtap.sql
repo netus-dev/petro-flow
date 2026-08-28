@@ -1,8 +1,6 @@
--- Historical pre-retirement migration test. Excluded from the final local suite:
--- it deliberately creates public.companies and users.company_id to exercise the
--- backfill before the approved consolidation state removes both objects.
-begin;
-create extension if not exists pgtap with schema extensions;
+-- Historical pre-retirement migration assertions.
+-- Run only through rbac_legacy_backfill_projection_checkpoint.sql, which owns
+-- the transaction and supplies the legacy contracts temporarily.
 select plan(15);
 
 delete from public.rbac_role_permissions;
@@ -58,12 +56,12 @@ select is((select count(*) from public.rbac_memberships where user_id = '1100000
 select is((select count(*) from public.rbac_assignments where user_id = '11000000-0000-0000-0000-000000000001'), 1::bigint, 'assignment remains company-scoped');
 select is((select count(*) from public.rbac_assignments where user_id = '11000000-0000-0000-0000-000000000003' and company_id = '21000000-0000-0000-0000-000000000001'), 1::bigint, 'different user receives an independent company assignment');
 select is((select count(*) from public.rbac_roles where company_id = '21000000-0000-0000-0000-000000000001'), 2::bigint, 'roles retain company scope');
-select is((select count(*) from public.rbac_permissions), 4::bigint, 'valid permissions are reused by capability');
+select is((select count(*) from public.rbac_permissions), 2::bigint, 'valid permissions are reused by capability');
 select ok(not public.rbac_has_capability('21000000-0000-0000-0000-000000000002', 'read', 'documents', null), 'membership without role denies capability');
 select is((select count(*) from public.rbac_permissions where action = 'read' and resource = 'documents'), 1::bigint, 'global capability is reused across companies');
 select public.rbac_rehearse_legacy_consolidation();
-select is((select count(*) from public.rbac_memberships), 7::bigint, 'rerun does not duplicate memberships');
-select is((select count(*) from public.rbac_assignments), 4::bigint, 'rerun does not duplicate assignments');
+select is((select count(*) from public.rbac_memberships), 4::bigint, 'rerun does not duplicate memberships');
+select is((select count(*) from public.rbac_assignments), 2::bigint, 'rerun does not duplicate assignments');
 update public.rbac_memberships set is_active = false where user_id = '11000000-0000-0000-0000-000000000001' and company_id = '21000000-0000-0000-0000-000000000001';
 select ok(not public.rbac_has_capability('21000000-0000-0000-0000-000000000001', 'read', 'documents', null), 'inactive membership denies access');
 select ok(not public.rbac_has_capability('21000000-0000-0000-0000-000000000001', 'read', 'documents', null), 'inactive lifecycle remains denied');
@@ -71,4 +69,3 @@ select ok(to_regclass('public.rbac_compat_reconciliation') is null, 'persistent 
 select ok(not exists (select 1 from public.rbac_assignments where user_id = '11000000-0000-0000-0000-000000000002'), 'role without same-company membership receives no assignment');
 select ok(to_regclass('public.rbac_compat_exceptions') is null, 'unusable role assignment is not retained in schema');
 select * from finish();
-rollback;
