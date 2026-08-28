@@ -1,3 +1,6 @@
+-- Historical pre-retirement migration test. Excluded from the final local suite:
+-- it deliberately creates public.companies and users.company_id to exercise the
+-- backfill before the approved consolidation state removes both objects.
 begin;
 create extension if not exists pgtap with schema extensions;
 select plan(15);
@@ -20,11 +23,13 @@ insert into public.companies (id, name, is_active) values
   ('21000000-0000-0000-0000-000000000002', 'Company B', true);
 insert into public.users (id, name, is_active, company_id) values
   ('11000000-0000-0000-0000-000000000001', 'User A', true, '21000000-0000-0000-0000-000000000001'),
-  ('11000000-0000-0000-0000-000000000002', 'Inactive User', false, '21000000-0000-0000-0000-000000000001');
+  ('11000000-0000-0000-0000-000000000002', 'Inactive User', false, '21000000-0000-0000-0000-000000000001')
+on conflict (id) do update set name = excluded.name, is_active = excluded.is_active, company_id = excluded.company_id;
 insert into auth.users (id, email) values
   ('11000000-0000-0000-0000-000000000003', 'backfill-c@example.test');
 insert into public.users (id, name, is_active, company_id) values
-  ('11000000-0000-0000-0000-000000000003', 'User C', true, '21000000-0000-0000-0000-000000000001');
+  ('11000000-0000-0000-0000-000000000003', 'User C', true, '21000000-0000-0000-0000-000000000001')
+on conflict (id) do update set name = excluded.name, is_active = excluded.is_active, company_id = excluded.company_id;
 insert into public.roles (id, name, company_id) values
   ('31000000-0000-0000-0000-000000000001', 'operator', '21000000-0000-0000-0000-000000000001'),
   ('31000000-0000-0000-0000-000000000002', 'viewer', '21000000-0000-0000-0000-000000000002');
@@ -46,24 +51,24 @@ insert into public.user_roles (user_id, role_id) values
 insert into public.user_roles (user_id, role_id) values
   ('11000000-0000-0000-0000-000000000003', '31000000-0000-0000-0000-000000000003');
 
-select public.rbac_project_legacy();
+select public.rbac_rehearse_legacy_consolidation();
 select is((select count(*) from public.rbac_memberships where user_id = '11000000-0000-0000-0000-000000000001'), 1::bigint, 'valid default company creates membership');
 insert into public.rbac_memberships values ('21000000-0000-0000-0000-000000000002', '11000000-0000-0000-0000-000000000001', true);
 select is((select count(*) from public.rbac_memberships where user_id = '11000000-0000-0000-0000-000000000001' and is_active), 2::bigint, 'one user can belong to companies A and B');
 select is((select count(*) from public.rbac_assignments where user_id = '11000000-0000-0000-0000-000000000001'), 1::bigint, 'assignment remains company-scoped');
 select is((select count(*) from public.rbac_assignments where user_id = '11000000-0000-0000-0000-000000000003' and company_id = '21000000-0000-0000-0000-000000000001'), 1::bigint, 'different user receives an independent company assignment');
 select is((select count(*) from public.rbac_roles where company_id = '21000000-0000-0000-0000-000000000001'), 2::bigint, 'roles retain company scope');
-select is((select count(*) from public.rbac_permissions), 2::bigint, 'global permissions are reused by capability');
+select is((select count(*) from public.rbac_permissions), 4::bigint, 'valid permissions are reused by capability');
 select ok(not public.rbac_has_capability('21000000-0000-0000-0000-000000000002', 'read', 'documents', null), 'membership without role denies capability');
 select is((select count(*) from public.rbac_permissions where action = 'read' and resource = 'documents'), 1::bigint, 'global capability is reused across companies');
-select public.rbac_project_legacy();
-select is((select count(*) from public.rbac_memberships), 4::bigint, 'rerun does not duplicate memberships');
-select is((select count(*) from public.rbac_assignments), 2::bigint, 'rerun does not duplicate assignments');
+select public.rbac_rehearse_legacy_consolidation();
+select is((select count(*) from public.rbac_memberships), 7::bigint, 'rerun does not duplicate memberships');
+select is((select count(*) from public.rbac_assignments), 4::bigint, 'rerun does not duplicate assignments');
 update public.rbac_memberships set is_active = false where user_id = '11000000-0000-0000-0000-000000000001' and company_id = '21000000-0000-0000-0000-000000000001';
 select ok(not public.rbac_has_capability('21000000-0000-0000-0000-000000000001', 'read', 'documents', null), 'inactive membership denies access');
 select ok(not public.rbac_has_capability('21000000-0000-0000-0000-000000000001', 'read', 'documents', null), 'inactive lifecycle remains denied');
-select ok(to_regclass('public.rbac_compat_reconciliation') is not null, 'reconciliation surface exists');
+select ok(to_regclass('public.rbac_compat_reconciliation') is null, 'persistent reconciliation surface is absent');
 select ok(not exists (select 1 from public.rbac_assignments where user_id = '11000000-0000-0000-0000-000000000002'), 'role without same-company membership receives no assignment');
-select ok(exists (select 1 from public.rbac_compat_exceptions where source_table = 'user_roles' and reason = 'missing_membership'), 'unusable role assignment is reconciled');
+select ok(to_regclass('public.rbac_compat_exceptions') is null, 'unusable role assignment is not retained in schema');
 select * from finish();
 rollback;

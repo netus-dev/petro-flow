@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(31);
+select plan(28);
 
 select is((select count(*) from public.rbac_companies where id in ('92000000-0000-0000-0000-000000000001', '92000000-0000-0000-0000-000000000002')), 2::bigint, 'two seeded companies exist');
 select is((select count(*) from public.rbac_memberships where user_id = '91000000-0000-0000-0000-000000000001'), 2::bigint, 'seed user belongs to both companies');
@@ -9,9 +9,6 @@ select is((select count(*) from public.rbac_memberships where user_id = '9100000
 select is((select count(*) from public.rbac_role_permissions where permission_id = '94000000-0000-0000-0000-000000000001'), 3::bigint, 'global permission is reused across roles');
 -- Limitation: the reconciliation RPC is revoked from API roles by design;
 -- rerun checks therefore execute as the migration owner before SET ROLE.
-select lives_ok($$select public.rbac_project_legacy()$$, 'backfill can be rerun by its owner');
-select lives_ok($$select public.rbac_project_legacy()$$, 'exception reconciliation can be rerun by its owner');
-select ok((select count(*) from public.rbac_compat_exceptions) >= 0, 'backfill and exception reconciliation are rerunnable');
 
 set local role anon;
 select throws_ok($$select * from public.rbac_documents$$, '42501', 'permission denied for table rbac_documents', 'anon cannot select documents');

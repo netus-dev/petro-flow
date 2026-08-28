@@ -1,11 +1,12 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(19);
+select plan(20);
 
 select is((select count(*) from information_schema.tables where table_schema = 'public' and table_name in
-  ('companies', 'users', 'roles', 'permissions', 'user_roles', 'role_permissions')), 6::bigint,
-  'verified legacy RBAC tables exist locally');
-select ok((select relrowsecurity from pg_class where oid = 'public.companies'::regclass), 'companies RLS enabled');
+  ('users', 'roles', 'permissions', 'user_roles', 'role_permissions')), 5::bigint,
+  'verified remaining legacy RBAC tables exist locally');
+select ok(to_regclass('public.companies') is null, 'retired companies table is absent');
+select ok((select relrowsecurity from pg_class where oid = 'public.rbac_companies'::regclass), 'canonical companies RLS enabled');
 select ok((select relrowsecurity from pg_class where oid = 'public.users'::regclass), 'users RLS enabled');
 select ok((select relrowsecurity from pg_class where oid = 'public.roles'::regclass), 'roles RLS enabled');
 select ok((select relrowsecurity from pg_class where oid = 'public.permissions'::regclass), 'permissions RLS enabled');
@@ -15,7 +16,7 @@ select ok((select relrowsecurity from pg_class where oid = 'public.role_permissi
 select is((select count(*) from pg_policies where schemaname = 'public' and policyname like 'legacy_%_authenticated_crud'), 0::bigint,
   'unsafe authenticated CRUD baseline has been removed');
 select is((select count(*) from information_schema.role_table_grants where grantee = 'authenticated' and table_schema = 'public' and table_name in
-  ('companies', 'users', 'roles', 'permissions', 'user_roles', 'role_permissions') and privilege_type in ('INSERT', 'UPDATE', 'DELETE')), 0::bigint,
+  ('users', 'roles', 'permissions', 'user_roles', 'role_permissions') and privilege_type in ('INSERT', 'UPDATE', 'DELETE')), 0::bigint,
   'authenticated mutations are revoked');
 
 select is((select public = false from storage.buckets where id = 'certificates'), true, 'certificates bucket is private');
@@ -30,8 +31,8 @@ select is((select proconfig from pg_proc where oid = to_regprocedure('public.get
 select is((select count(*) from public.get_asset_stats_by_functional_principle('40000000-0000-0000-0000-000000000001')), 2::bigint,
   'asset stats excludes inactive assets and groups by location');
 
-select is((select count(*) from pg_constraint where conrelid = 'public.users'::regclass and contype = 'f'), 2::bigint,
-  'users keeps auth and company foreign keys');
+select is((select count(*) from pg_constraint where conrelid = 'public.users'::regclass and contype = 'f'), 1::bigint,
+  'users keeps auth foreign key after company membership cutover');
 select ok(exists (select 1 from pg_constraint where conrelid = 'public.permissions'::regclass and contype = 'u'),
   'permissions has a unique company constraint');
 select ok(exists (select 1 from pg_constraint where conrelid = 'public.roles'::regclass and contype = 'u'),

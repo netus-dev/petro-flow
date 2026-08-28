@@ -3,13 +3,7 @@ create extension if not exists pgtap with schema extensions;
 select plan(16);
 
 select has_schema('rbac_compat', 'compatibility schema exists');
-select is(
-  (select count(*) from information_schema.tables
-   where table_schema = 'public' and table_name in
-      ('companies', 'users', 'roles', 'permissions', 'user_roles', 'role_permissions')),
-   6::bigint,
-   'verified legacy fixture exists locally without guessed identity mapping'
-);
+select ok(to_regclass('public.companies') is null, 'retired companies table is absent from the final local schema');
 select ok(exists (select 1 from pg_proc p where p.oid = to_regprocedure('public.get_asset_stats_by_functional_principle(uuid)')
   and p.proconfig @> array['search_path=""']::text[]), 'asset stats SECURITY DEFINER RPC has empty search_path');
 
@@ -54,8 +48,8 @@ select throws_ok($$insert into storage.objects (id, bucket_id, name, owner, meta
   '42501', 'new row violates row-level security policy for table "objects"',
   'owner mismatch denies storage insert');
 select is((select count(*) from pg_views
-  where schemaname = 'rbac_compat'), 6::bigint,
-  'read-only compatibility views exist for each legacy table');
+   where schemaname = 'rbac_compat'), 0::bigint,
+  'historical compatibility views are not retained in the final schema');
 
 select * from finish();
 rollback;

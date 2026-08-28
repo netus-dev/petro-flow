@@ -11,7 +11,9 @@ This specification preserves legacy behavior while establishing an unambiguous p
 | Concern | Approved decision |
 |---|---|
 | Multi-company users | Supported. One user may have active memberships in multiple companies. |
-| `public.users.company_id` | Retained as the legacy/default company reference for compatibility. It is not the complete membership set. |
+| `public.users.company_id` | Legacy input used only during backfill. It is removed in final consolidation and is never an authorization authority. |
+| Canonical company | `rbac_companies` is the canonical company table after consolidation; legacy company records are mapped to it by stable identity. |
+| Identity linkage | Authorization backfill requires exact `public.users.id = auth.users.id` linkage. Unmatched users are recorded only in a temporary preflight report and receive no access. |
 | `user_roles` | Semantics remain unchanged. It continues to assign roles to users and has no `company_id`. |
 | Role scope | `roles.company_id` scopes a role to one company. |
 | Explicit membership | Use `rbac_memberships(company_id, user_id, is_active)` as the membership authority in the local model. |
@@ -30,7 +32,7 @@ The following facts are inputs to this design and are not proposed schema change
 | Role catalog | `roles.company_id` scopes roles to a company. |
 | Local membership model | `rbac_memberships` has explicit `company_id`, `user_id`, and `is_active` fields. |
 | Local assignment model | `rbac_assignments` has explicit `company_id`, `user_id`, and `role_id` fields. |
-| Existing local direction | The local RBAC model is namespaced and additive; compatibility must not destructively reinterpret legacy production objects. |
+| Existing local direction | The local RBAC model is namespaced and additive during rollout; final consolidation establishes one canonical table per concept. |
 
 The verified facts do not, by themselves, define how ambiguous legacy assignments should be migrated. The rules below are therefore proposed implementation decisions.
 
@@ -40,8 +42,9 @@ The verified facts do not, by themselves, define how ambiguous legacy assignment
 
 | Legacy source | Local target | Mapping rule | Authority during rollout |
 |---|---|---|---|
-| `public.users.id` | `user_id` in local rows | Preserve the same user identity; do not copy or recreate identities. | Legacy identity |
-| `public.users.company_id` | `rbac_memberships.company_id` | Create an active membership for the legacy/default company when the source reference is valid and the user is eligible. | Explicit membership after backfill |
+| `public.users.id` | `user_id` in local rows | Preserve the same identity only when it exactly matches `auth.users.id`; do not copy or recreate identities. | Auth-linked principal identity |
+| `public.users.company_id` | `rbac_memberships.company_id` | During backfill only, create or converge an active membership when the company reference and exact Auth identity linkage are valid. | Explicit membership after backfill |
+| Legacy `companies` | `rbac_companies` | Map by stable company identity and preserve required business attributes and identifiers. | `rbac_companies` after consolidation |
 | `user_roles.user_id` | `rbac_assignments.user_id` | Preserve the user identifier. | Legacy read, then local read after cutover |
 | `user_roles.role_id` | `rbac_assignments.role_id` | Map only when the role resolves to exactly one valid company-scoped role. | Legacy read, then local read after cutover |
 | `roles.id` | `rbac_assignments.role_id` | Preserve role identity where compatible; validate its `company_id`. | Role catalog |
@@ -51,11 +54,12 @@ The verified facts do not, by themselves, define how ambiguous legacy assignment
 
 | Legacy situation | Local result |
 |---|---|
-| User has a valid `users.company_id` | One active membership for that company, subject to lifecycle checks. |
+| User has a valid `users.company_id` and exact Auth linkage | During backfill, one active membership for that company, subject to lifecycle checks. |
+| User has no exact matching Auth identity | Exclude from authorization backfill and record the user in the temporary preflight report. Do not create a provisional Auth account. |
 | User has multiple legacy `user_roles` rows | Multiple local assignments may be created, but each must resolve to a company-scoped role. |
 | User is a member without a role | Keep the membership. Do not discard it because no assignment exists. |
 | User has a role without an explicit membership | Do not treat the assignment as proof of membership. Quarantine or deny until membership is resolved. |
-| User belongs to companies A and B | Store two active membership rows. The default field may point to one company only. |
+| User belongs to companies A and B | Store two active membership rows. No legacy default field remains after final consolidation. |
 
 ## Invariants
 
@@ -64,7 +68,7 @@ These invariants must hold after the local model becomes authoritative:
 1. An active authorization decision requires an active user, an active company, and an active `rbac_memberships` row for the requested company.
 2. An `rbac_assignments` row must reference the same company as its role's `company_id`.
 3. An assignment is usable only when the corresponding membership is active; a role does not create membership implicitly.
-4. `users.company_id` may select a default or compatibility company, but authorization must never use it as the user's complete company set.
+4. `users.company_id` is not present in the final consolidated profile schema; it is only a backfill input before removal.
 5. A user may have zero, one, or many active memberships, subject to product lifecycle rules; multiple memberships are valid, not an error.
 6. Company selection is request/session context, not authority. The database or authorization boundary must validate it against active membership.
 7. No role-name or company-name substring matching is permitted for migration or authorization.
@@ -75,20 +79,21 @@ These invariants must hold after the local model becomes authoritative:
 Backfill is a separately approved operation. This document defines behavior, not executable SQL.
 
 1. Snapshot source counts and source-to-target reconciliation results before writing.
-2. Backfill identities by stable user ID; never create duplicate users.
-3. For each eligible non-null `users.company_id`, create or converge one active membership for that company.
+2. Backfill identities only where `public.users.id = auth.users.id` exactly; never create duplicate or provisional identities.
+3. For each eligible non-null `users.company_id`, create or converge one active membership for that company. This column is a temporary migration input, not retained compatibility state.
 4. For each `user_roles` row, resolve the role and its `roles.company_id`; create an assignment only when the resolution is unique and valid.
 5. Do not create memberships solely because a role assignment exists.
 6. Preserve existing local rows; use idempotent convergence semantics rather than destructive replacement.
-7. Do not overwrite `users.company_id` during backfill. If a default must change, handle it as a separately reviewed compatibility decision.
-8. Record skipped, orphaned, and ambiguous rows with stable identifiers and a reason category.
-9. Backfill inactive users, companies, roles, or memberships according to their lifecycle state; do not silently promote inactive data to active authorization.
+7. Record unmatched users, skipped rows, orphaned rows, and ambiguous rows in the temporary `rbac_compat_exceptions` rehearsal report with stable identifiers and a reason category. This object is removed before production and is not part of the final schema.
+8. Backfill inactive users, companies, roles, or memberships according to their lifecycle state; do not silently promote inactive data to active authorization.
+9. After all consumers, policies, functions, triggers, views, and seeds are repointed and validation passes, remove `users.company_id` in final consolidation.
 
 ## Orphans and Ambiguity
 
 | Condition | Required handling |
 |---|---|
 | User ID has no matching user | Do not create a local row. Record an orphan for investigation. |
+| `public.users.id` has no exact matching `auth.users.id` | Exclude the user from authorization backfill and record it in the temporary preflight report; do not create a provisional Auth account. |
 | `users.company_id` is null | Do not invent a company or membership. Leave the user without a derived membership. |
 | Company reference does not resolve | Quarantine the membership candidate and deny company-scoped access. |
 | Role reference does not resolve | Quarantine the assignment candidate; do not guess from role name. |
@@ -99,6 +104,12 @@ Backfill is a separately approved operation. This document defines behavior, not
 | Multiple possible company matches | Do not auto-select. Require an authoritative ID-based mapping. |
 
 No ambiguity may be resolved by choosing the first row, the default company, a text similarity match, or a role-derived membership.
+
+### Temporary Exception Handling
+
+`rbac_compat_exceptions` exists only during migration rehearsal and preflight. It must not exist in the final production schema or serve as a permanent operational ledger. The preflight report must check each unmatched or ambiguous user for linked business data and foreign-key dependencies. Any dependency causes the process to fail closed until explicitly resolved.
+
+Disposable development users may be recreated only after explicit verification confirms that they are disposable and have no linked business data or dependencies. Otherwise, preserve the identity for manual disposition; never silently discard or recreate it. Remove the temporary exception object before production cutover and verify its absence in the final catalog.
 
 ## Rollout
 
@@ -121,10 +132,11 @@ No ambiguity may be resolved by choosing the first row, the default company, a t
 - Retain legacy-compatible reads for non-authoritative display paths only where required.
 - Monitor denied requests, orphan counts, mismatch counts, and company-crossing attempts.
 
-### Phase 3: Legacy retirement decision
+### Phase 3: Final consolidation
 
-- Only after operational evidence demonstrates parity and complete multi-company coverage, separately approve changes to legacy consumers.
-- This specification does not authorize dropping, rewriting, or repurposing legacy columns or tables.
+- After operational evidence demonstrates parity and complete multi-company coverage, repoint all remaining consumers to canonical `rbac_companies` and explicit memberships.
+- Remove `users.company_id` and retire legacy company references only after dependency, zero-reference, and runtime verification passes.
+- Unmatched users remain quarantined until an explicit later disposition; they do not become active authorization subjects automatically.
 
 ## Reconciliation Queries (Conceptual)
 
@@ -132,7 +144,7 @@ Implementations should provide read-only checks equivalent to the following conc
 
 | Check | Expected result |
 |---|---|
-| Legacy users with valid `company_id` versus active local memberships | Every eligible legacy default has one matching membership. |
+| Backfill-eligible users with valid `company_id` and exact Auth linkage versus active local memberships | Every eligible legacy input has one matching membership; unmatched users are present in the temporary preflight report with linked-data checks. |
 | Active local memberships versus user/company lifecycle | No active membership points to an inactive or missing principal/company. |
 | `user_roles` joined through `roles` versus local assignments | Every uniquely resolvable legacy assignment has one matching company-scoped assignment. |
 | Local assignments versus memberships | Zero usable assignments without an active same-company membership. |
@@ -147,16 +159,21 @@ Queries must use stable IDs and exact equality. They must not mutate data or con
 Rollback is a read-authority change, not a destructive data reversal:
 
 1. Disable the explicit-model read path or feature flag at the authorization boundary.
-2. Restore the last known-good legacy read path for single-company-compatible behavior.
+2. During rollout, restore the last known-good legacy read path for single-company-compatible behavior. After final consolidation, use rehearsed backup/catalog restoration instead.
 3. Preserve local memberships, assignments, and reconciliation evidence for diagnosis; do not delete them automatically.
-4. Block or quarantine multi-company operations that the legacy path cannot represent rather than silently applying them to `users.company_id`.
+4. Block or quarantine multi-company operations that the legacy path cannot represent rather than silently collapsing them into a legacy company field.
 5. Reconcile again before retrying cutover. A rollback must not introduce dual-write as an emergency workaround.
 
 ## Acceptance Criteria
 
 - [ ] The document distinguishes verified remote/local facts from proposed implementation decisions.
 - [ ] A user can belong to companies A and B through two explicit active memberships.
-- [ ] `users.company_id` remains available as a legacy/default compatibility field and is never treated as the complete membership set.
+- [ ] `users.company_id` is used only as a backfill input and is removed in final consolidation.
+- [ ] `rbac_companies` is the canonical company table after consolidation, with dependent references repointed by stable IDs.
+- [ ] Authorization backfill requires exact `public.users.id = auth.users.id` linkage.
+- [ ] Users without an exact Auth match are recorded in a temporary preflight report, receive no provisional identity or access, and are not represented by `rbac_compat_exceptions` in the final production schema.
+- [ ] The preflight report checks linked business data and dependencies; unresolved dependencies fail closed.
+- [ ] Disposable development users are recreated only after explicit verification proves they are unlinked and disposable.
 - [ ] `user_roles` remains unchanged and is not treated as company-scoped data.
 - [ ] Every local assignment is company-scoped and agrees with the role's `company_id`.
 - [ ] Membership exists independently of role assignment; membership-only users are supported.
@@ -165,5 +182,5 @@ Rollback is a read-authority change, not a destructive data reversal:
 - [ ] Orphans and ambiguities fail closed and are recorded for resolution.
 - [ ] Rollout uses dual-read comparison with no dual-write.
 - [ ] Reconciliation covers membership coverage, assignment scope, orphan counts, and authorization parity.
-- [ ] Rollback restores legacy reads without deleting local evidence or silently collapsing a multi-company user into one company.
+- [ ] Rollback preserves local evidence and does not silently collapse a multi-company user into one company; final-consolidation recovery uses rehearsed restoration procedures.
 - [ ] No executable SQL backfill is introduced by this work unit.
