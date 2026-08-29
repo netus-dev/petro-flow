@@ -4,6 +4,8 @@
 
 **Capture date:** 2026-08-27
 
+**CSV reconciliation:** 2026-08-28
+
 **Target:** Configured remote Supabase project `petro`.
 
 ## Executive Summary
@@ -165,3 +167,30 @@ The bounded `aclexplode` query was attempted for `public` and `storage` relation
 ## Reconciliation result
 
 The prior partial statements for tables/columns, constraints, indexes, routines, triggers, event-trigger names/state/owner/function, RLS state, policies, and storage object metadata are now **captured by this addendum**, subject only to the explicit event-trigger-definition and grants limitations above. The migration history, extensions, bucket metadata, and storage constraints previously recorded remain unchanged. No DDL, DML, migration, or storage mutation was performed.
+
+## Addendum: uploaded catalog CSV reconciliation (2026-08-28)
+
+The uploaded files under `docs/supabase_csv/` are read-only evidence. They are not a complete replacement for the bounded catalog capture above:
+
+| File | Evidence status | Exact limitation |
+|---|---|---|
+| `tables-and-columns.csv` | Substantive but not complete | 258 data rows are present, but the export skips `public.transactions` ordinal 2 and `public.user_roles` ordinal 4. The missing column names/types cannot be inferred. |
+| `constraints.csv` | Substantive | 83 data rows; absence from this export is not proof of absence. |
+| `indexes.csv` | Substantive | 62 data rows; absence from this export is not proof of absence. |
+| `rls-and-policies.csv` | RLS state only | 30 data rows report `rls_enabled=true` and `force_rls=false`; no policy expressions, commands, or roles are included. |
+| `functions.csv` | Routine evidence | Includes exported definitions, security mode, owner, and configuration where present; it does not provide ACL/EXECUTE grants. |
+| `triggers-and-event-triggers.csv` | Substantive trigger/event-trigger evidence | 16 enabled ordinary trigger rows and 7 enabled event-trigger rows are listed; event-trigger definitions are not included. |
+
+### Confirmed security and event-trigger findings
+
+- `public.get_asset_stats_by_functional_principle(uuid)` is `SECURITY DEFINER`, owned by `postgres`, and has no fixed `search_path`; its unqualified `assets` and `locations` references remain a hardening blocker.
+- `public.rls_auto_enable()` is `SECURITY DEFINER` with `search_path=pg_catalog`. Its dynamic `ALTER TABLE` still requires event-trigger trust-boundary and ownership review.
+- Enabled event triggers include `ensure_rls` -> `rls_auto_enable`, Supabase integration triggers (`issue_graphql_placeholder`, `issue_pg_cron_access`, `issue_pg_graphql_access`, `issue_pg_net_access`), and PostgREST watchers (`pgrst_ddl_watch`, `pgrst_drop_watch`). Their definitions are not present in the CSV.
+
+The uploaded RLS file does not independently substantiate the policy expressions in the earlier bounded-capture addendum; those remain attributable only to that earlier query result. The CSV policy export shows 97 policy rows, including permissive authenticated CRUD policies and three Storage object policies, but it has no ACL/grant columns and no Storage delete policy row. The CSV package contains no backup, snapshot, restore, or retention evidence. No privilege is inferred from owners, RLS flags, or policy membership. The package remains insufficient as a complete schema lockfile or production authorization approval.
+
+### Correction to export-coverage assessment
+
+The refreshed package removes the earlier claim that `tables-and-columns.csv` was truncated at `public.models` column 4. It is substantially populated through `storage.vector_indexes`, but it is not a complete column lockfile because of the two observed ordinal gaps above. Constraints, indexes, RLS state, ordinary triggers, event triggers, and policy rows are readable in the supplied files; absence from an export is not proof of absence in the remote catalog.
+
+The security conclusion is unchanged: complete grants/ACLs, event-trigger definitions, Storage delete semantics, and backup/restore evidence remain unavailable. The `SECURITY DEFINER` search-path finding and broad authenticated policy findings remain active risks.

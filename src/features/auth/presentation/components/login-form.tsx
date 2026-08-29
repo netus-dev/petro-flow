@@ -9,6 +9,8 @@ import { Button } from "@/src/core/presentation/components/ui/button";
 
 import { useAuth } from "../hooks/use-auth";
 import { useAuthStore } from "../store/auth-store";
+import { listActiveCompanyMemberships, selectCompanyAfterLogin } from "../../infrastructure/server/company-membership-actions";
+import { resolveCompanySelection, type CompanyMembership } from "../../domain/entities/companyMembership";
 
 export function LoginForm() {
   const { login, isLoading, error, user, getProfile } = useAuth();
@@ -17,6 +19,8 @@ export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [memberships, setMemberships] = useState<CompanyMembership[]>([]);
+  const [selectedCompanyId, setSelectedCompanyId] = useState("");
 
   const getValidRedirectPath = (): string => {
     const rawRedirect = searchParams.get("redirectTo");
@@ -43,13 +47,26 @@ export function LoginForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // 1. Iniciamos sesión
+    if (memberships.length > 1) {
+      const selection = resolveCompanySelection(memberships, selectedCompanyId);
+      if (selection.status !== "selected") return;
+      if ((await selectCompanyAfterLogin(selection.companyId)).status !== "ok") return;
+      router.push(targetPath);
+      return;
+    }
+
     await login({ email, password });
     
     // 2. Si el login fue exitoso, procedemos a obtener perfil y redirigir al destino original
     const { user: authUser } = useAuthStore.getState();
 
     if (authUser) {
+      const available = await listActiveCompanyMemberships();
+      setMemberships(available);
+      const selection = resolveCompanySelection(available);
+      if (selection.status === "selection_required") return;
+      if (selection.status !== "selected") return;
+      if ((await selectCompanyAfterLogin(selection.companyId)).status !== "ok") return;
       const profileData = await getProfile();
       if (profileData) {
         console.log("Información del profile recibida y guardada:", profileData);
@@ -78,6 +95,7 @@ export function LoginForm() {
           placeholder="usuario@petroflow.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          disabled={memberships.length > 0}
           required
           className="h-12 border-border bg-secondary/50 text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-primary/20 rounded-lg text-sm"
         />
@@ -105,6 +123,7 @@ export function LoginForm() {
             placeholder="Ingresa tu contrasena"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            disabled={memberships.length > 0}
             required
             className="h-12 border-border bg-secondary/50 text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-primary/20 rounded-lg text-sm pr-12"
           />
@@ -124,6 +143,16 @@ export function LoginForm() {
           </button>
         </div>
       </div>
+
+      {memberships.length > 1 && (
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="company" className="text-muted-foreground text-xs tracking-widest uppercase">Compañía</Label>
+          <select id="company" value={selectedCompanyId} onChange={(e) => setSelectedCompanyId(e.target.value)} required className="h-12 rounded-lg border border-border bg-secondary/50 px-3 text-sm text-foreground">
+            <option value="">Selecciona una compañía</option>
+            {memberships.map((membership) => <option key={membership.companyId} value={membership.companyId}>{membership.companyName}</option>)}
+          </select>
+        </div>
+      )}
 
       <Button
         type="submit"

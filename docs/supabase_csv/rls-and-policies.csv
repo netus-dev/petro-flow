@@ -1,0 +1,98 @@
+public,assets,authenticated_users_can_delete_assets,PERMISSIVE,{authenticated},DELETE,(( SELECT auth.uid() AS uid) IS NOT NULL),
+public,assets,authenticated_users_can_insert_assets,PERMISSIVE,{authenticated},INSERT,,(( SELECT auth.uid() AS uid) IS NOT NULL)
+public,assets,authenticated_users_can_update_assets,PERMISSIVE,{authenticated},UPDATE,(( SELECT auth.uid() AS uid) IS NOT NULL),(( SELECT auth.uid() AS uid) IS NOT NULL)
+public,assets,company_users_can_select_assets,PERMISSIVE,{authenticated},SELECT,"(company_id = ( SELECT u.company_id
+   FROM users u
+  WHERE (u.id = auth.uid())))",
+public,assets_certificates,authenticated_users_can_delete_certificates,PERMISSIVE,{authenticated},DELETE,(( SELECT auth.uid() AS uid) IS NOT NULL),
+public,assets_certificates,authenticated_users_can_insert_certificates,PERMISSIVE,{authenticated},INSERT,,(( SELECT auth.uid() AS uid) IS NOT NULL)
+public,assets_certificates,authenticated_users_can_select_certificates,PERMISSIVE,{authenticated},SELECT,(( SELECT auth.uid() AS uid) IS NOT NULL),
+public,assets_certificates,authenticated_users_can_update_certificates,PERMISSIVE,{authenticated},UPDATE,(( SELECT auth.uid() AS uid) IS NOT NULL),(( SELECT auth.uid() AS uid) IS NOT NULL)
+public,brands,authenticated_users_can_delete_brands,PERMISSIVE,{authenticated},DELETE,(( SELECT auth.uid() AS uid) IS NOT NULL),
+public,brands,authenticated_users_can_insert_brands,PERMISSIVE,{authenticated},INSERT,,(( SELECT auth.uid() AS uid) IS NOT NULL)
+public,brands,authenticated_users_can_select_brands,PERMISSIVE,{authenticated},SELECT,(( SELECT auth.uid() AS uid) IS NOT NULL),
+public,brands,authenticated_users_can_update_brands,PERMISSIVE,{authenticated},UPDATE,(( SELECT auth.uid() AS uid) IS NOT NULL),(( SELECT auth.uid() AS uid) IS NOT NULL)
+public,certificates,authenticated_users_can_delete_certificates,PERMISSIVE,{authenticated},DELETE,true,
+public,certificates,authenticated_users_can_insert_certificates,PERMISSIVE,{authenticated},INSERT,,true
+public,certificates,authenticated_users_can_select_certificates,PERMISSIVE,{authenticated},SELECT,true,
+public,certificates,authenticated_users_can_update_certificates,PERMISSIVE,{authenticated},UPDATE,true,true
+public,companies,authenticated_users_can_delete_companies,PERMISSIVE,{authenticated},DELETE,(( SELECT auth.uid() AS uid) IS NOT NULL),
+public,companies,authenticated_users_can_insert_companies,PERMISSIVE,{authenticated},INSERT,,(( SELECT auth.uid() AS uid) IS NOT NULL)
+public,companies,authenticated_users_can_select_companies,PERMISSIVE,{authenticated},SELECT,true,
+public,companies,authenticated_users_can_update_companies,PERMISSIVE,{authenticated},UPDATE,(( SELECT auth.uid() AS uid) IS NOT NULL),(( SELECT auth.uid() AS uid) IS NOT NULL)
+public,functional_principle_scopes,authenticated_users_can_delete_scopes,PERMISSIVE,{authenticated},DELETE,(( SELECT auth.uid() AS uid) IS NOT NULL),
+public,functional_principle_scopes,authenticated_users_can_insert_scopes,PERMISSIVE,{authenticated},INSERT,,(( SELECT auth.uid() AS uid) IS NOT NULL)
+public,functional_principle_scopes,authenticated_users_can_select_scopes,PERMISSIVE,{authenticated},SELECT,true,
+public,functional_principle_scopes,authenticated_users_can_update_scopes,PERMISSIVE,{authenticated},UPDATE,(( SELECT auth.uid() AS uid) IS NOT NULL),(( SELECT auth.uid() AS uid) IS NOT NULL)
+public,functional_principles,authenticated_users_can_delete_functional_principles,PERMISSIVE,{authenticated},DELETE,(( SELECT auth.uid() AS uid) IS NOT NULL),
+public,functional_principles,authenticated_users_can_insert_functional_principles,PERMISSIVE,{authenticated},INSERT,,(( SELECT auth.uid() AS uid) IS NOT NULL)
+public,functional_principles,authenticated_users_can_select_functional_principles,PERMISSIVE,{authenticated},SELECT,(( SELECT auth.uid() AS uid) IS NOT NULL),
+public,functional_principles,authenticated_users_can_update_functional_principles,PERMISSIVE,{authenticated},UPDATE,(( SELECT auth.uid() AS uid) IS NOT NULL),(( SELECT auth.uid() AS uid) IS NOT NULL)
+public,locations,authenticated_users_can_delete_locations,PERMISSIVE,{authenticated},DELETE,(( SELECT auth.uid() AS uid) IS NOT NULL),
+public,locations,authenticated_users_can_insert_locations,PERMISSIVE,{authenticated},INSERT,,(( SELECT auth.uid() AS uid) IS NOT NULL)
+public,locations,authenticated_users_can_select_locations,PERMISSIVE,{authenticated},SELECT,(( SELECT auth.uid() AS uid) IS NOT NULL),
+public,locations,authenticated_users_can_update_locations,PERMISSIVE,{authenticated},UPDATE,(( SELECT auth.uid() AS uid) IS NOT NULL),(( SELECT auth.uid() AS uid) IS NOT NULL)
+public,models,authenticated_users_can_delete_models,PERMISSIVE,{authenticated},DELETE,(( SELECT auth.uid() AS uid) IS NOT NULL),
+public,models,authenticated_users_can_insert_models,PERMISSIVE,{authenticated},INSERT,,(( SELECT auth.uid() AS uid) IS NOT NULL)
+public,models,authenticated_users_can_select_models,PERMISSIVE,{authenticated},SELECT,(( SELECT auth.uid() AS uid) IS NOT NULL),
+public,models,authenticated_users_can_update_models,PERMISSIVE,{authenticated},UPDATE,(( SELECT auth.uid() AS uid) IS NOT NULL),(( SELECT auth.uid() AS uid) IS NOT NULL)
+public,operating_bases,authenticated_users_can_delete_operating_bases,PERMISSIVE,{authenticated},DELETE,(( SELECT auth.uid() AS uid) IS NOT NULL),
+public,operating_bases,authenticated_users_can_insert_operating_bases,PERMISSIVE,{authenticated},INSERT,,(( SELECT auth.uid() AS uid) IS NOT NULL)
+public,operating_bases,authenticated_users_can_select_operating_bases,PERMISSIVE,{authenticated},SELECT,(( SELECT auth.uid() AS uid) IS NOT NULL),
+public,operating_bases,authenticated_users_can_update_operating_bases,PERMISSIVE,{authenticated},UPDATE,(( SELECT auth.uid() AS uid) IS NOT NULL),(( SELECT auth.uid() AS uid) IS NOT NULL)
+public,permissions,Public permissions are viewable only by authenticated users,PERMISSIVE,{authenticated},SELECT,true,
+public,permissions,authenticated_users_can_delete_permissions,PERMISSIVE,{authenticated},DELETE,(( SELECT auth.uid() AS uid) IS NOT NULL),
+public,permissions,authenticated_users_can_insert_permissions,PERMISSIVE,{authenticated},INSERT,,(( SELECT auth.uid() AS uid) IS NOT NULL)
+public,permissions,authenticated_users_can_select_permissions,PERMISSIVE,{authenticated},SELECT,(( SELECT auth.uid() AS uid) IS NOT NULL),
+public,permissions,authenticated_users_can_update_permissions,PERMISSIVE,{authenticated},UPDATE,(( SELECT auth.uid() AS uid) IS NOT NULL),(( SELECT auth.uid() AS uid) IS NOT NULL)
+public,rigs,authenticated_users_can_delete_rigs,PERMISSIVE,{authenticated},DELETE,(( SELECT auth.uid() AS uid) IS NOT NULL),
+public,rigs,authenticated_users_can_insert_rigs,PERMISSIVE,{authenticated},INSERT,,(( SELECT auth.uid() AS uid) IS NOT NULL)
+public,rigs,authenticated_users_can_select_rigs,PERMISSIVE,{authenticated},SELECT,(( SELECT auth.uid() AS uid) IS NOT NULL),
+public,rigs,authenticated_users_can_update_rigs,PERMISSIVE,{authenticated},UPDATE,(( SELECT auth.uid() AS uid) IS NOT NULL),(( SELECT auth.uid() AS uid) IS NOT NULL)
+public,role_permissions,Public roles_permissions are viewable only by authenticated use,PERMISSIVE,{authenticated},SELECT,true,
+public,role_permissions,authenticated_users_can_delete_role_permissions,PERMISSIVE,{authenticated},DELETE,(( SELECT auth.uid() AS uid) IS NOT NULL),
+public,role_permissions,authenticated_users_can_insert_role_permissions,PERMISSIVE,{authenticated},INSERT,,(( SELECT auth.uid() AS uid) IS NOT NULL)
+public,role_permissions,authenticated_users_can_select_role_permissions,PERMISSIVE,{authenticated},SELECT,(( SELECT auth.uid() AS uid) IS NOT NULL),
+public,role_permissions,authenticated_users_can_update_role_permissions,PERMISSIVE,{authenticated},UPDATE,(( SELECT auth.uid() AS uid) IS NOT NULL),(( SELECT auth.uid() AS uid) IS NOT NULL)
+public,roles,Public roles are viewable only by authenticated users,PERMISSIVE,{authenticated},SELECT,true,
+public,roles,authenticated_users_can_delete_roles,PERMISSIVE,{authenticated},DELETE,(( SELECT auth.uid() AS uid) IS NOT NULL),
+public,roles,authenticated_users_can_insert_roles,PERMISSIVE,{authenticated},INSERT,,(( SELECT auth.uid() AS uid) IS NOT NULL)
+public,roles,authenticated_users_can_select_roles,PERMISSIVE,{authenticated},SELECT,(( SELECT auth.uid() AS uid) IS NOT NULL),
+public,roles,authenticated_users_can_update_roles,PERMISSIVE,{authenticated},UPDATE,(( SELECT auth.uid() AS uid) IS NOT NULL),(( SELECT auth.uid() AS uid) IS NOT NULL)
+public,suppliers,authenticated_users_can_delete_suppliers,PERMISSIVE,{authenticated},DELETE,(( SELECT auth.uid() AS uid) IS NOT NULL),
+public,suppliers,authenticated_users_can_insert_suppliers,PERMISSIVE,{authenticated},INSERT,,(( SELECT auth.uid() AS uid) IS NOT NULL)
+public,suppliers,authenticated_users_can_select_suppliers,PERMISSIVE,{authenticated},SELECT,(( SELECT auth.uid() AS uid) IS NOT NULL),
+public,suppliers,authenticated_users_can_update_suppliers,PERMISSIVE,{authenticated},UPDATE,(( SELECT auth.uid() AS uid) IS NOT NULL),(( SELECT auth.uid() AS uid) IS NOT NULL)
+public,tasks,authenticated_users_can_delete_tasks,PERMISSIVE,{authenticated},DELETE,(( SELECT auth.uid() AS uid) IS NOT NULL),
+public,tasks,authenticated_users_can_insert_tasks,PERMISSIVE,{authenticated},INSERT,,(( SELECT auth.uid() AS uid) IS NOT NULL)
+public,tasks,authenticated_users_can_select_tasks,PERMISSIVE,{authenticated},SELECT,(( SELECT auth.uid() AS uid) IS NOT NULL),
+public,tasks,authenticated_users_can_update_tasks,PERMISSIVE,{authenticated},UPDATE,(( SELECT auth.uid() AS uid) IS NOT NULL),(( SELECT auth.uid() AS uid) IS NOT NULL)
+public,transaction_details,authenticated_users_can_delete_transaction_details,PERMISSIVE,{authenticated},DELETE,(( SELECT auth.uid() AS uid) IS NOT NULL),
+public,transaction_details,authenticated_users_can_insert_transaction_details,PERMISSIVE,{authenticated},INSERT,,(( SELECT auth.uid() AS uid) IS NOT NULL)
+public,transaction_details,authenticated_users_can_select_transaction_details,PERMISSIVE,{authenticated},SELECT,(( SELECT auth.uid() AS uid) IS NOT NULL),
+public,transaction_details,authenticated_users_can_update_transaction_details,PERMISSIVE,{authenticated},UPDATE,(( SELECT auth.uid() AS uid) IS NOT NULL),(( SELECT auth.uid() AS uid) IS NOT NULL)
+public,transactions,authenticated_users_can_delete_transactions,PERMISSIVE,{authenticated},DELETE,(( SELECT auth.uid() AS uid) IS NOT NULL),
+public,transactions,authenticated_users_can_insert_transactions,PERMISSIVE,{authenticated},INSERT,,(( SELECT auth.uid() AS uid) IS NOT NULL)
+public,transactions,authenticated_users_can_select_transactions,PERMISSIVE,{authenticated},SELECT,(( SELECT auth.uid() AS uid) IS NOT NULL),
+public,transactions,authenticated_users_can_update_transactions,PERMISSIVE,{authenticated},UPDATE,(( SELECT auth.uid() AS uid) IS NOT NULL),(( SELECT auth.uid() AS uid) IS NOT NULL)
+public,ubications,authenticated_users_can_delete_ubications,PERMISSIVE,{authenticated},DELETE,(( SELECT auth.uid() AS uid) IS NOT NULL),
+public,ubications,authenticated_users_can_insert_ubications,PERMISSIVE,{authenticated},INSERT,,(( SELECT auth.uid() AS uid) IS NOT NULL)
+public,ubications,authenticated_users_can_select_ubications,PERMISSIVE,{authenticated},SELECT,(( SELECT auth.uid() AS uid) IS NOT NULL),
+public,ubications,authenticated_users_can_update_ubications,PERMISSIVE,{authenticated},UPDATE,(( SELECT auth.uid() AS uid) IS NOT NULL),(( SELECT auth.uid() AS uid) IS NOT NULL)
+public,user_roles,Public user_roles are viewable only by authenticated users,PERMISSIVE,{authenticated},SELECT,true,
+public,user_roles,authenticated_users_can_delete_user_roles,PERMISSIVE,{authenticated},DELETE,(( SELECT auth.uid() AS uid) IS NOT NULL),
+public,user_roles,authenticated_users_can_insert_user_roles,PERMISSIVE,{authenticated},INSERT,,(( SELECT auth.uid() AS uid) IS NOT NULL)
+public,user_roles,authenticated_users_can_select_user_roles,PERMISSIVE,{authenticated},SELECT,(( SELECT auth.uid() AS uid) IS NOT NULL),
+public,user_roles,authenticated_users_can_update_user_roles,PERMISSIVE,{authenticated},UPDATE,(( SELECT auth.uid() AS uid) IS NOT NULL),(( SELECT auth.uid() AS uid) IS NOT NULL)
+public,users,Public profiles are viewable only by authenticated users,PERMISSIVE,{authenticated},SELECT,true,
+public,users,authenticated_users_can_delete_users,PERMISSIVE,{authenticated},DELETE,(( SELECT auth.uid() AS uid) IS NOT NULL),
+public,users,authenticated_users_can_insert_users,PERMISSIVE,{authenticated},INSERT,,(( SELECT auth.uid() AS uid) IS NOT NULL)
+public,users,authenticated_users_can_select_users,PERMISSIVE,{authenticated},SELECT,(( SELECT auth.uid() AS uid) IS NOT NULL),
+public,users,authenticated_users_can_update_users,PERMISSIVE,{authenticated},UPDATE,(( SELECT auth.uid() AS uid) IS NOT NULL),(( SELECT auth.uid() AS uid) IS NOT NULL)
+public,wells,authenticated_users_can_delete_wells,PERMISSIVE,{authenticated},DELETE,(( SELECT auth.uid() AS uid) IS NOT NULL),
+public,wells,authenticated_users_can_insert_wells,PERMISSIVE,{authenticated},INSERT,,(( SELECT auth.uid() AS uid) IS NOT NULL)
+public,wells,authenticated_users_can_select_wells,PERMISSIVE,{authenticated},SELECT,(( SELECT auth.uid() AS uid) IS NOT NULL),
+public,wells,authenticated_users_can_update_wells,PERMISSIVE,{authenticated},UPDATE,(( SELECT auth.uid() AS uid) IS NOT NULL),(( SELECT auth.uid() AS uid) IS NOT NULL)
+storage,objects,authenticated_users_can_insert_certificates,PERMISSIVE,{authenticated},INSERT,,(bucket_id = 'certificates'::text)
+storage,objects,authenticated_users_can_select_certificates,PERMISSIVE,{authenticated},SELECT,(bucket_id = 'certificates'::text),
+storage,objects,authenticated_users_can_update_certificates,PERMISSIVE,{authenticated},UPDATE,(bucket_id = 'certificates'::text),

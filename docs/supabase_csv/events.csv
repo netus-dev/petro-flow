@@ -1,0 +1,7 @@
+ensure_rls,O,postgres,ddl_command_end
+issue_graphql_placeholder,O,supabase_admin,sql_drop
+issue_pg_cron_access,O,supabase_admin,ddl_command_end
+issue_pg_graphql_access,O,supabase_admin,ddl_command_end
+issue_pg_net_access,O,supabase_admin,ddl_command_end
+pgrst_ddl_watch,O,supabase_admin,ddl_command_end
+pgrst_drop_watch,O,supabase_admin,sql_drop
