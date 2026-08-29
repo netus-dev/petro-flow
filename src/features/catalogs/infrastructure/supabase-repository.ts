@@ -3,9 +3,18 @@ import { ICatalogsRepository } from "../domain/repository";
 import { CatalogType, BaseCatalogItem } from "../domain/entities";
 
 export class SupabaseCatalogsRepository implements ICatalogsRepository {
-  private supabase = createClient();
+  private supabase;
+
+  constructor(supabase = createClient()) {
+    this.supabase = supabase;
+  }
 
   async getItems(catalog: CatalogType, companyId?: string): Promise<BaseCatalogItem[]> {
+    if (companyId) {
+      const { data: authorized, error: authorizationError } = await this.supabase.rpc("rbac_renew_authorization", { p_company_id: companyId });
+      if (authorizationError) throw new Error(authorizationError.message);
+      if (!authorized) return [];
+    }
     let query = this.supabase.from(catalog).select("*").order("created_at", { ascending: false });
 
     if (catalog === "locations") {
