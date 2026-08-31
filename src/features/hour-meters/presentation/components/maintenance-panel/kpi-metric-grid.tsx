@@ -34,7 +34,7 @@ export function KpiMetricGrid({
   const reliabilityValue = kpi?.reliability ? kpi.reliability[reliabilityPeriod] : null;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 w-full">
+    <div className="grid grid-cols-2 gap-1.5 w-full">
       <KpiMetricCard
         label="MTBF"
         fullName="Tiempo Medio Entre Fallas"

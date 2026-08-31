@@ -41,7 +41,20 @@ export class GetNextMaintenancePlanUseCase {
       const plans = await this.repository.getPlansByEquipmentId(equipmentId);
 
       if (!plans || plans.length === 0) {
-        return right(null);
+        return right({
+          equipmentId,
+          equipmentName,
+          currentReading,
+          nextThresholdHours: currentReading + 500,
+          activities: [{
+            id: `fallback-${equipmentId}`,
+            name: "Inspección preventiva general",
+            description: "Revisión preventiva del equipo y registro de hallazgos.",
+            estimatedDuration: "1h",
+            category: "inspeccion",
+          }],
+          planType: "cyclic",
+        });
       }
 
       // Estructura para almacenar cada plan asociado con su siguiente umbral calculado
@@ -67,7 +80,14 @@ export class GetNextMaintenancePlanUseCase {
       }
 
       if (resolvedThresholds.length === 0) {
-        return right(null);
+        return right({
+          equipmentId,
+          equipmentName,
+          currentReading,
+          nextThresholdHours: currentReading + 500,
+          activities: plans.flatMap((plan) => plan.activities),
+          planType: "cyclic",
+        });
       }
 
       // Encontrar el menor de los umbrales calculados

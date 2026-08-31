@@ -121,7 +121,7 @@ export function DashboardNavbar() {
         <Button
           variant="ghost"
           size="icon"
-          className="size-9 text-muted-foreground hover:text-foreground"
+          className="hidden lg:inline-flex size-9 text-muted-foreground hover:text-foreground"
           aria-label={t("nav.fullscreen")}
           onClick={() => {
             if (!document.fullscreenElement) {

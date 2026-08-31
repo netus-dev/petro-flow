@@ -27,6 +27,11 @@ export interface HourMeterCardProps {
   onClick: (equipmentId: string) => void;
 }
 
+/** Formats maintenance dates for the Spanish card presentation. */
+function formatMaintenanceDate(date: string): string {
+  return new Date(date).toLocaleDateString("es-ES");
+}
+
 /**
  * Tarjeta individual de activo físico que visualiza sus horas acumuladas,
  * su progreso hasta el límite y su estado actual (normal, warning, critical).
@@ -82,7 +87,7 @@ export function HourMeterCard({ record, isSelected, onClick }: HourMeterCardProp
         }`}
     >
 
-      <CardContent className="p-4 flex flex-col justify-between h-full">
+      <CardContent className="p-4 flex flex-col justify-between flex-1">
         {/* Nivel 1: Encabezado compacto (Título + ID a la izquierda, Badge a la derecha) */}
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
@@ -101,47 +106,47 @@ export function HourMeterCard({ record, isSelected, onClick }: HourMeterCardProp
           </span>
         </div>
 
-        {/* Nivel 2: Métricas Principales en 2 columnas (Lectura Actual vs Horas Restantes) */}
-        <div className="grid grid-cols-2 gap-2 py-1 my-auto items-baseline">
-          <div>
+        {/* Nivel 2: contexto histórico y lectura actual destacada */}
+        <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 py-3 my-auto">
+          <div className="min-w-0 text-[10px] font-mono leading-relaxed text-muted-foreground">
+            <span className="block">Último mantto:</span>
+            <span className="block">{formatMaintenanceDate(record.lastMaintenanceDate)}</span>
+            <span className="block">{record.lastMaintenanceReading.toLocaleString("es-ES")} hrs</span>
+          </div>
+
+          <div className="text-center">
             <span className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground block">
-              Lectura Actual
+              Lectura actual
             </span>
-            <div className="flex items-baseline gap-1 mt-0.5">
-              <span className="text-2xl md:text-3xl font-black font-mono tabular-nums tracking-tight text-foreground">
+            <div className="flex items-baseline justify-center gap-1 mt-0.5">
+              <span className="text-3xl md:text-4xl font-black font-mono tabular-nums tracking-tight text-foreground">
                 {record.currentReading.toLocaleString()}
               </span>
-              <span className="text-xs font-mono font-bold text-muted-foreground">h</span>
+              <span className="text-xs font-mono font-bold text-muted-foreground">hrs</span>
             </div>
           </div>
 
-          <div className="text-right">
-            <span className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground block">
-              Faltan
-            </span>
-            <div className="flex items-baseline justify-end gap-1 mt-0.5">
-              <span className={`text-xl md:text-2xl font-black font-mono tabular-nums tracking-tight ${textColor}`}>
-                {record.remainingHours.toLocaleString()}
-              </span>
-              <span className={`text-xs font-mono font-bold ${textColor}`}>h</span>
-            </div>
+          <div className={`text-right text-[10px] font-mono ${textColor}`}>
+            <span className="block font-bold">{record.remainingHours <= 0 ? "Mantenimiento vencido" : "Siguiente Mantto. en"}</span>
+            <span className="block font-black text-sm tabular-nums">{Math.max(record.remainingHours, 0).toLocaleString("es-ES")} hrs</span>
           </div>
         </div>
 
-        {/* Nivel 3: Indicador de progreso consolidado con el Límite */}
-        <div className="space-y-1.5 pt-1">
-          <div className="flex justify-between text-[10px] font-mono tracking-wider text-muted-foreground">
-            <span>Progreso ({Math.round(record.progressValue)}%)</span>
-            <span>Límite: <strong className="text-foreground">{record.maxThreshold.toLocaleString()}h</strong></span>
-          </div>
-          <div className="h-2 w-full bg-secondary/60 overflow-hidden rounded-full">
-            <div
-              className={`h-full rounded-full transition-all duration-1000 ease-out ${progressIndicatorColor}`}
-              style={{ width: `${record.progressValue}%` }}
-            />
-          </div>
-        </div>
       </CardContent>
+
+      {/* Nivel 3: Indicador de progreso integrado al borde inferior de la tarjeta */}
+      <div className="shrink-0 space-y-1 px-4 pt-1 pb-1">
+        <div className="flex justify-between text-[10px] font-mono tracking-wider text-muted-foreground">
+          <span>Progreso ({Math.round(record.progressValue)}%)</span>
+          <span>Límite: <strong className="text-foreground">{record.maxThreshold.toLocaleString()} hrs</strong></span>
+        </div>
+      </div>
+      <div className="shrink-0 h-1 w-full bg-secondary/60 overflow-hidden rounded-b-xl">
+        <div
+          className={`h-full transition-all duration-1000 ease-out ${progressIndicatorColor}`}
+          style={{ width: `${record.progressValue}%` }}
+        />
+      </div>
 
     </Card>
   );

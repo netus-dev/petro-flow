@@ -6,13 +6,17 @@ import { useHourMeters } from "../hooks/use-hour-meters";
 import { HourMeterCard, EnhancedHourMeterRecord } from "./hour-meter-card";
 import { MaintenancePanel } from "./maintenance-panel/maintenance-panel";
 import { useMaintenancePanel } from "../hooks/use-maintenance-panel";
+import { Button } from "@/src/core/presentation/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/src/core/presentation/components/ui/dialog";
+import { RegisterHourMeterForm } from "./register-hour-meter-form";
+import { InventoryManagementModal } from "./inventory-management-modal";
 
 /**
  * Componente principal de presentación (Page/Organism) que representa la vista
  * del Dashboard de Horómetros con telemetría en tiempo real y panel de mantenimiento.
  */
 export function HourMeterContent() {
-  const { records, loading } = useHourMeters() as { records: any[]; loading: boolean };
+  const { records, loading, refresh } = useHourMeters();
   const [lastSync, setLastSync] = useState("hace 1 min");
   
   // Hook de estado para el panel lateral de mantenimiento
@@ -88,7 +92,21 @@ export function HourMeterContent() {
           </div>
         </div>
 
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-4">
+          <Dialog>
+            <DialogTrigger asChild><Button size="sm" variant="outline">Gestionar inventario</Button></DialogTrigger>
+            <DialogContent className="w-[min(96vw,1400px)] max-w-none max-h-[90vh] overflow-hidden p-6" aria-describedby="inventory-management-description">
+              <DialogHeader><DialogTitle>Gestionar inventario</DialogTitle><p id="inventory-management-description" className="text-sm text-muted-foreground">Registra y actualiza materiales por activo o de forma compartida por tipo de equipo.</p></DialogHeader>
+              <InventoryManagementModal assets={records.map(record => ({ id: record.id, equipment: record.equipment }))} />
+            </DialogContent>
+          </Dialog>
+          <Dialog>
+            <DialogTrigger asChild><Button size="sm">Registrar lectura</Button></DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Registrar lectura de horómetro</DialogTitle></DialogHeader>
+              <RegisterHourMeterForm onRegistered={() => void refresh()} />
+            </DialogContent>
+          </Dialog>
           <div className="flex flex-col items-end">
             <div className="flex items-center gap-2">
               <span className="relative flex size-3">
@@ -137,7 +155,7 @@ export function HourMeterContent() {
       {/* Main Container - Fills remaining space dynamically */}
       <div className="flex-1 min-h-0 flex flex-row gap-4 overflow-hidden relative">
         {/* Grid de tarjetas — se ajusta automáticamente al espacio disponible */}
-        <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 overflow-y-auto">
+        <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 overflow-hidden">
           {enhancedRecords.map((record) => (
             <HourMeterCard
               key={record.id}
@@ -152,11 +170,11 @@ export function HourMeterContent() {
         <div
           className={`hidden lg:block h-full shrink-0 transition-all duration-300 ease-in-out overflow-hidden ${
             selectedEquipmentId
-              ? "w-[400px] opacity-100"
+              ? "w-[440px] opacity-100"
               : "w-0 opacity-0 pointer-events-none"
           }`}
         >
-          <div className="w-[400px] h-full">
+          <div className="w-[440px] h-full">
             <MaintenancePanel
               resolvedPlan={resolvedPlan}
               isLoading={isLoading}
@@ -169,14 +187,12 @@ export function HourMeterContent() {
       {/* Panel responsivo en móvil/tablet - Drawer/Overlay superpuesto (pantallas < lg) */}
       {selectedEquipmentId && (
         <div className="lg:hidden fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-end justify-center p-4">
-          <div className="w-full max-h-[85vh] bg-card border border-border rounded-t-2xl shadow-2xl overflow-hidden flex flex-col relative animate-in slide-in-from-bottom duration-300">
-            <div className="flex-1 overflow-y-auto min-h-0">
-              <MaintenancePanel
-                resolvedPlan={resolvedPlan}
-                isLoading={isLoading}
-                onClose={closePanel}
-              />
-            </div>
+          <div className="w-full h-[85vh] min-h-0 relative animate-in slide-in-from-bottom duration-300">
+            <MaintenancePanel
+              resolvedPlan={resolvedPlan}
+              isLoading={isLoading}
+              onClose={closePanel}
+            />
           </div>
         </div>
       )}
