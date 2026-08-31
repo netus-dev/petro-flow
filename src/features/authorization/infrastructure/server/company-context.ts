@@ -3,9 +3,13 @@ import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 export const COMPANY_CONTEXT_COOKIE = "petro_company_context";
 /** Maximum age for a signed context before requiring a fresh company selection. */
 export const COMPANY_CONTEXT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
-export const companyContextCookieOptions = { httpOnly: true, secure: true, sameSite: "lax" as const, path: "/" };
 
 export interface BrowserCompanyContext { companyId: string; contextId: string; issuedAt: number }
+
+/** Builds context cookie attributes while preserving secure defaults. */
+export function companyContextCookieOptions(secure = true) {
+  return { httpOnly: true, secure, sameSite: "lax" as const, path: "/" };
+}
 
 /** Returns the tenant header only after the server has validated the same company. */
 export function companyHeaderForValidatedContext(
@@ -16,11 +20,11 @@ export function companyHeaderForValidatedContext(
   return { "x-company-id": validatedCompanyId };
 }
 
-/** Creates an opaque signed browser-session company context. */
-export function sealCompanyContext(context: BrowserCompanyContext, secret: string) {
+/** Creates an opaque signed browser-session company context with request-appropriate cookie transport security. */
+export function sealCompanyContext(context: BrowserCompanyContext, secret: string, secure = true) {
   const payload = Buffer.from(JSON.stringify(context)).toString("base64url");
   const signature = createHmac("sha256", secret).update(payload).digest("base64url");
-  return { value: `${payload}.${signature}`, options: companyContextCookieOptions };
+  return { value: `${payload}.${signature}`, options: companyContextCookieOptions(secure) };
 }
 
 /** Verifies and decodes a company context without treating it as authority. */

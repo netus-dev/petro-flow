@@ -12,3 +12,23 @@ export function expectedRequestOrigin(host: string | null, forwardedProto: strin
 export function isSameRequestOrigin(origin: string | null, host: string | null, forwardedProto: string | null) {
   return Boolean(origin && origin === expectedRequestOrigin(host, forwardedProto));
 }
+
+/** Keeps Secure unless a validated request is explicitly HTTP on a loopback host outside production. */
+export function shouldUseSecureCookie(
+  origin: string | null,
+  host: string | null,
+  forwardedProto: string | null,
+  isProduction: boolean,
+): boolean {
+  if (isProduction || !origin || forwardedProto?.includes(",") || !isSameRequestOrigin(origin, host, forwardedProto)) return true;
+  try {
+    const parsedOrigin = new URL(origin);
+    if (parsedOrigin.origin !== origin) return true;
+    const isLoopback = parsedOrigin.hostname === "localhost"
+      || parsedOrigin.hostname === "127.0.0.1"
+      || parsedOrigin.hostname === "[::1]";
+    return parsedOrigin.protocol !== "http:" || !isLoopback;
+  } catch {
+    return true;
+  }
+}

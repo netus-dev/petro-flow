@@ -3,7 +3,7 @@
 import { cookies, headers } from "next/headers";
 import { createClient } from "@/src/core/lib/supabase/server";
 import { COMPANY_CONTEXT_COOKIE, newCompanyContext, sealCompanyContext } from "@/src/features/authorization/infrastructure/server/company-context";
-import { isSameRequestOrigin } from "./request-origin";
+import { isSameRequestOrigin, shouldUseSecureCookie } from "./request-origin";
 
 export type CompanyContextActionResult =
   | { status: "ok" }
@@ -28,13 +28,16 @@ export async function selectCompanyAfterLogin(companyId: string): Promise<Compan
   try {
     const requestHeaders = await headers();
     const origin = requestHeaders.get("origin");
-    if (!isSameRequestOrigin(origin, requestHeaders.get("host"), requestHeaders.get("x-forwarded-proto"))) return { status: "forbidden" };
+    const host = requestHeaders.get("host");
+    const forwardedProto = requestHeaders.get("x-forwarded-proto");
+    if (!isSameRequestOrigin(origin, host, forwardedProto)) return { status: "forbidden" };
     const supabase = await createClient();
     const { data, error } = await supabase.rpc("authorization_projection", { p_company_id: companyId });
     if (error || !data) return { status: "forbidden" };
     const secret = process.env.AUTHORIZATION_CONTEXT_SECRET;
     if (!secret) return { status: "error", message: "No se pudo establecer el contexto de compañía" };
-    const sealed = sealCompanyContext(newCompanyContext(companyId), secret);
+    const secure = shouldUseSecureCookie(origin, host, forwardedProto, process.env.NODE_ENV === "production");
+    const sealed = sealCompanyContext(newCompanyContext(companyId), secret, secure);
     (await cookies()).set(COMPANY_CONTEXT_COOKIE, sealed.value, sealed.options);
     return { status: "ok" };
   } catch {
