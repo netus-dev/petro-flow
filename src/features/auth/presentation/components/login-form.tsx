@@ -12,6 +12,7 @@ import { useAuthStore } from "../store/auth-store";
 import { listActiveCompanyMemberships, selectCompanyAfterLogin } from "../../infrastructure/server/company-membership-actions";
 import { selectLoginCompany } from "../../application/select-login-company";
 import type { CompanyMembership } from "../../domain/entities/companyMembership";
+import { getValidRedirectPath } from "./login-redirect";
 
 export function LoginForm() {
   const { login, isLoading, error, user, getProfile } = useAuth();
@@ -24,20 +25,7 @@ export function LoginForm() {
   const [selectedCompanyId, setSelectedCompanyId] = useState("");
   const [contextError, setContextError] = useState<string | null>(null);
 
-  const getValidRedirectPath = (): string => {
-    const rawRedirect = searchParams.get("redirectTo");
-    if (
-      rawRedirect &&
-      rawRedirect.startsWith("/") &&
-      !rawRedirect.startsWith("//") &&
-      !rawRedirect.startsWith("/auth")
-    ) {
-      return rawRedirect;
-    }
-    return "/dashboard";
-  };
-
-  const targetPath = getValidRedirectPath();
+  const targetPath = getValidRedirectPath(searchParams.get("redirectTo"));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

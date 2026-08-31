@@ -1,20 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { selectLoginCompany } from "../../../application/select-login-company";
 import { resolveCompanySelection } from "../../../domain/entities/companyMembership";
+import { getValidRedirectPath } from "../login-redirect";
 
 describe("LoginForm Redirect Helper Logic", () => {
-  const getValidRedirectPath = (redirectToParam: string | null): string => {
-    if (
-      redirectToParam &&
-      redirectToParam.startsWith("/") &&
-      !redirectToParam.startsWith("//") &&
-      !redirectToParam.startsWith("/auth")
-    ) {
-      return redirectToParam;
-    }
-    return "/dashboard";
-  };
-
   it("returns target path when valid relative path is provided", () => {
     expect(getValidRedirectPath("/requisitions")).toBe("/requisitions");
     expect(getValidRedirectPath("/timesheet/new")).toBe("/timesheet/new");
@@ -28,6 +17,10 @@ describe("LoginForm Redirect Helper Logic", () => {
   it("defaults to /dashboard when redirectTo points to /auth/* as safety fallback", () => {
     expect(getValidRedirectPath("/auth/login")).toBe("/dashboard");
     expect(getValidRedirectPath("/auth/register")).toBe("/dashboard");
+  });
+
+  it("defaults to /dashboard for the legacy /select-company redirect", () => {
+    expect(getValidRedirectPath("/select-company")).toBe("/dashboard");
   });
 
   it("defaults to /dashboard when redirectTo is an external URL or protocol-relative path", () => {
