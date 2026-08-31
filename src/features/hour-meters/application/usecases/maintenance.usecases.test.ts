@@ -98,7 +98,8 @@ describe("GetNextMaintenancePlanUseCase", () => {
     expect(result.isRight()).toBe(true);
     if (result.isRight()) {
       const plan = result.value;
-      expect(plan).toBeNull();
+      expect(plan?.nextThresholdHours).toBe(6300);
+      expect(plan?.activities).toHaveLength(1);
     }
   });
 
@@ -165,18 +166,19 @@ describe("GetNextMaintenancePlanUseCase", () => {
     }
   });
 
-  it("retorna null cuando no hay planes para el activo", async () => {
+  it("crea un plan preventivo fallback cuando no hay planes para el activo", async () => {
     repository.plans = [];
 
     const result = await useCase.execute("EQ-6", "Equipo Test 6", 7200);
 
     expect(result.isRight()).toBe(true);
     if (result.isRight()) {
-      expect(result.value).toBeNull();
+      expect(result.value?.nextThresholdHours).toBe(7700);
+      expect(result.value?.activities[0].category).toBe("inspeccion");
     }
   });
 
-  it("retorna null cuando todos los planes fijos están vencidos y no hay cíclicos", async () => {
+  it("crea un plan preventivo cuando todos los planes fijos están vencidos", async () => {
     repository.plans = [
       {
         id: "plan-fixed-vencido",
@@ -190,7 +192,8 @@ describe("GetNextMaintenancePlanUseCase", () => {
 
     expect(result.isRight()).toBe(true);
     if (result.isRight()) {
-      expect(result.value).toBeNull();
+      expect(result.value?.nextThresholdHours).toBe(6300);
+      expect(result.value?.activities).toHaveLength(1);
     }
   });
 });

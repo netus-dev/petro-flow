@@ -41,7 +41,7 @@ export function KpiMetricCard({
 }: KpiMetricCardProps) {
   if (isLoading) {
     return (
-      <div className="bg-muted/15 border border-border/30 rounded-lg p-3 h-[90px] flex flex-col justify-between animate-pulse">
+      <div className="bg-muted/15 border border-border/30 rounded-lg p-2 h-[78px] flex flex-col justify-between animate-pulse">
         <div className="space-y-1">
           <div className="h-2.5 bg-muted rounded w-1/3"></div>
           <div className="h-2 bg-muted rounded w-2/3"></div>
@@ -54,7 +54,7 @@ export function KpiMetricCard({
   const hasDropdown = period !== undefined && onPeriodChange !== undefined;
 
   return (
-    <div className="bg-muted/30 border border-border/50 rounded-lg p-3 h-[90px] flex flex-col justify-between transition-all hover:bg-muted/40 hover:border-border/80 group">
+    <div className="bg-muted/30 border border-border/50 rounded-lg p-2 h-[78px] flex flex-col justify-between transition-all hover:bg-muted/40 hover:border-border/80 group">
       <div className="flex justify-between items-start gap-1">
         <div className="min-w-0">
           <span className="text-[9px] font-bold font-mono uppercase tracking-widest text-muted-foreground block">

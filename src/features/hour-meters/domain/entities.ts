@@ -10,6 +10,44 @@ export interface HourMeterRecord {
   lastUpdated: string;
   maxThreshold: number;
   status: HourMeterStatus;
+  lastMaintenanceDate: string;
+  lastMaintenanceReading: number;
+  dieselAccumulatedGallons: number;
+  dailyMwAccumulated: number;
+  dailyMvarAccumulated: number;
+}
+
+export interface DailyOperationsKpi {
+  dieselGallons: number;
+  generatedMw: number;
+  lastUpdated: string;
+}
+
+/** Branding displayed for the client associated with the current session. */
+export interface ClientBranding {
+  clientId: string;
+  clientName: string;
+  logoUrl?: string;
+}
+
+/** Inventory assigned to one physical asset. Availability is derived in domain. */
+export interface AssetInventoryItem {
+  id: string;
+  assetId: string;
+  material: string;
+  specification: string;
+  quantityInStock: number;
+  minimumStock: number;
+  scope: "asset" | "shared_equipment_type";
+  equipmentType: string;
+}
+
+export type InventoryAvailability = "sufficient" | "critical" | "out_of_stock";
+
+/** Calculates stock availability without coupling consumers to threshold rules. */
+export function getInventoryAvailability(item: Pick<AssetInventoryItem, "quantityInStock" | "minimumStock">): InventoryAvailability {
+  if (item.quantityInStock <= 0) return "out_of_stock";
+  return item.quantityInStock <= item.minimumStock ? "critical" : "sufficient";
 }
 
 export interface HourMeterStats {
@@ -137,4 +175,3 @@ export interface FailureEvent {
   /** Duración total de la reparación (MTTR contribution) en horas. */
   repairHours: number;
 }
-

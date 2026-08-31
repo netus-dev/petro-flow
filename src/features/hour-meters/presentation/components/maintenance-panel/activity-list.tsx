@@ -12,7 +12,7 @@ export interface ActivityListProps {
 
 /**
  * Componente molécula que agrupa y renderiza una lista de actividades de mantenimiento.
- * Maneja el estado vacío diferenciado e implementa scroll.
+ * Maneja el estado vacío diferenciado y renderiza las actividades.
  */
 export function ActivityList({ activities }: ActivityListProps) {
   if (activities.length === 0) {
@@ -30,7 +30,7 @@ export function ActivityList({ activities }: ActivityListProps) {
   }
 
   return (
-    <div className="space-y-3 max-h-full overflow-y-auto pr-1">
+    <div className="space-y-3 pr-1">
       {activities.map((activity) => (
         <ActivityItem key={activity.id} activity={activity} />
       ))}

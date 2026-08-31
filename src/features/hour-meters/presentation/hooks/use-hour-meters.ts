@@ -1,187 +1,60 @@
-import { useState, useEffect, useMemo } from "react";
-import { HourMeterRecord, HourMeterStats } from "../../domain/entities";
+"use client";
 
-const initialRecords: HourMeterRecord[] = [
-  {
-    id: "ODO-001",
-    platform: "Plataforma Norte",
-    equipment: "Motor de Generador 01",
-    currentReading: 4280,
-    previousReading: 4100,
-    unit: "hrs",
-    lastUpdated: "2026-02-27",
-    maxThreshold: 5000,
-    status: "warning",
-  },
-  {
-    id: "ODO-002",
-    platform: "Plataforma Norte",
-    equipment: "Motor de Generador 02",
-    currentReading: 2150,
-    previousReading: 2000,
-    unit: "hrs",
-    lastUpdated: "2026-02-27",
-    maxThreshold: 6000,
-    status: "normal",
-  },
-  {
-    id: "ODO-003",
-    platform: "Plataforma Sur",
-    equipment: "Motor de Generador 03",
-    currentReading: 5800,
-    previousReading: 5600,
-    unit: "hrs",
-    lastUpdated: "2026-02-26",
-    maxThreshold: 6000,
-    status: "critical",
-  },
-  {
-    id: "ODO-004",
-    platform: "Plataforma Sur",
-    equipment: "Motor de Generador 04",
-    currentReading: 3400,
-    previousReading: 3200,
-    unit: "hrs",
-    lastUpdated: "2026-02-27",
-    maxThreshold: 8000,
-    status: "normal",
-  },
-  {
-    id: "ODO-005",
-    platform: "Plataforma Este",
-    equipment: "Motor de Generador 05",
-    currentReading: 1900,
-    previousReading: 1800,
-    unit: "hrs",
-    lastUpdated: "2026-02-27",
-    maxThreshold: 5000,
-    status: "normal",
-  },
-  {
-    id: "ODO-006",
-    platform: "Plataforma Este",
-    equipment: "Bomba de Lodo 01",
-    currentReading: 7200,
-    previousReading: 7000,
-    unit: "hrs",
-    lastUpdated: "2026-02-25",
-    maxThreshold: 8000,
-    status: "warning",
-  },
-  {
-    id: "ODO-007",
-    platform: "Plataforma Norte",
-    equipment: "Bomba de Lodo 02",
-    currentReading: 4280,
-    previousReading: 4100,
-    unit: "hrs",
-    lastUpdated: "2026-02-27",
-    maxThreshold: 5000,
-    status: "warning",
-  },
-  {
-    id: "ODO-008",
-    platform: "Plataforma Norte",
-    equipment: "Bomba de Lodo 03",
-    currentReading: 2150,
-    previousReading: 2000,
-    unit: "hrs",
-    lastUpdated: "2026-02-27",
-    maxThreshold: 6000,
-    status: "normal",
-  },
-  {
-    id: "ODO-009",
-    platform: "Plataforma Sur",
-    equipment: "Top Drive",
-    currentReading: 5800,
-    previousReading: 5600,
-    unit: "hrs",
-    lastUpdated: "2026-02-26",
-    maxThreshold: 6000,
-    status: "critical",
-  },
-  {
-    id: "ODO-010",
-    platform: "Plataforma Sur",
-    equipment: "Malacate",
-    currentReading: 3400,
-    previousReading: 3200,
-    unit: "hrs",
-    lastUpdated: "2026-02-27",
-    maxThreshold: 8000,
-    status: "normal",
-  },
-  {
-    id: "ODO-011",
-    platform: "Plataforma Este",
-    equipment: "HPU",
-    currentReading: 1900,
-    previousReading: 1800,
-    unit: "hrs",
-    lastUpdated: "2026-02-27",
-    maxThreshold: 5000,
-    status: "normal",
-  },
-  {
-    id: "ODO-012",
-    platform: "Plataforma Este",
-    equipment: "Bomba Koomey",
-    currentReading: 7200,
-    previousReading: 7000,
-    unit: "hrs",
-    lastUpdated: "2026-02-25",
-    maxThreshold: 8000,
-    status: "warning",
-  },
-];
+import { useCallback, useEffect, useState } from "react";
+import { DailyOperationsKpi, HourMeterRecord } from "../../domain/entities";
+import { RegisterHourMeterInput } from "../../domain/repositories/hour-meter.repository";
+import { GetHourMetersUseCase, RegisterHourMeterUseCase } from "../../application/usecases/hour-meter.usecases";
+import { MockHourMeterRepository } from "../../infrastructure/repositories/hour-meter.mock.repository";
+import { GetDailyOperationsKpiUseCase } from "../../application/usecases/hour-meter.usecases";
+import { MockDailyOperationsKpiRepository } from "../../infrastructure/repositories/daily-operations-kpi.mock.repository";
 
+const repository = new MockHourMeterRepository();
+const getHourMeters = new GetHourMetersUseCase(repository);
+const registerHourMeter = new RegisterHourMeterUseCase(repository);
+const getDailyKpi = new GetDailyOperationsKpiUseCase(new MockDailyOperationsKpiRepository());
+
+/** Keeps the dashboard and registration selector in the agreed operational order. */
+function sortHourMeters(records: HourMeterRecord[]): HourMeterRecord[] {
+  const order = (equipment: string) => {
+    const normalized = equipment.toLowerCase();
+    const numbered = normalized.match(/(motor(?:es)?(?: de generador(?:es)?)?|generador|bomba de lodo)\s*(\d+)/);
+    if (numbered) {
+      const group = numbered[1].includes("bomba") ? 2 : 1;
+      return group * 10 + Number(numbered[2]);
+    }
+    if (normalized.includes("top drive")) return 20;
+    if (normalized.includes("malacate")) return 40;
+    if (normalized.includes("hpu")) return 41;
+    if (normalized.includes("koomey")) return 42;
+    return 99;
+  };
+  return [...records].sort((a, b) => order(a.equipment) - order(b.equipment));
+}
+
+/** Presentation adapter for hour-meter reads and manual registration. */
 export function useHourMeters() {
-  const [records, setRecords] = useState<HourMeterRecord[]>(initialRecords);
-  const [loading, setLoading] = useState(false);
+  const [records, setRecords] = useState<HourMeterRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const stats = useMemo(() => {
-    return {
-      total: records.length,
-      normal: records.filter((r) => r.status === "normal").length,
-      warning: records.filter((r) => r.status === "warning").length,
-      critical: records.filter((r) => r.status === "critical").length,
-      avgUsage: Math.round(
-        records.reduce(
-          (acc, r) => acc + (r.currentReading / r.maxThreshold) * 100,
-          0,
-        ) / records.length,
-      ),
-    } as HourMeterStats;
-  }, [records]);
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    const result = await getHourMeters.execute();
+    if (result.isLeft()) setError(result.value.message);
+    else { setRecords(sortHourMeters(result.value)); setError(null); }
+    setLoading(false);
+  }, []);
 
-  const addRecord = (newRecord: {
-    platform: string;
-    equipment: string;
-    reading: string;
-    maxThreshold: string;
-  }) => {
-    const reading = parseInt(newRecord.reading);
-    const max = parseInt(newRecord.maxThreshold);
-    const usage = reading / max;
-    const record: HourMeterRecord = {
-      id: `ODO-${String(records.length + 1).padStart(3, "0")}`,
-      platform: newRecord.platform,
-      equipment: newRecord.equipment,
-      currentReading: reading,
-      previousReading: Math.round(reading * 0.95),
-      unit: "hrs",
-      lastUpdated: new Date().toISOString().split("T")[0],
-      maxThreshold: max,
-      status: usage > 0.9 ? "critical" : usage > 0.75 ? "warning" : "normal",
-    };
-    setRecords([...records, record]);
-  };
+  useEffect(() => { void refresh(); }, [refresh]);
 
-  return {
-    records,
-    stats,
-    loading,
-    addRecord,
-  };
+  const addRecord = useCallback(async (input: RegisterHourMeterInput) => {
+    const result = await registerHourMeter.execute(input);
+    if (result.isLeft()) return { error: result.value.message, errorFieldErrors: result.value.fieldErrors };
+    setRecords((current) => sortHourMeters([...current, result.value]));
+    return { record: result.value };
+  }, []);
+
+  const [dailyKpi, setDailyKpi] = useState<DailyOperationsKpi | null>(null);
+  useEffect(() => { void getDailyKpi.execute().then((result) => { if (result.isRight()) setDailyKpi(result.value); }); }, []);
+  return { records, loading, error, refresh, addRecord, dailyKpi };
 }
