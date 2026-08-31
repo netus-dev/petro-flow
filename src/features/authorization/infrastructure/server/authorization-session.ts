@@ -3,13 +3,12 @@ import { forbidden, redirect } from "next/navigation";
 import { createClient } from "../../../../core/lib/supabase/server";
 import { can, mapProjection, type Capability } from "../../domain/authorization";
 import { COMPANY_CONTEXT_COOKIE, readCompanyContext } from "./company-context";
-
-const secret = () => process.env.AUTHORIZATION_CONTEXT_SECRET!;
+import { getAuthorizationContextSecret } from "./authorization-config";
 
 /** Loads a fresh server-authoritative projection for the current browser context. */
 export async function loadAuthorization() {
   const cookieStore = await cookies();
-  const context = readCompanyContext(cookieStore.get(COMPANY_CONTEXT_COOKIE)?.value, secret());
+  const context = readCompanyContext(cookieStore.get(COMPANY_CONTEXT_COOKIE)?.value, getAuthorizationContextSecret());
   if (!context) return { status: "context_required" as const };
   const supabase = await createClient();
   const { data: renewed } = await supabase.rpc("rbac_renew_authorization", { p_company_id: context.companyId });

@@ -1,17 +1,44 @@
 import { describe, expect, it, vi } from "vitest";
 import { mapProjection } from "./domain/authorization";
-import { readCompanyContext, sealCompanyContext } from "./infrastructure/server/company-context";
+import { COMPANY_CONTEXT_MAX_AGE_MS, companyHeaderForValidatedContext, readCompanyContext, sealCompanyContext } from "./infrastructure/server/company-context";
 import { switchCompany } from "./application/switch-company";
 import { createAuthorizationStore } from "./presentation/authorization-store";
+import { getAuthorizationContextSecret } from "./infrastructure/server/authorization-config";
 
 const projection = { user_id: "u1", company_id: "b", roles: ["viewer"], capabilities: [{ action: "read", resource: "documents" }], enabled_modules: ["operations"] };
 
+describe("authorization server configuration", () => {
+  it("rejects a missing or blank context secret with actionable setup guidance", () => {
+    const original = process.env.AUTHORIZATION_CONTEXT_SECRET;
+    delete process.env.AUTHORIZATION_CONTEXT_SECRET;
+    expect(() => getAuthorizationContextSecret()).toThrow(
+      "AUTHORIZATION_CONTEXT_SECRET is missing. Add a non-empty random value to .env.local and restart the Next.js server.",
+    );
+    process.env.AUTHORIZATION_CONTEXT_SECRET = "   ";
+    expect(() => getAuthorizationContextSecret()).toThrow("AUTHORIZATION_CONTEXT_SECRET is missing");
+    if (original === undefined) delete process.env.AUTHORIZATION_CONTEXT_SECRET;
+    else process.env.AUTHORIZATION_CONTEXT_SECRET = original;
+  });
+});
+
 describe("browser authorization context", () => {
   it("seals a signed session cookie with secure HttpOnly options and rejects tampering", () => {
-    const sealed = sealCompanyContext({ companyId: "a", contextId: "ctx", issuedAt: 1 }, "secret");
+    const sealed = sealCompanyContext({ companyId: "a", contextId: "ctx", issuedAt: Date.now() }, "secret");
     expect(sealed.options).toEqual({ httpOnly: true, secure: true, sameSite: "lax", path: "/" });
     expect(readCompanyContext(sealed.value, "secret")?.companyId).toBe("a");
     expect(readCompanyContext(`${sealed.value}x`, "secret")).toBeNull();
+  });
+
+  it("only creates a company header for a matching validated context", () => {
+    const context = { companyId: "a", contextId: "ctx", issuedAt: 1 };
+    expect(companyHeaderForValidatedContext(context, "a")).toEqual({ "x-company-id": "a" });
+    expect(companyHeaderForValidatedContext(context, "b")).toEqual({});
+    expect(companyHeaderForValidatedContext(null, "a")).toEqual({});
+  });
+
+  it("rejects an expired context before database validation", () => {
+    const stale = sealCompanyContext({ companyId: "a", contextId: "ctx", issuedAt: Date.now() - COMPANY_CONTEXT_MAX_AGE_MS - 1 }, "secret");
+    expect(readCompanyContext(stale.value, "secret")).toBeNull();
   });
 
   it("keeps the old context after an invalid or cross-origin switch", async () => {

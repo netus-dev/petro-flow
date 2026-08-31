@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, Loader2, ArrowRight } from "lucide-react";
 import { Input } from "@/src/core/presentation/components/ui/input";
@@ -10,7 +10,8 @@ import { Button } from "@/src/core/presentation/components/ui/button";
 import { useAuth } from "../hooks/use-auth";
 import { useAuthStore } from "../store/auth-store";
 import { listActiveCompanyMemberships, selectCompanyAfterLogin } from "../../infrastructure/server/company-membership-actions";
-import { resolveCompanySelection, type CompanyMembership } from "../../domain/entities/companyMembership";
+import { selectLoginCompany } from "../../application/select-login-company";
+import type { CompanyMembership } from "../../domain/entities/companyMembership";
 
 export function LoginForm() {
   const { login, isLoading, error, user, getProfile } = useAuth();
@@ -21,6 +22,7 @@ export function LoginForm() {
   const [password, setPassword] = useState("");
   const [memberships, setMemberships] = useState<CompanyMembership[]>([]);
   const [selectedCompanyId, setSelectedCompanyId] = useState("");
+  const [contextError, setContextError] = useState<string | null>(null);
 
   const getValidRedirectPath = (): string => {
     const rawRedirect = searchParams.get("redirectTo");
@@ -37,20 +39,17 @@ export function LoginForm() {
 
   const targetPath = getValidRedirectPath();
 
-  useEffect(() => {
-    // Si ya existe un usuario al cargar el componente, redirigir al destino o dashboard
-    if (user) {
-      router.push(targetPath);
-    }
-  }, [user, router, targetPath]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setContextError(null);
     
     if (memberships.length > 1) {
-      const selection = resolveCompanySelection(memberships, selectedCompanyId);
-      if (selection.status !== "selected") return;
-      if ((await selectCompanyAfterLogin(selection.companyId)).status !== "ok") return;
+      const result = await selectCompanyAfterLogin(selectedCompanyId);
+      if (result.status === "error") {
+        setContextError(result.message);
+        return;
+      }
+      if (result.status !== "ok") return;
       router.push(targetPath);
       return;
     }
@@ -61,12 +60,15 @@ export function LoginForm() {
     const { user: authUser } = useAuthStore.getState();
 
     if (authUser) {
-      const available = await listActiveCompanyMemberships();
+      const membershipResult = await listActiveCompanyMemberships();
+      if (membershipResult.status === "error") {
+        setContextError(membershipResult.message);
+        return;
+      }
+      const available = membershipResult.memberships;
       setMemberships(available);
-      const selection = resolveCompanySelection(available);
-      if (selection.status === "selection_required") return;
-      if (selection.status !== "selected") return;
-      if ((await selectCompanyAfterLogin(selection.companyId)).status !== "ok") return;
+      if (available.length > 1) return;
+      if (!await selectLoginCompany(available, "", selectCompanyAfterLogin)) return;
       const profileData = await getProfile();
       if (profileData) {
         console.log("Información del profile recibida y guardada:", profileData);
@@ -80,6 +82,11 @@ export function LoginForm() {
       {error && (
         <div className="p-3 text-xs bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg">
           {error}
+        </div>
+      )}
+      {contextError && (
+        <div className="p-3 text-xs bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg">
+          {contextError}
         </div>
       )}
       <div className="flex flex-col gap-2">

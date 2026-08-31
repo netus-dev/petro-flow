@@ -9,7 +9,7 @@ const projection = (capabilities: AuthorizationProjection["capabilities"]): Auth
 describe("access-control use cases", () => {
   it("denies non-admin CRUD without touching persistence", async () => {
     const repository = repo();
-    const result = await new ExecuteAccessControlCommand(repository, async () => projection([])).execute({ type: "create-role", role: { name: "Operator" } });
+    const result = await new ExecuteAccessControlCommand(repository, async () => projection([])).execute({ type: "create-role", companyId: "c", role: { name: "Operator" } });
     expect(result.isLeft()).toBe(true);
     expect(repository.createRole).not.toHaveBeenCalled();
   });

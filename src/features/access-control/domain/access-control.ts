@@ -27,11 +27,11 @@ export interface AuditEvent {
 
 export type AccessControlResource = "roles" | "permissions" | "entitlements" | "memberships" | "assignments";
 export type AccessControlCommand =
-  | { type: "create-role"; role: Pick<Role, "name"> }
-  | { type: "delete-role"; roleId: string }
+  | { type: "create-role"; companyId: string; role: Pick<Role, "name"> }
+  | { type: "delete-role"; companyId: string; roleId: string }
   | { type: "create-company"; company: Pick<Company, "name"> }
   | { type: "set-company"; companyId: string; isActive: boolean }
-  | { type: "set-permission"; roleId: string; permissionId: string; enabled: boolean }
+  | { type: "set-permission"; companyId: string; roleId: string; permissionId: string; enabled: boolean }
   | { type: "set-entitlement"; entitlement: ModuleEntitlement }
   | { type: "set-membership"; membership: Membership }
   | { type: "set-assignment"; assignment: RoleAssignment };

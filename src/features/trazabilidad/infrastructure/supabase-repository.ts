@@ -204,212 +204,22 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
   }
 
   async registerMovement(assetId: string, movement: any): Promise<void> {
-    // Simplification for the example: just update the currentLocation to a specific one if possible.
-    // In real scenario we would `insert` to `transactions` and `transaction_details`.
-    console.log("Saving movement", movement);
+    return this.registerBulkMovement({ ...movement, assets: [{ asset_id: assetId, comments: movement.comments }] });
   }
 
+  /** Movement writes are atomic RPC calls; certificate files are intentionally not part of this contract. */
   async registerBulkMovement(payload: any): Promise<void> {
-    const { data: { user } } = await this.supabase.auth.getUser();
-    if (!user) throw new Error("No user authenticated");
-
-    const destLocationId = payload.type === "transfer" 
-      ? payload.destination_location_id 
-      : payload.origin_location_id;
-
-    // Fetch current ubication of the first asset since all share the same origin ubication
-    const assetIds = payload.assets.map((a: any) => a.asset_id);
-    const { data: firstAsset, error: caError } = await this.supabase
-      .from("assets")
-      .select("id, current_ubication_id")
-      .eq("id", assetIds[0] || "")
-      .single();
-
-    if (caError && assetIds.length > 0) throw caError;
-    const originUbicationId = firstAsset?.current_ubication_id;
-
-    let globalDestinationUbicationId = payload.destination_ubication_id;
-
-    if (payload.type === "transfer") {
-      const { data: patioData, error: patioError } = await this.supabase
-        .from("ubications")
-        .select("id")
-        .ilike("name", "%patio%")
-        .limit(1)
-        .single();
-        
-      if (patioError || !patioData) {
-         console.error("Could not find global Patio ubication", patioError);
-         throw patioError || new Error("Patio not found");
-      }
-      globalDestinationUbicationId = patioData.id;
-    }
-
-    // 1. Create transaction
-    const { data: txData, error: txError } = await this.supabase
-      .from("transactions")
-      .insert({
-        origin_location_id: payload.origin_location_id,
-        destination_location_id: destLocationId,
-        origin_ubication_id: originUbicationId,
-        destination_ubication_id: globalDestinationUbicationId,
-        date: new Date().toISOString(),
-        type: payload.type,
-        created_by: user.id,
-        justification: payload.justification,
-      })
-      .select("id")
-      .single();
-
-    if (txError || !txData) {
-      console.error("Error creating transaction", txError);
-      throw txError || new Error("Transaction creation failed");
-    }
-
-    const transactionId = txData.id;
-
-    // 2. Create transaction details
-    const detailsPayload = payload.assets.map((a: any) => ({
-      transaction_id: transactionId,
-      asset_id: a.asset_id,
-      comments: a.comments || null
-    }));
-
-    const { error: detailsError } = await this.supabase
-      .from("transaction_details")
-      .insert(detailsPayload);
-
-    if (detailsError) {
-      console.error("Error creating transaction details", detailsError);
-      throw detailsError;
-    }
-
-    // 3. Update assets
-    const { error: updateError } = await this.supabase
-      .from("assets")
-      .update({
-         current_location_id: destLocationId,
-         current_ubication_id: globalDestinationUbicationId
-      })
-      .in("id", assetIds);
-
-    if (updateError) throw updateError;
-    
-    // 4. Upload and link certificates if it's a transfer and certs exist
-    if (payload.type === "transfer" && payload.certificates && payload.certificates.length > 0) {
-       const certIds = await this.uploadCertificates(payload.certificates, user.id);
-       if (certIds.length > 0) {
-          const links: any[] = [];
-          assetIds.forEach((aId: string) => {
-             certIds.forEach((cId) => {
-                links.push({
-                   asset_id: aId,
-                   certificate_id: cId
-                });
-             });
-          });
-          const { error: linksError } = await this.supabase.from('assets_certificates').insert(links);
-          if (linksError) throw linksError;
-       }
-    }
+    const { certificates: _certificates, ...movementPayload } = payload;
+    const { error } = await this.supabase.rpc("register_bulk_movement", { p_payload: { ...movementPayload, date: new Date().toISOString() } });
+    if (error) throw error;
   }
 
   async registerReplacementMovement(payload: ReplacementMovementPayload): Promise<void> {
-    const { data: { user } } = await this.supabase.auth.getUser();
-    if (!user) throw new Error("No user authenticated");
-
-    // Fetch assets to get their current ubications
-    const { data: assets, error: assetsError } = await this.supabase
-      .from("assets")
-      .select("id, current_ubication_id")
-      .in("id", [payload.asset_a_id, payload.asset_b_id]);
-
-    if (assetsError || !assets) throw assetsError || new Error("Assets not found");
-
-    const assetA = assets.find((a: any) => a.id === payload.asset_a_id);
-    const assetB = assets.find((a: any) => a.id === payload.asset_b_id);
-
-    if (!assetA || !assetB) throw new Error("Asset missing");
-
-    const dateStr = new Date().toISOString();
-
-    // Create transaction for A
-    const { data: txAData, error: txAError } = await this.supabase
-      .from("transactions")
-      .insert({
-        origin_location_id: payload.location_id,
-        destination_location_id: payload.location_id,
-        origin_ubication_id: assetA.current_ubication_id,
-        destination_ubication_id: assetB.current_ubication_id, // A moves to B's previous ubication
-        date: dateStr,
-        type: payload.type,
-        created_by: user.id,
-        justification: payload.justification,
-      })
-      .select("id")
-      .single();
-
-    if (txAError || !txAData) throw txAError || new Error("Transaction A creation failed");
-
-    // Detail for A
-    const { error: detailAError } = await this.supabase
-      .from("transaction_details")
-      .insert({
-        transaction_id: txAData.id,
-        asset_id: payload.asset_a_id,
-      });
-
-    if (detailAError) throw detailAError;
-
-    // Create transaction for B
-    const { data: txBData, error: txBError } = await this.supabase
-      .from("transactions")
-      .insert({
-        origin_location_id: payload.location_id,
-        destination_location_id: payload.location_id,
-        origin_ubication_id: assetB.current_ubication_id,
-        destination_ubication_id: payload.asset_b_destination_ubication_id, // B moves to the new multi-asset ubication
-        date: dateStr,
-        type: payload.type,
-        created_by: user.id,
-        justification: payload.justification,
-      })
-      .select("id")
-      .single();
-
-    if (txBError || !txBData) throw txBError || new Error("Transaction B creation failed");
-
-    // Detail for B
-    const { error: detailBError } = await this.supabase
-      .from("transaction_details")
-      .insert({
-        transaction_id: txBData.id,
-        asset_id: payload.asset_b_id,
-      });
-
-    if (detailBError) throw detailBError;
-
-    // Update Asset A
-    const { error: updateAError } = await this.supabase
-      .from("assets")
-      .update({
-         current_ubication_id: assetB.current_ubication_id
-      })
-      .eq("id", payload.asset_a_id);
-
-    if (updateAError) throw updateAError;
-
-    // Update Asset B
-    const { error: updateBError } = await this.supabase
-      .from("assets")
-      .update({
-         current_ubication_id: payload.asset_b_destination_ubication_id
-      })
-      .eq("id", payload.asset_b_id);
-
-    if (updateBError) throw updateBError;
+    const { error } = await this.supabase.rpc("register_replacement_movement", { p_payload: payload });
+    if (error) throw error;
   }
 
+  /** Uploads certificate metadata separately from movement confirmation; confirmation RPC is not implemented here. */
   private async uploadCertificates(certificates: { file: File; name: string }[], userId: string): Promise<string[]> {
     const certIds: string[] = [];
     for (const cert of certificates) {

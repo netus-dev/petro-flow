@@ -1,21 +1,21 @@
-import { createClient } from "../../../core/lib/supabase/server";
-import type { AccessControlRepository, AuditEvent, ModuleEntitlement, Membership, Role, RoleAssignment, AccessControlSnapshot, Permission, Company } from "../domain/access-control";
+import { createTenantClient } from "../../../core/lib/supabase/server";
+import type { AccessControlRepository, AuditEvent, ModuleEntitlement, Membership, Role, RoleAssignment, AccessControlSnapshot, Company } from "../domain/access-control";
 
 /** Maps Supabase rows into domain objects and keeps all persistence outside the UI. */
 export class SupabaseAccessControlRepository implements AccessControlRepository {
-  private async client() { return createClient(); }
-  async createRole(name: string): Promise<Role> {
-    const { data, error } = await (await this.client()).from("rbac_roles").insert({ name }).select("id,name").single();
-    if (error) throw error; return data;
+  private async client() {
+    const client = await createTenantClient();
+    if (!client) throw new Error("A valid active company membership is required.");
+    return client;
   }
-  async deleteRole(roleId: string) { const { error } = await (await this.client()).from("rbac_roles").delete().eq("id", roleId); if (error) throw error; }
-  async createCompany(name: string): Promise<Company> { const { data, error } = await (await this.client()).from("rbac_companies").insert({ name }).select("id,name,is_active").single(); if (error) throw error; return { id: data.id, name: data.name, isActive: data.is_active }; }
-  async setCompany(companyId: string, isActive: boolean) { const { error } = await (await this.client()).from("rbac_companies").update({ is_active: isActive }).eq("id", companyId); if (error) throw error; }
-  async setRolePermission(roleId: string, permissionId: string, enabled: boolean) {
-    const db = await this.client();
-    const result = enabled ? await db.from("rbac_role_permissions").upsert({ role_id: roleId, permission_id: permissionId }) : await db.from("rbac_role_permissions").delete().match({ role_id: roleId, permission_id: permissionId });
-    if (result.error) throw result.error;
+  async createRole(name: string, companyId?: string): Promise<Role> {
+    if (!companyId) throw new Error("company_id is required to create a role.");
+    throw new Error("Company-scoped roles are not supported by the current RBAC schema.");
   }
+  async deleteRole() { throw new Error("Global role mutations are disabled."); }
+  async createCompany(): Promise<Company> { throw new Error("Global company creation is disabled."); }
+  async setCompany() { throw new Error("Global company mutations are disabled."); }
+  async setRolePermission() { throw new Error("Global permission mutations are disabled."); }
   async setEntitlement(value: ModuleEntitlement) { const { error } = await (await this.client()).from("rbac_company_modules").upsert({ company_id: value.companyId, module_key: value.moduleKey, enabled: value.enabled }); if (error) throw error; }
   async setMembership(value: Membership) { const { error } = await (await this.client()).from("rbac_memberships").upsert({ company_id: value.companyId, user_id: value.userId, is_active: value.isActive }); if (error) throw error; }
   async setAssignment(value: RoleAssignment) { const { error } = await (await this.client()).from("rbac_assignments").upsert({ company_id: value.companyId, user_id: value.userId, role_id: value.roleId }); if (error) throw error; }
@@ -24,8 +24,8 @@ export class SupabaseAccessControlRepository implements AccessControlRepository 
   async readSnapshot(): Promise<AccessControlSnapshot> {
     const db = await this.client();
     const [roles, permissions, companies, memberships, entitlements, assignments, auditEvents] = await Promise.all([
-      db.from("rbac_roles").select("id,name"), db.from("rbac_permissions").select("id,action,resource"),
-      db.from("rbac_companies").select("id,name,is_active"), db.from("rbac_memberships").select("company_id,user_id,is_active"),
+      Promise.resolve({ data: [], error: null }), Promise.resolve({ data: [], error: null }),
+      db.from("rbac_companies").select("id,name,is_active").eq("id", (await db.rpc("rbac_request_company_id")).data), db.from("rbac_memberships").select("company_id,user_id,is_active"),
       db.from("rbac_company_modules").select("company_id,module_key,enabled"), db.from("rbac_assignments").select("company_id,user_id,role_id"),
       db.from("rbac_audit_events").select("id,actor_id,company_id,event_type,outcome,target,created_at").order("created_at", { ascending: false }),
     ]);

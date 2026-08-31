@@ -117,19 +117,19 @@ insert into public.rbac_documents (id, company_id, body) values
   ('95000000-0000-0000-0000-000000000002', '92000000-0000-0000-0000-000000000002', '{"fixture":"south"}')
 on conflict (id) do update set body = excluded.body;
 
-insert into public.locations (id, name, location_type) values
-  ('96000000-0000-0000-0000-000000000001', 'Seed Yard', 'operating_base')
+insert into public.locations (id, name, location_type, company_id) values
+  ('96000000-0000-0000-0000-000000000001', 'Seed Yard', 'operating_base', '92000000-0000-0000-0000-000000000001')
 on conflict (id) do nothing;
-insert into public.functional_principles (id, name) values
-  ('97000000-0000-0000-0000-000000000001', 'Seed Equipment')
+insert into public.functional_principles (id, name, company_id) values
+  ('97000000-0000-0000-0000-000000000001', 'Seed Equipment', '92000000-0000-0000-0000-000000000001')
 on conflict (id) do nothing;
-insert into public.assets (id, current_location_id, function_principle_id, is_active) values
-  ('98000000-0000-0000-0000-000000000001', '96000000-0000-0000-0000-000000000001', '97000000-0000-0000-0000-000000000001', true)
+insert into public.assets (id, company_id, current_location_id, function_principle_id, is_active) values
+  ('98000000-0000-0000-0000-000000000001', '92000000-0000-0000-0000-000000000001', '96000000-0000-0000-0000-000000000001', '97000000-0000-0000-0000-000000000001', true)
 on conflict (id) do nothing;
-insert into public.certificates (id, asset_id, storage_path, uploaded_by) values
-  ('99000000-0000-0000-0000-000000000001', '98000000-0000-0000-0000-000000000001', 'seed/valid-document.pdf', '91000000-0000-0000-0000-000000000001'),
-  ('99000000-0000-0000-0000-000000000002', '98000000-0000-0000-0000-000000000001', 'seed/path-mismatch.pdf', '91000000-0000-0000-0000-000000000001'),
-  ('a5000000-0000-0000-0000-000000000001', '98000000-0000-0000-0000-000000000001', 'seed/legacy-reference.pdf', 'a1000000-0000-0000-0000-000000000001')
+insert into public.certificates (id, company_id, storage_path, uploaded_by) values
+  ('99000000-0000-0000-0000-000000000001', '92000000-0000-0000-0000-000000000001', 'seed/valid-document.pdf', '91000000-0000-0000-0000-000000000001'),
+  ('99000000-0000-0000-0000-000000000002', '92000000-0000-0000-0000-000000000001', 'seed/path-mismatch.pdf', '91000000-0000-0000-0000-000000000001'),
+  ('a5000000-0000-0000-0000-000000000001', '92000000-0000-0000-0000-000000000001', 'seed/legacy-reference.pdf', 'a1000000-0000-0000-0000-000000000001')
 on conflict (id) do nothing;
 insert into storage.objects (id, bucket_id, name, owner, metadata) values
   ('9a000000-0000-0000-0000-000000000001', 'certificates', 'seed/valid-document.pdf', '91000000-0000-0000-0000-000000000001', '{"mimetype":"application/pdf"}'),

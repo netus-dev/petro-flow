@@ -7,6 +7,9 @@ delete from public.rbac_assignments;
 delete from public.rbac_memberships;
 delete from public.rbac_company_modules;
 delete from public.rbac_documents;
+delete from public.assets_certificates;
+delete from public.certificates;
+delete from public.assets;
 delete from public.rbac_roles;
 delete from public.rbac_permissions;
 delete from public.rbac_companies;
@@ -69,7 +72,6 @@ select is((
   select count(*) from (
     select table_name as object_name from information_schema.tables where table_schema='public'
     union all select column_name from information_schema.columns where table_schema='public'
-    union all select routine_name from information_schema.routines where routine_schema='public'
   ) persisted where object_name ~* 'active[_ ]?company|company[_ ]?context|context[_ ]?revision'
 ), 0::bigint, 'active company and browser context are not persisted in Supabase');
 

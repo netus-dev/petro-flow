@@ -1,36 +1,24 @@
-import { createClient } from "@/src/core/lib/supabase/client";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { ICatalogsRepository } from "../domain/repository";
 import { CatalogType, BaseCatalogItem } from "../domain/entities";
 
 export class SupabaseCatalogsRepository implements ICatalogsRepository {
-  private supabase;
+  private supabase: SupabaseClient | null;
 
-  constructor(supabase = createClient()) {
+  constructor(supabase: SupabaseClient | null) {
     this.supabase = supabase;
   }
 
-  async getItems(catalog: CatalogType, companyId?: string): Promise<BaseCatalogItem[]> {
-    if (companyId) {
-      const { data: authorized, error: authorizationError } = await this.supabase.rpc("rbac_renew_authorization", { p_company_id: companyId });
-      if (authorizationError) throw new Error(authorizationError.message);
-      if (!authorized) return [];
-    }
+  async getItems(catalog: CatalogType, _companyId?: string): Promise<BaseCatalogItem[]> {
+    if (!this.supabase) return [];
+    // A browser-supplied companyId is not authority. Server clients inject the validated header.
     let query = this.supabase.from(catalog).select("*").order("created_at", { ascending: false });
 
     if (catalog === "locations") {
-      query = this.supabase.from("locations").select("*, rigs(current_well_id), operating_bases(supplier_id)") as any;
+      query = this.supabase.from("locations").select("*, rigs(current_well_id), operating_bases(supplier_id)") as never;
     }
 
     // Apply company filter if provided and applicable
-    const catalogsWithCompany = [
-      "locations", "functional_principles", "ubications", 
-      "suppliers", "wells", "brands", "models"
-    ];
-
-    if (companyId && catalogsWithCompany.includes(catalog)) {
-      query = query.eq("company_id", companyId) as any;
-    }
-
     const { data, error } = await query;
 
     if (error) {
@@ -39,21 +27,22 @@ export class SupabaseCatalogsRepository implements ICatalogsRepository {
     }
 
     if (catalog === "locations") {
-      return data.map((d: any) => ({
+      return data.map((d: Record<string, unknown>) => ({
         ...d,
-        current_well_id: Array.isArray(d.rigs) ? d.rigs[0]?.current_well_id : d.rigs?.current_well_id,
-        supplier_id: Array.isArray(d.operating_bases) ? d.operating_bases[0]?.supplier_id : d.operating_bases?.supplier_id,
-      }));
+        current_well_id: Array.isArray(d.rigs) ? (d.rigs[0] as Record<string, unknown>)?.current_well_id : (d.rigs as Record<string, unknown>)?.current_well_id,
+        supplier_id: Array.isArray(d.operating_bases) ? (d.operating_bases[0] as Record<string, unknown>)?.supplier_id : (d.operating_bases as Record<string, unknown>)?.supplier_id,
+      })) as unknown as BaseCatalogItem[];
     }
 
     return data as BaseCatalogItem[];
   }
 
   async getItemById(catalog: CatalogType, id: string): Promise<BaseCatalogItem | undefined> {
+    if (!this.supabase) return undefined;
     let query = this.supabase.from(catalog).select("*").eq("id", id).single();
 
     if (catalog === "locations") {
-      query = this.supabase.from("locations").select("*, rigs(current_well_id), operating_bases(supplier_id)").eq("id", id).single() as any;
+      query = this.supabase.from("locations").select("*, rigs(current_well_id), operating_bases(supplier_id)").eq("id", id).single() as never;
     }
 
     const { data, error } = await query;
@@ -75,6 +64,7 @@ export class SupabaseCatalogsRepository implements ICatalogsRepository {
   }
 
   async createItem(catalog: CatalogType, item: Partial<BaseCatalogItem>): Promise<BaseCatalogItem> {
+    if (!this.supabase) throw new Error("Tenant context is unavailable");
     const payload = { ...item };
     const current_well_id = payload.current_well_id;
     const supplier_id = payload.supplier_id;
@@ -104,6 +94,7 @@ export class SupabaseCatalogsRepository implements ICatalogsRepository {
   }
 
   async updateItem(catalog: CatalogType, id: string, item: Partial<BaseCatalogItem>): Promise<void> {
+    if (!this.supabase) throw new Error("Tenant context is unavailable");
     // Remove id from payload if it exists
     const payload = { ...item };
     delete payload.id;
@@ -138,6 +129,7 @@ export class SupabaseCatalogsRepository implements ICatalogsRepository {
   }
 
   async deleteItem(catalog: CatalogType, id: string): Promise<void> {
+    if (!this.supabase) throw new Error("Tenant context is unavailable");
     const { error } = await this.supabase
       .from(catalog)
       .delete()

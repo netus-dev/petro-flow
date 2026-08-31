@@ -1,9 +1,20 @@
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 
 export const COMPANY_CONTEXT_COOKIE = "petro_company_context";
+/** Maximum age for a signed context before requiring a fresh company selection. */
+export const COMPANY_CONTEXT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 export const companyContextCookieOptions = { httpOnly: true, secure: true, sameSite: "lax" as const, path: "/" };
 
 export interface BrowserCompanyContext { companyId: string; contextId: string; issuedAt: number }
+
+/** Returns the tenant header only after the server has validated the same company. */
+export function companyHeaderForValidatedContext(
+  context: BrowserCompanyContext | null,
+  validatedCompanyId: string | null,
+): Record<string, string> {
+  if (!context || !validatedCompanyId || context.companyId !== validatedCompanyId) return {};
+  return { "x-company-id": validatedCompanyId };
+}
 
 /** Creates an opaque signed browser-session company context. */
 export function sealCompanyContext(context: BrowserCompanyContext, secret: string) {
@@ -22,7 +33,8 @@ export function readCompanyContext(value: string | undefined, secret: string): B
   if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) return null;
   try {
     const context = JSON.parse(Buffer.from(payload, "base64url").toString()) as BrowserCompanyContext;
-    return context.companyId && context.contextId && Number.isFinite(context.issuedAt) ? context : null;
+    const isFresh = Date.now() - context.issuedAt >= 0 && Date.now() - context.issuedAt <= COMPANY_CONTEXT_MAX_AGE_MS;
+    return context.companyId && context.contextId && Number.isFinite(context.issuedAt) && isFresh ? context : null;
   } catch { return null; }
 }
 
