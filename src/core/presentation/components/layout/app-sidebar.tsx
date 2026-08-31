@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { usePathname } from "next/navigation";
 import {
   Route,
@@ -43,20 +44,26 @@ import {
 } from "@/src/core/presentation/components/ui/avatar";
 import { useApp } from "@/src/core/presentation/providers/providers";
 import { useLogout } from "@/src/features/auth/presentation/store/auth-store";
+import type { AuthorizationProjection } from "@/src/features/authorization/domain/authorization";
+import { hydrateAuthorization, useAuthorizationProjection } from "@/src/features/authorization/presentation/authorization-store";
+import { filterNavigation } from "./app-sidebar-authorization";
 
 interface AppSidebarProps {
   initialUser: {
     name: string;
     email: string;
-  }
+  };
+  initialAuthorization: AuthorizationProjection;
 }
 
-export function AppSidebar({ initialUser }: AppSidebarProps) {
+export function AppSidebar({ initialUser, initialAuthorization }: AppSidebarProps) {
   const pathname = usePathname();
   const { t } = useApp();
 
   // Usar selector atómico directo de la Store de Zustand
   const logout = useLogout();
+  useState(() => hydrateAuthorization(initialAuthorization));
+  const authorization = useAuthorizationProjection() ?? initialAuthorization;
 
   const mainModules = [
     {
@@ -127,6 +134,15 @@ export function AppSidebar({ initialUser }: AppSidebarProps) {
     },
   ];
 
+  const authorize = <T extends { href: string }>(items: T[]) => filterNavigation(
+    items.map((item) => ({ ...item, moduleKey: item.href.split("/")[1], capability: { action: "read", resource: item.href.split("/")[1] } })),
+    authorization,
+    pathname,
+  );
+  const authorizedMainModules = authorize(mainModules);
+  const authorizedAdminItems = authorize(adminItems);
+  const authorizedSecondaryItems = authorize(secondaryItems);
+
   const handleLogout = async () => {
     await logout();
   };
@@ -150,11 +166,8 @@ export function AppSidebar({ initialUser }: AppSidebarProps) {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {mainModules.map((item) => {
-                const isActive =
-                  pathname === item.href ||
-                  (item.href !== "/dashboard" &&
-                    pathname.startsWith(item.href));
+              {authorizedMainModules.map((item) => {
+                const isActive = item.active;
                 return (
                   <SidebarMenuItem key={item.titleKey}>
                     <SidebarMenuButton
@@ -187,8 +200,8 @@ export function AppSidebar({ initialUser }: AppSidebarProps) {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {adminItems.map((item) => {
-                const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+              {authorizedAdminItems.map((item) => {
+                const isActive = item.active;
                 return (
                   <SidebarMenuItem key={item.titleKey}>
                     <SidebarMenuButton
@@ -221,8 +234,8 @@ export function AppSidebar({ initialUser }: AppSidebarProps) {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {secondaryItems.map((item) => {
-                const isActive = pathname === item.href;
+              {authorizedSecondaryItems.map((item) => {
+                const isActive = item.active;
                 return (
                   <SidebarMenuItem key={item.titleKey}>
                     <SidebarMenuButton
@@ -278,7 +291,7 @@ export function AppSidebar({ initialUser }: AppSidebarProps) {
                 <div className="flex items-center gap-3 p-3">
                   <Avatar className="size-9 rounded-lg">
                     <AvatarFallback className="rounded-lg bg-primary/10 text-primary text-xs font-bold">
-                      CM
+                      {initialUser.name.substring(0,2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col">
@@ -292,13 +305,13 @@ export function AppSidebar({ initialUser }: AppSidebarProps) {
                 </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild className="text-sm text-foreground">
-                  <Link href="/dashboard/settings">
+                  <Link href="/settings">
                     <Settings className="mr-2 size-4" />
                     {t("sidebar.settings")}
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild className="text-sm text-foreground">
-                  <Link href="/dashboard/soporte">
+                  <Link href="/soporte">
                     <HelpCircle className="mr-2 size-4" />
                     {t("sidebar.support")}
                   </Link>

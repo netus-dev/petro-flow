@@ -16,6 +16,7 @@ import {
   UpdateUserUseCase,
   GetProfileUseCase,
 } from "../../application/uses-cases/authUsesCases";
+import { invalidateAuthorization } from "@/src/features/authorization/presentation/authorization-store";
 
 // Dependency Injection / Singleton Pattern for Use Cases
 const dataSource = new AuthDataSource();
@@ -110,6 +111,7 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true, error: null }); // Limpiar error al iniciar logout
         try {
           await logoutUseCase.execute();
+          invalidateAuthorization();
           set({ user: null, profile: null, isLoading: false, error: null }); // Limpiar todo al salir
         } catch (err: any) {
           set({ error: err.message, isLoading: false });

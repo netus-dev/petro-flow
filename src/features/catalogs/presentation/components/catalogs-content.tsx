@@ -1,10 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useAuth } from "@/src/features/auth/presentation/hooks/use-auth";
 import { useCatalogs } from "../hooks/use-catalogs";
-import { catalogsRepository } from "../../infrastructure/repository";
-import { CatalogType, BaseCatalogItem } from "../../domain/entities";
+import { BaseCatalogItem } from "../../domain/entities";
 import { 
   Tabs, TabsContent, TabsList, TabsTrigger 
 } from "@/src/core/presentation/components/ui/tabs";
@@ -38,42 +36,35 @@ export interface PropertyItem {
   type: PropertyType;
 }
 
-export function CatalogsContent() {
-  const { profile } = useAuth();
+export function CatalogsContent({ initialItems = [], initialError = null }: { initialItems?: BaseCatalogItem[]; initialError?: string | null }) {
   const { 
     activeCatalog, items, loading, error, 
     handleTabChange, loadItems, createItem, updateItem, deleteItem 
-  } = useCatalogs();
+  } = useCatalogs(initialItems);
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editItemId, setEditItemId] = useState<string | null>(null);
-  const [newItemPayload, setNewItemPayload] = useState<{ name: string; type?: string; is_active?: boolean; [key: string]: any }>({ name: "", is_active: true });
+  const [newItemPayload, setNewItemPayload] = useState<{ name: string; type?: string; is_active?: boolean; [key: string]: unknown }>({ name: "", is_active: true });
   const [properties, setProperties] = useState<PropertyItem[]>([]);
   const [wellsList, setWellsList] = useState<BaseCatalogItem[]>([]);
   const [suppliersList, setSuppliersList] = useState<BaseCatalogItem[]>([]);
   const [brandsList, setBrandsList] = useState<BaseCatalogItem[]>([]);
 
   useEffect(() => {
-    loadItems("companies");
-  }, [loadItems]);
+  }, []);
 
   useEffect(() => {
-    if (activeCatalog === "companies") return;
-    const companyId = profile?.company?.id;
-    if (companyId) {
-      loadItems(activeCatalog, companyId);
-    }
-  }, [activeCatalog, profile, loadItems]);
+    loadItems(activeCatalog);
+  }, [activeCatalog, loadItems]);
 
   useEffect(() => {
-    const companyId = profile?.company?.id;
     if (activeCatalog === "locations") {
-      catalogsRepository.getItems("wells", companyId).then(setWellsList).catch(console.error);
-      catalogsRepository.getItems("suppliers", companyId).then(setSuppliersList).catch(console.error);
+      loadItems("wells").then(setWellsList).catch(console.error);
+      loadItems("suppliers").then(setSuppliersList).catch(console.error);
     } else if (activeCatalog === "models") {
-      catalogsRepository.getItems("brands", companyId).then(setBrandsList).catch(console.error);
+      loadItems("brands").then(setBrandsList).catch(console.error);
     }
-  }, [activeCatalog, profile]);
+  }, [activeCatalog, loadItems]);
 
   const openCreateDialog = () => {
     setEditItemId(null);
@@ -117,23 +108,6 @@ export function CatalogsContent() {
 
     const payloadToSave = { ...newItemPayload };
 
-    const companyId = profile?.company?.id;
-
-    const catalogsRequireCompany = [
-      "locations", "functional_principles", "ubications", 
-      "suppliers", "wells", "brands", "models"
-    ];
-
-    if (catalogsRequireCompany.includes(activeCatalog) && !companyId) {
-      alert("No se pudo determinar la compañía del usuario. Por favor, intente iniciar sesión de nuevo.");
-      return;
-    }
-
-    if (catalogsRequireCompany.includes(activeCatalog) && companyId) {
-      payloadToSave.company_id = companyId;
-    }
-
-
     if (activeCatalog === "functional_principles") {
       // Clear all properties first to rewrite them completely
       for (let i = 1; i <= 20; i++) {
@@ -168,9 +142,7 @@ export function CatalogsContent() {
       await createItem(payloadToSave);
     }
 
-    if (companyId) {
-      loadItems(activeCatalog, companyId);
-    }
+    await loadItems(activeCatalog);
     
     setNewItemPayload({ name: "", is_active: true });
     setProperties([]);
@@ -184,7 +156,7 @@ export function CatalogsContent() {
     }
   };
 
-  const updateProperty = (index: number, key: keyof PropertyItem, value: any) => {
+  const updateProperty = (index: number, key: keyof PropertyItem, value: string | PropertyType) => {
     const newProps = [...properties];
     newProps[index] = { ...newProps[index], [key]: value };
     setProperties(newProps);
@@ -232,7 +204,7 @@ export function CatalogsContent() {
                 <div className="space-y-2 mt-4">
                   <Label htmlFor="brand_id">Marca</Label>
                   <Select 
-                    value={newItemPayload.brand_id} 
+                  value={newItemPayload.brand_id as string | undefined}
                     onValueChange={(val) => setNewItemPayload({ ...newItemPayload, brand_id: val })}
                   >
                     <SelectTrigger id="brand_id">
@@ -283,7 +255,7 @@ export function CatalogsContent() {
                         <div className="space-y-2">
                           <Label htmlFor="current_well_id">Pozo actual</Label>
                           <Select 
-                            value={newItemPayload.current_well_id} 
+                            value={newItemPayload.current_well_id as string | undefined}
                             onValueChange={(val) => setNewItemPayload({ ...newItemPayload, current_well_id: val })}
                           >
                             <SelectTrigger id="current_well_id">
@@ -300,7 +272,7 @@ export function CatalogsContent() {
                         <div className="space-y-2">
                           <Label htmlFor="supplier_id">Proveedor propietario</Label>
                           <Select 
-                            value={newItemPayload.supplier_id} 
+                            value={newItemPayload.supplier_id as string | undefined}
                             onValueChange={(val) => setNewItemPayload({ ...newItemPayload, supplier_id: val })}
                           >
                             <SelectTrigger id="supplier_id">
@@ -346,7 +318,7 @@ export function CatalogsContent() {
                           className="flex-1 min-w-[100px]" 
                           required
                         />
-                        <Select value={p.type} onValueChange={(v: any) => updateProperty(index, "type", v)}>
+                        <Select value={p.type} onValueChange={(v) => updateProperty(index, "type", v as PropertyType)}>
                           <SelectTrigger className="w-[140px] sm:w-[180px]">
                             <SelectValue />
                           </SelectTrigger>
@@ -373,7 +345,7 @@ export function CatalogsContent() {
         </Dialog>
       </div>
 
-      {error && <div className="text-red-500 font-medium">{error}</div>}
+      {(error || initialError) && <div className="text-red-500 font-medium">{error || initialError}</div>}
 
       <Tabs defaultValue="companies" onValueChange={handleTabChange}>
         <TabsList className="mb-4 flex-wrap">
@@ -428,8 +400,7 @@ export function CatalogsContent() {
                       </Button>
                       <Button variant="destructive" size="sm" onClick={async () => {
                         await deleteItem(item.id);
-                        const companyId = profile?.company?.id;
-                        if (companyId) loadItems(activeCatalog, companyId);
+                        await loadItems(activeCatalog);
                       }}>
                         Eliminar
                       </Button>

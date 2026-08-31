@@ -1,0 +1,83 @@
+public,assets,asset_functional_principle_id,FOREIGN KEY,FOREIGN KEY (function_principle_id) REFERENCES functional_principles(id) ON DELETE RESTRICT
+public,assets,asset_location_id,FOREIGN KEY,FOREIGN KEY (current_location_id) REFERENCES locations(id) ON DELETE RESTRICT
+public,assets,asset_ubication_id,FOREIGN KEY,FOREIGN KEY (current_ubication_id) REFERENCES ubications(id) ON DELETE RESTRICT
+public,assets,assets_company_id_fkey,FOREIGN KEY,FOREIGN KEY (company_id) REFERENCES companies(id) ON UPDATE CASCADE ON DELETE RESTRICT
+public,assets,assets_pkey,PRIMARY KEY,PRIMARY KEY (id)
+public,assets,fk_asset_brand,FOREIGN KEY,FOREIGN KEY (brand_id) REFERENCES brands(id) ON DELETE RESTRICT
+public,assets,fk_asset_model,FOREIGN KEY,FOREIGN KEY (model_id) REFERENCES models(id) ON DELETE RESTRICT
+public,assets_certificates,certificates_pkey,PRIMARY KEY,PRIMARY KEY (id)
+public,assets_certificates,fk_asset_certificate,FOREIGN KEY,FOREIGN KEY (certificate_id) REFERENCES certificates(id) ON UPDATE CASCADE ON DELETE RESTRICT
+public,assets_certificates,fk_certificates_asset,FOREIGN KEY,FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE CASCADE
+public,brands,brands_pkey,PRIMARY KEY,PRIMARY KEY (id)
+public,brands,fk_brand_company,FOREIGN KEY,FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+public,certificates,certificates_pkey1,PRIMARY KEY,PRIMARY KEY (id)
+public,companies,companies_pkey,PRIMARY KEY,PRIMARY KEY (id)
+public,functional_principle_scopes,functional_principle_scopes_company_id_fkey,FOREIGN KEY,FOREIGN KEY (company_id) REFERENCES companies(id) ON UPDATE CASCADE ON DELETE RESTRICT
+public,functional_principle_scopes,functional_principle_types_pkey,PRIMARY KEY,PRIMARY KEY (id)
+public,functional_principles,fk_functional_principle_company,FOREIGN KEY,FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+public,functional_principles,functional_principles_pkey,PRIMARY KEY,PRIMARY KEY (id)
+public,functional_principles,functional_principles_scope_id_fkey,FOREIGN KEY,FOREIGN KEY (scope_id) REFERENCES functional_principle_scopes(id) ON UPDATE CASCADE ON DELETE RESTRICT
+public,locations,fk_location_company,FOREIGN KEY,FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+public,locations,locations_pkey,PRIMARY KEY,PRIMARY KEY (id)
+public,models,fk_model_brand,FOREIGN KEY,FOREIGN KEY (brand_id) REFERENCES brands(id) ON DELETE CASCADE
+public,models,fk_model_company,FOREIGN KEY,FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+public,models,models_pkey,PRIMARY KEY,PRIMARY KEY (id)
+public,operating_bases,fk_operating_bases_location_id,FOREIGN KEY,FOREIGN KEY (id) REFERENCES locations(id) ON DELETE CASCADE
+public,operating_bases,fk_operating_bases_supplier_id,FOREIGN KEY,FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE RESTRICT
+public,operating_bases,operating_bases_pkey,PRIMARY KEY,PRIMARY KEY (id)
+public,permissions,permissions_company_id_fkey,FOREIGN KEY,FOREIGN KEY (company_id) REFERENCES companies(id) ON UPDATE CASCADE ON DELETE CASCADE
+public,permissions,permissions_company_id_key,UNIQUE,UNIQUE (company_id)
+public,permissions,permissions_name_key,UNIQUE,UNIQUE (name)
+public,permissions,permissions_pkey,PRIMARY KEY,PRIMARY KEY (id)
+public,rigs,fk_rigs_location_id,FOREIGN KEY,FOREIGN KEY (id) REFERENCES locations(id) ON DELETE CASCADE
+public,rigs,fk_rigs_well_id,FOREIGN KEY,FOREIGN KEY (current_well_id) REFERENCES wells(id) ON DELETE RESTRICT
+public,rigs,rigs_pkey,PRIMARY KEY,PRIMARY KEY (id)
+public,role_permissions,role_permissions_permission_id_fkey,FOREIGN KEY,FOREIGN KEY (permission_id) REFERENCES permissions(id) ON UPDATE CASCADE ON DELETE CASCADE
+public,role_permissions,role_permissions_pkey,PRIMARY KEY,PRIMARY KEY (id)
+public,role_permissions,role_permissions_role_id_fkey,FOREIGN KEY,FOREIGN KEY (role_id) REFERENCES roles(id) ON UPDATE CASCADE ON DELETE CASCADE
+public,roles,roles_company_id_fkey,FOREIGN KEY,FOREIGN KEY (company_id) REFERENCES companies(id) ON UPDATE CASCADE ON DELETE CASCADE
+public,roles,roles_name_key,UNIQUE,UNIQUE (name)
+public,roles,roles_pkey,PRIMARY KEY,PRIMARY KEY (id)
+public,suppliers,fk_supplier_company,FOREIGN KEY,FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+public,suppliers,suppliers_pkey,PRIMARY KEY,PRIMARY KEY (id)
+public,tasks,fk_tasks_created_by,FOREIGN KEY,FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE RESTRICT
+public,tasks,fk_tasks_next_task,FOREIGN KEY,FOREIGN KEY (next_task_id) REFERENCES tasks(id) ON DELETE RESTRICT
+public,tasks,fk_tasks_previous_task,FOREIGN KEY,FOREIGN KEY (previous_task_id) REFERENCES tasks(id) ON DELETE RESTRICT
+public,tasks,fk_tasks_rig,FOREIGN KEY,FOREIGN KEY (rig_id) REFERENCES rigs(id) ON DELETE RESTRICT
+public,tasks,tasks_pkey,PRIMARY KEY,PRIMARY KEY (id)
+public,transaction_details,fk_transaction_details_asset,FOREIGN KEY,FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE RESTRICT
+public,transaction_details,fk_transaction_details_transaction,FOREIGN KEY,FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE CASCADE
+public,transaction_details,transaction_details_pkey,PRIMARY KEY,PRIMARY KEY (id)
+public,transactions,fk_destination_location,FOREIGN KEY,FOREIGN KEY (destination_location_id) REFERENCES locations(id) ON DELETE RESTRICT
+public,transactions,fk_origin_location,FOREIGN KEY,FOREIGN KEY (origin_location_id) REFERENCES locations(id) ON DELETE RESTRICT
+public,transactions,fk_transaction_creator,FOREIGN KEY,FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE RESTRICT
+public,transactions,transactions_destination_ubication_id_fkey,FOREIGN KEY,FOREIGN KEY (destination_ubication_id) REFERENCES ubications(id) ON UPDATE CASCADE ON DELETE RESTRICT
+public,transactions,transactions_origin_ubication_id_fkey,FOREIGN KEY,FOREIGN KEY (origin_ubication_id) REFERENCES ubications(id) ON UPDATE CASCADE ON DELETE RESTRICT
+public,transactions,transactions_pkey,PRIMARY KEY,PRIMARY KEY (id)
+public,ubications,fk_ubication_company,FOREIGN KEY,FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+public,ubications,ubications_pkey,PRIMARY KEY,PRIMARY KEY (id)
+public,user_roles,user_roles_pkey,PRIMARY KEY,PRIMARY KEY (id)
+public,user_roles,user_roles_role_id_fkey,FOREIGN KEY,FOREIGN KEY (role_id) REFERENCES roles(id) ON UPDATE CASCADE ON DELETE CASCADE
+public,user_roles,user_roles_user_id_fkey,FOREIGN KEY,FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE
+public,users,fk_user_company,FOREIGN KEY,FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+public,users,users_id_fkey,FOREIGN KEY,FOREIGN KEY (id) REFERENCES auth.users(id) ON UPDATE CASCADE ON DELETE CASCADE
+public,users,users_pkey,PRIMARY KEY,PRIMARY KEY (id)
+public,wells,fk_well_company,FOREIGN KEY,FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+public,wells,wells_pkey,PRIMARY KEY,PRIMARY KEY (id)
+storage,buckets,buckets_pkey,PRIMARY KEY,PRIMARY KEY (id)
+storage,buckets,buckets_versioning_dark_check,CHECK,CHECK ((versioning_status = 'DISABLED'::text))
+storage,buckets,buckets_versioning_standard_only_check,CHECK,CHECK (((type = 'STANDARD'::storage.buckettype) OR (versioning_status = 'DISABLED'::text)))
+storage,buckets,buckets_versioning_status_check,CHECK,"CHECK ((versioning_status = ANY (ARRAY['DISABLED'::text, 'ENABLED'::text, 'SUSPENDED'::text])))"
+storage,buckets_analytics,buckets_analytics_pkey,PRIMARY KEY,PRIMARY KEY (id)
+storage,buckets_vectors,buckets_vectors_pkey,PRIMARY KEY,PRIMARY KEY (id)
+storage,migrations,migrations_name_key,UNIQUE,UNIQUE (name)
+storage,migrations,migrations_pkey,PRIMARY KEY,PRIMARY KEY (id)
+storage,objects,objects_bucketId_fkey,FOREIGN KEY,FOREIGN KEY (bucket_id) REFERENCES storage.buckets(id)
+storage,objects,objects_pkey,PRIMARY KEY,PRIMARY KEY (id)
+storage,s3_multipart_uploads,s3_multipart_uploads_bucket_id_fkey,FOREIGN KEY,FOREIGN KEY (bucket_id) REFERENCES storage.buckets(id)
+storage,s3_multipart_uploads,s3_multipart_uploads_pkey,PRIMARY KEY,PRIMARY KEY (id)
+storage,s3_multipart_uploads_parts,s3_multipart_uploads_parts_bucket_id_fkey,FOREIGN KEY,FOREIGN KEY (bucket_id) REFERENCES storage.buckets(id)
+storage,s3_multipart_uploads_parts,s3_multipart_uploads_parts_pkey,PRIMARY KEY,PRIMARY KEY (id)
+storage,s3_multipart_uploads_parts,s3_multipart_uploads_parts_upload_id_fkey,FOREIGN KEY,FOREIGN KEY (upload_id) REFERENCES storage.s3_multipart_uploads(id) ON DELETE CASCADE
+storage,vector_indexes,vector_indexes_bucket_id_fkey,FOREIGN KEY,FOREIGN KEY (bucket_id) REFERENCES storage.buckets_vectors(id)
+storage,vector_indexes,vector_indexes_pkey,PRIMARY KEY,PRIMARY KEY (id)

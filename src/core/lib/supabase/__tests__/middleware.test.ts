@@ -40,6 +40,22 @@ describe("Middleware Authentication", () => {
     expect(response.headers.get("location")).toBe("http://localhost:3000/dashboard");
   });
 
+  it("should allow authenticated Server Actions on /auth/login", async () => {
+    const mockResponse = { headers: new Headers() } as any;
+    vi.mocked(supabaseMiddleware.updateSession).mockResolvedValueOnce({
+      supabaseResponse: mockResponse,
+      user: { id: "user-123", email: "test@example.com" } as any,
+    });
+
+    const request = new NextRequest("http://localhost:3000/auth/login", {
+      method: "POST",
+      headers: { "next-action": "login-action" },
+    });
+    const response = await proxy(request);
+
+    expect(response).toBe(mockResponse);
+  });
+
   it("should allow authenticated user to pass through to protected route", async () => {
     const mockResponse = { headers: new Headers() } as any;
     vi.mocked(supabaseMiddleware.updateSession).mockResolvedValueOnce({
