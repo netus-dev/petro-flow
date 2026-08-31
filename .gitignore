@@ -13,3 +13,4 @@ node_modules/
 .atl/
 .codegraph/
 supabase/.gitignore
+tsconfig.tsbuildinfo
