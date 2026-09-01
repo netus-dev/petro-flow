@@ -6,8 +6,8 @@ import { Input } from "@/src/core/presentation/components/ui/input";
 import { Label } from "@/src/core/presentation/components/ui/label";
 import { useHourMeters } from "../hooks/use-hour-meters";
 
-export function formatPrevious(value: number | undefined, unit: string) {
-  return value === undefined ? "sin registro" : `${value.toLocaleString("en-US", { maximumFractionDigits: 2 })} ${unit}`;
+export function formatPrevious(value: number | null | undefined, unit: string) {
+  return value == null ? "sin registro" : `${value.toLocaleString("en-US", { maximumFractionDigits: 2 })} ${unit}`;
 }
 
 function preventNegativeInput(event: KeyboardEvent<HTMLInputElement>) {
@@ -29,7 +29,7 @@ export function RegisterHourMeterForm({ onRegistered }: RegisterHourMeterFormPro
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const selectedRecord = records.find((record) => record.id === equipmentId);
+  const selectedRecord = records.find((record) => record.assetId === equipmentId);
   const lastRegistered = selectedRecord;
 
   useEffect(() => {
@@ -40,7 +40,7 @@ export function RegisterHourMeterForm({ onRegistered }: RegisterHourMeterFormPro
   async function submit(event: FormEvent) {
     event.preventDefault();
     setSaving(true); setSuccess(false);
-    const result = await addRecord({ equipmentId, capturedAt, currentReading: Number(currentReading), dieselAccumulatedGallons: Number(diesel), dailyMwAccumulated: Number(mw), dailyMvarAccumulated: Number(mvar) });
+    const result = await addRecord({ assetId: equipmentId, capturedAt, currentReading: Number(currentReading), dieselAccumulatedGallons: Number(diesel), dailyMwAccumulated: Number(mw), dailyMvarAccumulated: Number(mvar) });
     setSaving(false);
     if (result.error) { setError(result.error); setFieldErrors(result.errorFieldErrors ?? {}); return; }
     setError(null); setFieldErrors({}); setSuccess(true); onRegistered?.();
@@ -51,7 +51,7 @@ export function RegisterHourMeterForm({ onRegistered }: RegisterHourMeterFormPro
     <div className="space-y-2 min-w-0">
       <Label htmlFor="equipment">Activo / Equipo</Label>
       <select id="equipment" required value={equipmentId} onChange={(e) => setEquipmentId(e.target.value)} className="border-input bg-background box-border flex h-9 w-full min-w-0 max-w-full rounded-md border px-3 text-sm"><option value="">Selecciona un equipo</option>{records.map((record) => <option key={record.id} value={record.id}>{record.equipment}</option>)}</select>
-      {fieldErrors.equipmentId && <p className="text-xs text-destructive">{fieldErrors.equipmentId}</p>}
+      {fieldErrors.assetId && <p className="text-xs text-destructive">{fieldErrors.assetId}</p>}
     </div>
     <div className="space-y-2 min-w-0">
     <Label htmlFor="capturedAt">Fecha y hora de captura</Label>

@@ -99,25 +99,23 @@ describe("GetEquipmentKpiUseCase", () => {
     expect(duration).toBeLessThan(2000); // Límite de 2 segundos (2000 ms)
   });
 
-  it("T019: verifica los cálculos matemáticos del MockKpiDatasource para ODO-001 y ODO-006", async () => {
+  it("keeps unsupported failure KPIs unreported until failure sources exist", async () => {
     const datasource = new MockKpiDatasource();
     
-    // ODO-001: activo con datos y fallas
+    // Hourmeter readings do not constitute a failure or maintenance source.
     const kpi001 = await datasource.getKpiByAssetId("ODO-001");
     expect(kpi001).not.toBeNull();
-    expect(kpi001?.mtbf).toBe(420);
-    expect(kpi001?.mttr).toBe(3.5);
-    expect(kpi001?.availability).toBe(99.03); // 100 * (1 - 7/720) = 99.0277... -> 99.03
-    expect(kpi001?.reliability["1w"]).toBe(67.03); // e^(-168/420) * 100 = 67.032... -> 67.03
-    expect(kpi001?.reliability["1m"]).toBe(18.01); // e^(-720/420) * 100 = 18.009... -> 18.01
-    expect(kpi001?.reliability["3m"]).toBe(0.58);  // e^(-2160/420) * 100 = 0.584... -> 0.58
+    expect(kpi001?.mtbf).toBeNull();
+    expect(kpi001?.mttr).toBeNull();
+    expect(kpi001?.availability).toBeNull();
+    expect(kpi001?.reliability["1w"]).toBeNull();
 
     // ODO-006: activo sin fallas (N/A)
     const kpi006 = await datasource.getKpiByAssetId("ODO-006");
     expect(kpi006).not.toBeNull();
     expect(kpi006?.mtbf).toBeNull();
     expect(kpi006?.mttr).toBeNull();
-    expect(kpi006?.availability).toBe(100.00);
+    expect(kpi006?.availability).toBeNull();
     expect(kpi006?.reliability["1w"]).toBeNull();
   });
 });

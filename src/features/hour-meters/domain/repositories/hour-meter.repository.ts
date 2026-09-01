@@ -1,7 +1,7 @@
 import { HourMeterRecord } from "../entities";
 
 export interface RegisterHourMeterInput {
-  equipmentId: string;
+  assetId: string;
   capturedAt: string;
   currentReading: number;
   dieselAccumulatedGallons: number;
@@ -15,6 +15,10 @@ export interface IHourMeterRepository {
   register(input: RegisterHourMeterInput): Promise<HourMeterRecord>;
 }
 
+export interface HourMeterRepositoryOptions {
+  initialRecords?: HourMeterRecord[];
+}
+
 export interface IDailyOperationsKpiRepository {
-  getLast24Hours(): Promise<import("../entities").DailyOperationsKpi>;
+  getLast24Hours(assetId: string): Promise<import("../entities").DailyOperationsKpi>;
 }

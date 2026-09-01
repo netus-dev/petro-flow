@@ -28,8 +28,8 @@ export interface HourMeterCardProps {
 }
 
 /** Formats maintenance dates for the Spanish card presentation. */
-function formatMaintenanceDate(date: string): string {
-  return new Date(date).toLocaleDateString("es-ES");
+function formatMaintenanceDate(date: string | null): string {
+  return date ? new Date(date).toLocaleDateString("es-ES") : "Sin registro";
 }
 
 /**
@@ -111,7 +111,7 @@ export function HourMeterCard({ record, isSelected, onClick }: HourMeterCardProp
           <div className="min-w-0 text-[10px] font-mono leading-relaxed text-muted-foreground">
             <span className="block">Último mantto:</span>
             <span className="block">{formatMaintenanceDate(record.lastMaintenanceDate)}</span>
-            <span className="block">{record.lastMaintenanceReading.toLocaleString("es-ES")} hrs</span>
+            <span className="block">{record.lastMaintenanceReading === null ? "Sin registro" : `${record.lastMaintenanceReading.toLocaleString("es-ES")} hrs`}</span>
           </div>
 
           <div className="text-center">
@@ -120,7 +120,7 @@ export function HourMeterCard({ record, isSelected, onClick }: HourMeterCardProp
             </span>
             <div className="flex items-baseline justify-center gap-1 mt-0.5">
               <span className="text-3xl md:text-4xl font-black font-mono tabular-nums tracking-tight text-foreground">
-                {record.currentReading.toLocaleString()}
+                {record.currentReading === null ? "Sin lecturas" : record.currentReading.toLocaleString()}
               </span>
               <span className="text-xs font-mono font-bold text-muted-foreground">hrs</span>
             </div>

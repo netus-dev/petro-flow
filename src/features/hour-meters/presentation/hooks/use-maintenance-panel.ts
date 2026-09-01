@@ -64,9 +64,9 @@ export function useMaintenancePanel(): UseMaintenancePanelReturn {
     activeLoadingId.current = record.id;
 
     const result = await getNextMaintenancePlanUseCase.execute(
-      record.id,
+      record.assetId,
       record.equipment,
-      record.currentReading
+      record.currentReading ?? 0
     );
 
     // Evitar actualización si el usuario ya cambió a otra tarjeta mientras cargaba

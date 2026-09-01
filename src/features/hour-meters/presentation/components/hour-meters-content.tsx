@@ -10,13 +10,17 @@ import { Button } from "@/src/core/presentation/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/src/core/presentation/components/ui/dialog";
 import { RegisterHourMeterForm } from "./register-hour-meter-form";
 import { InventoryManagementModal } from "./inventory-management-modal";
+import { canUseHourMeterPermission, HOUR_METER_PERMISSIONS } from "../../domain/permissions";
+import { HourMeterRecord } from "../../domain/entities";
 
 /**
  * Componente principal de presentación (Page/Organism) que representa la vista
  * del Dashboard de Horómetros con telemetría en tiempo real y panel de mantenimiento.
  */
-export function HourMeterContent() {
-  const { records, loading, refresh } = useHourMeters();
+export function HourMeterContent({ initialRecords = [], permissions = [] }: { initialRecords?: HourMeterRecord[]; permissions?: string[] }) {
+  const { records, loading, refresh, error } = useHourMeters(initialRecords);
+  const canRegister = canUseHourMeterPermission(permissions, HOUR_METER_PERMISSIONS.access);
+  const canManageInventory = canUseHourMeterPermission(permissions, HOUR_METER_PERMISSIONS.inventory);
   const [lastSync, setLastSync] = useState("hace 1 min");
   
   // Hook de estado para el panel lateral de mantenimiento
@@ -47,13 +51,15 @@ export function HourMeterContent() {
     );
   }
 
+  if (error) return <div role="alert" className="p-8 text-destructive">{error}</div>;
+
   // Mapear los registros a registros enriquecidos para las tarjetas
   const enhancedRecords: EnhancedHourMeterRecord[] = records.map((record) => {
-    const remainingHours = record.maxThreshold - record.currentReading;
+    const remainingHours = record.currentReading === null ? record.maxThreshold : record.maxThreshold - record.currentReading;
     const isCritical = remainingHours <= 250;
     const isWarning = remainingHours > 250 && remainingHours <= 500;
     const isNormal = remainingHours > 500;
-    const progressValue = Math.min(100, Math.max(0, (record.currentReading / record.maxThreshold) * 100));
+    const progressValue = record.currentReading === null ? 0 : Math.min(100, Math.max(0, (record.currentReading / record.maxThreshold) * 100));
 
     return {
       ...record,
@@ -93,20 +99,20 @@ export function HourMeterContent() {
         </div>
 
         <div className="flex items-center gap-4">
-          <Dialog>
+          {canManageInventory && <Dialog>
             <DialogTrigger asChild><Button size="sm" variant="outline">Gestionar inventario</Button></DialogTrigger>
             <DialogContent className="w-[min(96vw,1400px)] max-w-none max-h-[90vh] overflow-hidden p-6" aria-describedby="inventory-management-description">
               <DialogHeader><DialogTitle>Gestionar inventario</DialogTitle><p id="inventory-management-description" className="text-sm text-muted-foreground">Registra y actualiza materiales por activo o de forma compartida por tipo de equipo.</p></DialogHeader>
               <InventoryManagementModal assets={records.map(record => ({ id: record.id, equipment: record.equipment }))} />
             </DialogContent>
-          </Dialog>
-          <Dialog>
+          </Dialog>}
+          {canRegister && <Dialog>
             <DialogTrigger asChild><Button size="sm">Registrar lectura</Button></DialogTrigger>
             <DialogContent>
               <DialogHeader><DialogTitle>Registrar lectura de horómetro</DialogTitle></DialogHeader>
               <RegisterHourMeterForm onRegistered={() => void refresh()} />
             </DialogContent>
-          </Dialog>
+          </Dialog>}
           <div className="flex flex-col items-end">
             <div className="flex items-center gap-2">
               <span className="relative flex size-3">
@@ -156,7 +162,7 @@ export function HourMeterContent() {
       <div className="flex-1 min-h-0 flex flex-row gap-4 overflow-hidden relative">
         {/* Grid de tarjetas — se ajusta automáticamente al espacio disponible */}
         <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 overflow-hidden">
-          {enhancedRecords.map((record) => (
+          {enhancedRecords.length === 0 ? <p className="col-span-full p-8 text-center text-muted-foreground">No hay activos elegibles para horómetros.</p> : enhancedRecords.map((record) => (
             <HourMeterCard
               key={record.id}
               record={record}
