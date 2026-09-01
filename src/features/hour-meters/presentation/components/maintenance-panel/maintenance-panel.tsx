@@ -5,7 +5,7 @@ import { getInventoryAvailability, ResolvedMaintenancePlan } from "../../../doma
 import { ActivityList } from "./activity-list";
 import { useEquipmentKpi } from "../../hooks/use-equipment-kpi";
 import { KpiMetricGrid } from "./kpi-metric-grid";
-import { useHourMeters } from "../../hooks/use-hour-meters";
+import { useDailyOperationsKpi } from "../../hooks/use-daily-operations-kpi";
 import { useAssetInventory } from "../../hooks/use-asset-inventory";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/core/presentation/components/ui/tabs";
 
@@ -30,7 +30,7 @@ export function MaintenancePanel({ resolvedPlan, isLoading, onClose }: Maintenan
   const { kpi, isLoading: isKpiLoading, reliabilityPeriod, setReliabilityPeriod } = useEquipmentKpi(
     resolvedPlan?.equipmentId ?? null
   );
-  const { dailyKpi } = useHourMeters();
+  const { dailyKpi, isLoading: isDailyKpiLoading } = useDailyOperationsKpi(resolvedPlan?.equipmentId ?? null);
   const { items: inventory, isLoading: isInventoryLoading, error: inventoryError } = useAssetInventory(resolvedPlan?.equipmentId ?? null);
 
   // 1. Estado de carga (Skeleton Screen)
@@ -160,13 +160,13 @@ export function MaintenancePanel({ resolvedPlan, isLoading, onClose }: Maintenan
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
         <div className="bg-muted/30 border border-border/50 rounded-lg p-2.5">
           <p className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground">Consumo de Diésel (Últimas 24 hrs)</p>
-          <p className="text-2xl font-black font-mono text-foreground">{dailyKpi?.dieselGallons.toLocaleString("es-ES") ?? "—"} <span className="text-xs text-muted-foreground">gal</span></p>
-          <p className="text-[10px] text-muted-foreground">Última actualización: {dailyKpi ? new Date(dailyKpi.lastUpdated).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }) : "Cargando..."}</p>
+          <p className="text-2xl font-black font-mono text-foreground">{isDailyKpiLoading ? "—" : dailyKpi?.dieselGallons?.toLocaleString("es-ES") ?? "No reportado"} <span className="text-xs text-muted-foreground">gal</span></p>
+          <p className="text-[10px] text-muted-foreground">Última actualización: {isDailyKpiLoading ? "Cargando..." : dailyKpi ? new Date(dailyKpi.lastUpdated).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }) : "No reportado"}</p>
         </div>
         <div className="bg-muted/30 border border-border/50 rounded-lg p-2.5">
           <p className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground">Megavatios (MW) Generados (Últimas 24 hrs)</p>
-          <p className="text-2xl font-black font-mono text-foreground">{dailyKpi?.generatedMw.toLocaleString("es-ES") ?? "—"} <span className="text-xs text-muted-foreground">MW</span></p>
-          <p className="text-[10px] text-muted-foreground">Última actualización: {dailyKpi ? new Date(dailyKpi.lastUpdated).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }) : "Cargando..."}</p>
+          <p className="text-2xl font-black font-mono text-foreground">{isDailyKpiLoading ? "—" : dailyKpi?.generatedMw?.toLocaleString("es-ES") ?? "No reportado"} <span className="text-xs text-muted-foreground">MW</span></p>
+          <p className="text-[10px] text-muted-foreground">Última actualización: {isDailyKpiLoading ? "Cargando..." : dailyKpi ? new Date(dailyKpi.lastUpdated).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }) : "No reportado"}</p>
         </div>
       </div>
 

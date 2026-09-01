@@ -1,17 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { DailyOperationsKpi, HourMeterRecord } from "../../domain/entities";
+import { HourMeterRecord } from "../../domain/entities";
 import { RegisterHourMeterInput } from "../../domain/repositories/hour-meter.repository";
 import { GetHourMetersUseCase, RegisterHourMeterUseCase } from "../../application/usecases/hour-meter.usecases";
-import { MockHourMeterRepository } from "../../infrastructure/repositories/hour-meter.mock.repository";
-import { GetDailyOperationsKpiUseCase } from "../../application/usecases/hour-meter.usecases";
-import { MockDailyOperationsKpiRepository } from "../../infrastructure/repositories/daily-operations-kpi.mock.repository";
+import { SupabaseHourMeterRepository } from "../../infrastructure/repositories/hour-meter.supabase.repository";
 
-const repository = new MockHourMeterRepository();
+const repository = new SupabaseHourMeterRepository();
 const getHourMeters = new GetHourMetersUseCase(repository);
 const registerHourMeter = new RegisterHourMeterUseCase(repository);
-const getDailyKpi = new GetDailyOperationsKpiUseCase(new MockDailyOperationsKpiRepository());
 
 /** Keeps the dashboard and registration selector in the agreed operational order. */
 function sortHourMeters(records: HourMeterRecord[]): HourMeterRecord[] {
@@ -32,8 +29,8 @@ function sortHourMeters(records: HourMeterRecord[]): HourMeterRecord[] {
 }
 
 /** Presentation adapter for hour-meter reads and manual registration. */
-export function useHourMeters() {
-  const [records, setRecords] = useState<HourMeterRecord[]>([]);
+export function useHourMeters(initialRecords: HourMeterRecord[] = []) {
+  const [records, setRecords] = useState<HourMeterRecord[]>(initialRecords);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -54,7 +51,5 @@ export function useHourMeters() {
     return { record: result.value };
   }, []);
 
-  const [dailyKpi, setDailyKpi] = useState<DailyOperationsKpi | null>(null);
-  useEffect(() => { void getDailyKpi.execute().then((result) => { if (result.isRight()) setDailyKpi(result.value); }); }, []);
-  return { records, loading, error, refresh, addRecord, dailyKpi };
+  return { records, loading, error, refresh, addRecord };
 }
