@@ -4,6 +4,7 @@ import { FormEvent, KeyboardEvent, useEffect, useState } from "react";
 import { Button } from "@/src/core/presentation/components/ui/button";
 import { Input } from "@/src/core/presentation/components/ui/input";
 import { Label } from "@/src/core/presentation/components/ui/label";
+import { toast } from "sonner";
 import { useHourMeters } from "../hooks/use-hour-meters";
 
 export function formatPrevious(value: number | null | undefined, unit: string) {
@@ -26,7 +27,6 @@ export function RegisterHourMeterForm({ onRegistered }: RegisterHourMeterFormPro
   const [mw, setMw] = useState("");
   const [mvar, setMvar] = useState("");
   const [saving, setSaving] = useState(false);
-  const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const selectedRecord = records.find((record) => record.assetId === equipmentId);
@@ -34,20 +34,21 @@ export function RegisterHourMeterForm({ onRegistered }: RegisterHourMeterFormPro
 
   useEffect(() => {
     setCurrentReading(""); setDiesel(""); setMw(""); setMvar("");
-    setSuccess(false); setError(null); setFieldErrors({});
+    setError(null); setFieldErrors({});
   }, [equipmentId]);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
-    setSaving(true); setSuccess(false);
+    setSaving(true);
     const result = await addRecord({ assetId: equipmentId, capturedAt, currentReading: Number(currentReading), dieselAccumulatedGallons: Number(diesel), dailyMwAccumulated: Number(mw), dailyMvarAccumulated: Number(mvar) });
     setSaving(false);
     if (result.error) { setError(result.error); setFieldErrors(result.errorFieldErrors ?? {}); return; }
-    setError(null); setFieldErrors({}); setSuccess(true); onRegistered?.();
+    setError(null); setFieldErrors({});
+    toast.success("Registro guardado correctamente.");
+    onRegistered?.();
   }
 
   return <form onSubmit={submit} className="min-w-0 space-y-4">
-    {lastRegistered && <p role="status" className="rounded-md bg-emerald-500/10 p-2 text-xs text-emerald-700">Registro completado: este activo tiene una lectura registrada previamente.</p>}
     <div className="space-y-2 min-w-0">
       <Label htmlFor="equipment">Activo / Equipo</Label>
       <select id="equipment" required value={equipmentId} onChange={(e) => setEquipmentId(e.target.value)} className="border-input bg-background box-border flex h-9 w-full min-w-0 max-w-full rounded-md border px-3 text-sm"><option value="">Selecciona un equipo</option>{records.map((record) => <option key={record.assetId} value={record.assetId}>{record.equipment}</option>)}</select>
@@ -60,7 +61,6 @@ export function RegisterHourMeterForm({ onRegistered }: RegisterHourMeterFormPro
     </div>
     <div className="space-y-3 min-w-0"><div className="space-y-2"><Label htmlFor="reading">Horómetro actual <span className="text-muted-foreground">(último: {formatPrevious(lastRegistered?.currentReading, "horas")})</span></Label><Input className="w-full min-w-0 max-w-full box-border" id="reading" onKeyDown={preventNegativeInput} type="number" min="0" step="1" required value={currentReading} onChange={(e) => setCurrentReading(e.target.value)} />{fieldErrors.currentReading && <p className="text-xs text-destructive">{fieldErrors.currentReading}</p>}</div><div className="space-y-2"><Label htmlFor="diesel">Diésel acumulado <span className="text-muted-foreground">(último: {formatPrevious(lastRegistered?.dieselAccumulatedGallons, "galones")})</span></Label><Input className="w-full min-w-0 max-w-full box-border" id="diesel" onKeyDown={preventNegativeInput} type="number" min="0" step="1" required value={diesel} onChange={(e) => setDiesel(e.target.value)} />{fieldErrors.dieselAccumulatedGallons && <p className="text-xs text-destructive">{fieldErrors.dieselAccumulatedGallons}</p>}</div><div className="space-y-2"><Label htmlFor="mw">MW diario acumulado <span className="text-muted-foreground">(último: {formatPrevious(lastRegistered?.dailyMwAccumulated, "MW")})</span></Label><Input className="w-full min-w-0 max-w-full box-border" id="mw" onKeyDown={preventNegativeInput} type="number" min="0" step="0.1" required value={mw} onChange={(e) => setMw(e.target.value)} />{fieldErrors.dailyMwAccumulated && <p className="text-xs text-destructive">{fieldErrors.dailyMwAccumulated}</p>}</div><div className="space-y-2"><Label htmlFor="mvar">MVAR diario acumulado <span className="text-muted-foreground">(último: {formatPrevious(lastRegistered?.dailyMvarAccumulated, "MVAR")})</span></Label><Input className="w-full min-w-0 max-w-full box-border" id="mvar" onKeyDown={preventNegativeInput} type="number" min="0" step="0.1" required value={mvar} onChange={(e) => setMvar(e.target.value)} />{fieldErrors.dailyMvarAccumulated && <p className="text-xs text-destructive">{fieldErrors.dailyMvarAccumulated}</p>}</div></div>
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-    {success && <p role="status" className="text-sm text-emerald-600">Registro guardado correctamente.</p>}
     <Button type="submit" disabled={saving} className="w-full">{saving ? "Guardando..." : "Guardar Registro"}</Button>
   </form>;
 }

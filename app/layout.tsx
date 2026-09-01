@@ -29,6 +29,7 @@ export const viewport: Viewport = {
 };
 
 import { ThemeProvider } from "@/src/core/presentation/providers/ThemeProvider";
+import { Toaster } from "@/src/core/presentation/components/ui/sonner";
 
 export default function RootLayout({
   children,
@@ -42,6 +43,7 @@ export default function RootLayout({
       >
         <ThemeProvider>
           {children}
+          <Toaster position="top-right" />
         </ThemeProvider>
         <Analytics />
       </body>
