@@ -2,25 +2,35 @@ export type HourMeterStatus = "normal" | "warning" | "critical";
 
 export interface HourMeterRecord {
   id: string;
+  assetId: string;
   platform: string;
   equipment: string;
-  currentReading: number;
-  previousReading: number;
+  currentReading: number | null;
+  previousReading: number | null;
   unit: string;
-  lastUpdated: string;
+  lastUpdated: string | null;
   maxThreshold: number;
   status: HourMeterStatus;
-  lastMaintenanceDate: string;
-  lastMaintenanceReading: number;
-  dieselAccumulatedGallons: number;
-  dailyMwAccumulated: number;
-  dailyMvarAccumulated: number;
+  lastMaintenanceDate: string | null;
+  lastMaintenanceReading: number | null;
+  dieselAccumulatedGallons: number | null;
+  dailyMwAccumulated: number | null;
+  dailyMvarAccumulated: number | null;
 }
 
 export interface DailyOperationsKpi {
-  dieselGallons: number;
-  generatedMw: number;
+  dieselGallons: number | null;
+  generatedMw: number | null;
   lastUpdated: string;
+}
+
+/** Calculates consumption from two consecutive accumulated readings. */
+export function calculateOperationalDeltas(previous: Pick<HourMeterRecord, "dieselAccumulatedGallons" | "dailyMwAccumulated"> | null, current: Pick<HourMeterRecord, "dieselAccumulatedGallons" | "dailyMwAccumulated">): DailyOperationsKpi {
+  return {
+    dieselGallons: previous?.dieselAccumulatedGallons == null || current.dieselAccumulatedGallons == null ? null : current.dieselAccumulatedGallons - previous.dieselAccumulatedGallons,
+    generatedMw: previous?.dailyMwAccumulated == null || current.dailyMwAccumulated == null ? null : current.dailyMwAccumulated - previous.dailyMwAccumulated,
+    lastUpdated: new Date().toISOString(),
+  };
 }
 
 /** Branding displayed for the client associated with the current session. */
