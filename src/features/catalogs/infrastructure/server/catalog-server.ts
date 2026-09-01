@@ -2,10 +2,8 @@
 
 import { createTenantClient } from "@/src/core/lib/supabase/server";
 import { SupabaseCatalogsRepository } from "../supabase-repository";
-import { CatalogType, BaseCatalogItem } from "../../domain/entities";
-
-export const CATALOG_TYPES: readonly CatalogType[] = ["locations", "ubications", "functional_principles", "companies", "suppliers", "wells", "brands", "models"];
-const isCatalog = (value: unknown): value is CatalogType => typeof value === "string" && CATALOG_TYPES.includes(value as CatalogType);
+import { BaseCatalogItem } from "../../domain/entities";
+import { isCatalog } from "./catalog-constants";
 
 export type CatalogResult =
   | { ok: true; data: BaseCatalogItem[] }

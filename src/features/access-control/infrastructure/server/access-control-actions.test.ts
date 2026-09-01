@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { validateAccessControlCommand } from "./access-control-actions";
+import { validateAccessControlCommand } from "./access-control-command-validation";
 
 const companyId = "21000000-0000-0000-0000-000000000001";
 const roleId = "31000000-0000-0000-0000-000000000001";

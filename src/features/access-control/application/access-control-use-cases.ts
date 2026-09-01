@@ -26,14 +26,19 @@ export class ExecuteAccessControlCommand {
     }
     try {
       switch (command.type) {
-        case "create-role": return left({ code: "forbidden", message: "Company-scoped role administration is unavailable." });
-        case "delete-role": return left({ code: "forbidden", message: "Global role administration is forbidden." });
-        case "create-company": return left({ code: "forbidden", message: "Global company administration is forbidden." });
-        case "set-company": return left({ code: "forbidden", message: "Global company administration is forbidden." });
-        case "set-permission": return left({ code: "forbidden", message: "Global permission administration is forbidden." });
+        case "create-role": await this.repository.createRole(command.role.name, command.companyId); break;
+        case "update-role": await this.repository.updateRole(command.roleId, command.role.name, command.companyId); break;
+        case "delete-role": await this.repository.deleteRole(command.roleId, command.companyId); break;
+        case "create-company": await this.repository.createCompany(command.company.name); break;
+        case "update-company": await this.repository.updateCompany(command.companyId, command.company.name); break;
+        case "set-company": await this.repository.setCompany(command.companyId, command.isActive); break;
+        case "set-user": await this.repository.setUser(command.userId, command.isActive); break;
+        case "set-permission": await this.repository.setRolePermission(command.roleId, command.permissionId, command.enabled, command.companyId); break;
         case "set-entitlement": await this.repository.setEntitlement(command.entitlement); break;
         case "set-membership": await this.repository.setMembership(command.membership); break;
+        case "remove-membership": await this.repository.removeMembership(command.membership); break;
         case "set-assignment": await this.repository.setAssignment(command.assignment); break;
+        case "remove-assignment": await this.repository.removeAssignment(command.assignment); break;
       }
       return right(undefined);
     } catch (error) {

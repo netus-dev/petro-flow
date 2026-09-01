@@ -200,68 +200,76 @@ export function AppSidebar({ initialUser, initialAuthorization }: AppSidebarProp
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarSeparator />
+        {authorizedAdminItems.length > 0 && (
+          <>
+            <SidebarSeparator />
 
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground">
-            Administración
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {authorizedAdminItems.map((item) => {
-                const isActive = item.active;
-                return (
-                  <SidebarMenuItem key={item.titleKey}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={isActive}
-                      tooltip={item.label}
-                      className={
-                        isActive
-                          ? "bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary"
-                          : ""
-                      }
-                    >
-                      <Link href={item.href}>
-                        <item.icon className="size-4" />
-                        <span>{item.label}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+            <SidebarGroup>
+              <SidebarGroupLabel className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground">
+                Administración
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {authorizedAdminItems.map((item) => {
+                    const isActive = item.active;
+                    return (
+                      <SidebarMenuItem key={item.titleKey}>
+                        <SidebarMenuButton
+                          asChild
+                          isActive={isActive}
+                          tooltip={item.label}
+                          className={
+                            isActive
+                              ? "bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary"
+                              : ""
+                          }
+                        >
+                          <Link href={item.href}>
+                            <item.icon className="size-4" />
+                            <span>{item.label}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </>
+        )}
 
-        <SidebarSeparator />
+        {authorizedSecondaryItems.length > 0 && (
+          <>
+            <SidebarSeparator />
 
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground">
-            {t("sidebar.system")}
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {authorizedSecondaryItems.map((item) => {
-                const isActive = item.active;
-                return (
-                  <SidebarMenuItem key={item.titleKey}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={isActive}
-                      tooltip={item.label}
-                    >
-                      <Link href={item.href}>
-                        <item.icon className="size-4" />
-                        <span>{item.label}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+            <SidebarGroup>
+              <SidebarGroupLabel className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground">
+                {t("sidebar.system")}
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {authorizedSecondaryItems.map((item) => {
+                    const isActive = item.active;
+                    return (
+                      <SidebarMenuItem key={item.titleKey}>
+                        <SidebarMenuButton
+                          asChild
+                          isActive={isActive}
+                          tooltip={item.label}
+                        >
+                          <Link href={item.href}>
+                            <item.icon className="size-4" />
+                            <span>{item.label}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </>
+        )}
       </SidebarContent>
 
       {/* Footer */}

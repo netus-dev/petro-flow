@@ -3,11 +3,9 @@
 import { createTenantClient } from "@/src/core/lib/supabase/server";
 import { CatalogType, BaseCatalogItem } from "../../domain/entities";
 import { SupabaseCatalogsRepository } from "../supabase-repository";
-import { CATALOG_TYPES } from "./catalog-server";
+import { CATALOG_TYPES, isCatalog } from "./catalog-constants";
 
 type MutationResult = { ok: true; data?: BaseCatalogItem } | { ok: false; error: string };
-
-const isCatalog = (value: unknown): value is CatalogType => typeof value === "string" && CATALOG_TYPES.includes(value as CatalogType);
 
 function validatePayload(item: Partial<BaseCatalogItem>) {
   if (!item.name || typeof item.name !== "string" || item.name.trim().length === 0) {
