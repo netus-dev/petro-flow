@@ -14,4 +14,9 @@ describe("sidebar authorization", () => {
   it("renders and activates only an enabled, capable module", () => {
     expect(filterNavigation(items, { enabledModules: ["operations"], capabilities: [{ action: "read", resource: "documents" }] }, "/documents")).toEqual([{ ...items[0], active: true }]);
   });
+
+  it("allows access-control with its manage capability", () => {
+    const item = { href: "/access-control", moduleKey: "access-control", capability: { action: "manage", resource: "access-control" } };
+    expect(filterNavigation([item], { enabledModules: ["access-control"], capabilities: [item.capability] }, "/dashboard")).toEqual([{ ...item, active: false }]);
+  });
 });

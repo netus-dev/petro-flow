@@ -16,6 +16,7 @@ import {
   ChevronDown,
   ClipboardList,
   Database,
+  ShieldCheck,
 } from "lucide-react";
 import { PetroLogo } from "@/src/core/presentation/components/ui/petro-logo";
 import {
@@ -127,6 +128,13 @@ export function AppSidebar({ initialUser, initialAuthorization }: AppSidebarProp
 
   const adminItems = [
     {
+      titleKey: "sidebar.accessControl",
+      label: "Control de acceso",
+      icon: ShieldCheck,
+      href: "/access-control",
+      capability: { action: "manage", resource: "access-control" },
+    },
+    {
       titleKey: "sidebar.catalogs",
       label: "Catálogos",
       icon: Database,
@@ -134,8 +142,8 @@ export function AppSidebar({ initialUser, initialAuthorization }: AppSidebarProp
     },
   ];
 
-  const authorize = <T extends { href: string }>(items: T[]) => filterNavigation(
-    items.map((item) => ({ ...item, moduleKey: item.href.split("/")[1], capability: { action: "read", resource: item.href.split("/")[1] } })),
+  const authorize = <T extends { href: string; capability?: { action: string; resource: string } }>(items: T[]) => filterNavigation(
+    items.map((item) => ({ ...item, moduleKey: item.href.split("/")[1], capability: item.capability ?? { action: "read", resource: item.href.split("/")[1] } })),
     authorization,
     pathname,
   );
