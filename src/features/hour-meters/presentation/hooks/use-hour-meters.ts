@@ -4,9 +4,20 @@ import { useCallback, useEffect, useState } from "react";
 import { HourMeterRecord } from "../../domain/entities";
 import { RegisterHourMeterInput } from "../../domain/repositories/hour-meter.repository";
 import { GetHourMetersUseCase, RegisterHourMeterUseCase } from "../../application/usecases/hour-meter.usecases";
-import { SupabaseHourMeterRepository } from "../../infrastructure/repositories/hour-meter.supabase.repository";
+import { readHourMeters, registerHourMeter as registerHourMeterAction } from "../../infrastructure/server/hour-meter-actions";
 
-const repository = new SupabaseHourMeterRepository();
+const repository = {
+  getAll: async () => {
+    const result = await readHourMeters();
+    if (!result.ok) throw new Error(result.error);
+    return result.data;
+  },
+  register: async (input: RegisterHourMeterInput) => {
+    const result = await registerHourMeterAction(input);
+    if (!result.ok) throw new Error(result.error);
+    return result.data;
+  },
+};
 const getHourMeters = new GetHourMetersUseCase(repository);
 const registerHourMeter = new RegisterHourMeterUseCase(repository);
 

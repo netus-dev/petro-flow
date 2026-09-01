@@ -2,10 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { DailyOperationsKpi } from "../../domain/entities";
-import { GetDailyOperationsKpiUseCase } from "../../application/usecases/hour-meter.usecases";
-import { SupabaseHourMeterRepository } from "../../infrastructure/repositories/hour-meter.supabase.repository";
-
-const getDailyKpi = new GetDailyOperationsKpiUseCase(new SupabaseHourMeterRepository());
+import { readDailyOperationsKpi } from "../../infrastructure/server/hour-meter-actions";
 
 /** Loads consecutive-reading operational deltas for the selected asset. */
 export function useDailyOperationsKpi(assetId: string | null) {
@@ -19,8 +16,8 @@ export function useDailyOperationsKpi(assetId: string | null) {
       return;
     }
     setIsLoading(true);
-    void getDailyKpi.execute(assetId).then((result) => {
-      if (result.isRight()) setDailyKpi(result.value);
+    void readDailyOperationsKpi(assetId).then((result) => {
+      if (result.ok) setDailyKpi(result.data);
       else setDailyKpi(null);
       setIsLoading(false);
     });
