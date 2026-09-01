@@ -50,7 +50,7 @@ export function RegisterHourMeterForm({ onRegistered }: RegisterHourMeterFormPro
     {lastRegistered && <p role="status" className="rounded-md bg-emerald-500/10 p-2 text-xs text-emerald-700">Registro completado: este activo tiene una lectura registrada previamente.</p>}
     <div className="space-y-2 min-w-0">
       <Label htmlFor="equipment">Activo / Equipo</Label>
-      <select id="equipment" required value={equipmentId} onChange={(e) => setEquipmentId(e.target.value)} className="border-input bg-background box-border flex h-9 w-full min-w-0 max-w-full rounded-md border px-3 text-sm"><option value="">Selecciona un equipo</option>{records.map((record) => <option key={record.id} value={record.id}>{record.equipment}</option>)}</select>
+      <select id="equipment" required value={equipmentId} onChange={(e) => setEquipmentId(e.target.value)} className="border-input bg-background box-border flex h-9 w-full min-w-0 max-w-full rounded-md border px-3 text-sm"><option value="">Selecciona un equipo</option>{records.map((record) => <option key={record.assetId} value={record.assetId}>{record.equipment}</option>)}</select>
       {fieldErrors.assetId && <p className="text-xs text-destructive">{fieldErrors.assetId}</p>}
     </div>
     <div className="space-y-2 min-w-0">
