@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { Clock } from "lucide-react";
 import { useHourMeters } from "../hooks/use-hour-meters";
 import { HourMeterCard, EnhancedHourMeterRecord } from "./hour-meter-card";
@@ -21,19 +20,8 @@ export function HourMeterContent({ initialRecords = [], permissions = [] }: { in
   const { records, loading, refresh, error } = useHourMeters(initialRecords);
   const canRegister = canUseHourMeterPermission(permissions, HOUR_METER_PERMISSIONS.access);
   const canManageInventory = canUseHourMeterPermission(permissions, HOUR_METER_PERMISSIONS.inventory);
-  const [lastSync, setLastSync] = useState("hace 1 min");
-  
   // Hook de estado para el panel lateral de mantenimiento
   const { selectedEquipmentId, resolvedPlan, isLoading, selectEquipment, closePanel } = useMaintenancePanel();
-
-  // Subtle live update simulation effect
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setLastSync("hace unos segundos");
-      setTimeout(() => setLastSync("hace 1 min"), 20000);
-    }, 60000);
-    return () => clearInterval(interval);
-  }, []);
 
   if (loading) {
     return (
@@ -113,20 +101,6 @@ export function HourMeterContent({ initialRecords = [], permissions = [] }: { in
               <RegisterHourMeterForm onRegistered={() => void refresh()} />
             </DialogContent>
           </Dialog>}
-          <div className="flex flex-col items-end">
-            <div className="flex items-center gap-2">
-              <span className="relative flex size-3">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex size-3 rounded-full bg-emerald-500"></span>
-              </span>
-              <span className="font-mono text-xs tracking-wider text-emerald-500 uppercase font-semibold">
-                Conectado
-              </span>
-            </div>
-            <span className="font-mono text-[10px] text-muted-foreground mt-1">
-              Actualizado {lastSync}
-            </span>
-          </div>
         </div>
       </header>
 
