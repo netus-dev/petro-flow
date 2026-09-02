@@ -1,5 +1,5 @@
 import { IMaintenancePlanRepository } from "../../domain/repositories/maintenance.repository";
-import { MaintenancePlan } from "../../domain/entities";
+import { MaintenancePlan, MaintenanceThresholdConfiguration } from "../../domain/entities";
 import { MockMaintenanceDatasource } from "../datasources/maintenance.datasource";
 
 /**
@@ -17,4 +17,7 @@ export class MaintenancePlanRepositoryImpl implements IMaintenancePlanRepository
   async getPlansByEquipmentId(equipmentId: string): Promise<MaintenancePlan[]> {
     return this.datasource.getPlansByEquipmentId(equipmentId);
   }
+  async getThresholds(): Promise<MaintenanceThresholdConfiguration[]> { return []; }
+  async saveThresholds(companyId: string, functionalPrincipleId: string, thresholds: number[]): Promise<MaintenanceThresholdConfiguration[]> { return thresholds.map((thresholdHours) => ({ companyId, functionalPrincipleId, thresholdHours })); }
+  async deleteThreshold(): Promise<void> {}
 }

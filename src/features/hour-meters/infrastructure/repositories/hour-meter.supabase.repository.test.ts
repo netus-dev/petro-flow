@@ -33,6 +33,8 @@ describe("Hourmeter infrastructure mapping", () => {
     const order = vi.fn().mockResolvedValue({
       data: [{
         id: "asset-1",
+         company_id: "company-1",
+         function_principle_id: "principle-1",
          current_location_id: "location-1",
          current_ubication_id: "ubication-1",
         functional_principles: { name: HOURMETER_ELIGIBLE_PRINCIPLES[0] },
@@ -50,7 +52,7 @@ describe("Hourmeter infrastructure mapping", () => {
     await expect(repository.getAll()).resolves.toMatchObject([
        { assetId: "asset-1", equipment: "North Position", platform: "North Rig", rigName: "North Rig" },
     ]);
-     expect(select).toHaveBeenCalledWith("id, current_location_id, current_ubication_id, functional_principles!assets_function_principle_id_fkey(name), locations!assets_current_location_id_fkey(name), ubications!assets_company_id_current_ubication_id_fkey(name), asset_operational_parameters_history!asset_operational_parameters_history_asset_id_fkey(*)");
+      expect(select).toHaveBeenCalledWith("id, company_id, function_principle_id, current_location_id, current_ubication_id, functional_principles!assets_function_principle_id_fkey(name), locations!assets_current_location_id_fkey(name), ubications!assets_company_id_current_ubication_id_fkey(name), asset_operational_parameters_history!asset_operational_parameters_history_asset_id_fkey(*)");
   });
 
   it("falls back to the functional principle when an asset has no ubication", async () => {

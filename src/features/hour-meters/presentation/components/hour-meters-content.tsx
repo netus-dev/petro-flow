@@ -12,16 +12,20 @@ import { InventoryManagementModal } from "./inventory-management-modal";
 import { canUseHourMeterPermission, HOUR_METER_PERMISSIONS } from "../../domain/permissions";
 import { HourMeterRecord } from "../../domain/entities";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { MaintenanceThresholdModal } from "./maintenance-threshold-modal";
 
 /**
  * Componente principal de presentación (Page/Organism) que representa la vista
  * del Dashboard de Horómetros con telemetría en tiempo real y panel de mantenimiento.
  */
-export function HourMeterContent({ initialRecords = [], permissions = [], rigs = [], initialRigId }: { initialRecords?: HourMeterRecord[]; permissions?: string[]; rigs?: Array<{ id: string; name: string }>; initialRigId?: string }) {
+export function HourMeterContent({ initialRecords = [], permissions = [], principles = [], rigs = [], initialRigId }: { initialRecords?: HourMeterRecord[]; permissions?: string[]; principles?: Array<{ id: string; name: string }>; rigs?: Array<{ id: string; name: string }>; initialRigId?: string }) {
   const [rigId, setRigId] = useState(initialRigId ?? rigs[0]?.id);
+  const router = useRouter();
   const { records, loading, refresh, error } = useHourMeters(initialRecords, rigId);
   const canRegister = canUseHourMeterPermission(permissions, HOUR_METER_PERMISSIONS.access);
   const canManageInventory = canUseHourMeterPermission(permissions, HOUR_METER_PERMISSIONS.inventory);
+  const canManageMaintenance = canUseHourMeterPermission(permissions, HOUR_METER_PERMISSIONS.maintenanceManage);
   // Hook de estado para el panel lateral de mantenimiento
   const { selectedEquipmentId, resolvedPlan, isLoading, selectEquipment, closePanel } = useMaintenancePanel();
 
@@ -75,6 +79,7 @@ export function HourMeterContent({ initialRecords = [], permissions = [], rigs =
       {/* Top Header Panel (Fixed Height) */}
       <header className="shrink-0 mb-4 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/40 pb-4">
         <div className="flex items-center gap-4">
+          {principles.length > 0 && <Dialog><DialogTrigger asChild><Button size="sm" variant="outline">Configurar mantenimientos</Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>Configurar mantenimientos</DialogTitle></DialogHeader><MaintenanceThresholdModal principles={principles} canEdit={canManageMaintenance} onSaved={() => router.refresh()} /></DialogContent></Dialog>}
           <div className="flex size-12 items-center justify-center rounded-xl bg-primary/10 border border-primary/20 shadow-inner">
             <Clock className="size-6 text-primary" />
           </div>

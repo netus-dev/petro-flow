@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { calculateOperationalDeltas, DailyOperationsKpi, HourMeterRecord } from "../../domain/entities";
+import { calculateOperationalDeltas, DailyOperationsKpi, HourMeterRecord, MaintenanceThresholdConfiguration } from "../../domain/entities";
 import { IHourMeterRepository, RegisterHourMeterInput } from "../../domain/repositories/hour-meter.repository";
 import { toHourMeterRecord } from "../mappers/hour-meter.mapper";
 
@@ -14,6 +14,8 @@ export type HourMeterRow = {
 type NameRelation = { name: string } | { name: string }[] | null;
 type HourMeterAssetRow = {
   id: string;
+  company_id: string;
+  function_principle_id: string;
   current_location_id: string;
   current_ubication_id: string | null;
   functional_principles: NameRelation;
@@ -40,7 +42,7 @@ function mapAsset(asset: Omit<HourMeterAssetRow, "asset_operational_parameters_h
   } as HourMeterRow, {
      equipment: relationName(asset.ubications) || relationName(asset.functional_principles),
     platform: relationName(asset.locations),
-  }), rigId: asset.current_location_id, rigName: relationName(asset.locations) };
+  }), rigId: asset.current_location_id, rigName: relationName(asset.locations), companyId: asset.company_id, functionalPrincipleId: asset.function_principle_id };
 }
 
 /** Maps a persisted history row and optional asset labels into the domain model. */
@@ -68,14 +70,14 @@ export class SupabaseHourMeterRepository implements IHourMeterRepository {
   constructor(private readonly supabase: SupabaseClient) {}
 
   async getAll(rigId?: string): Promise<HourMeterRecord[]> {
-    let query = this.supabase.from("assets").select("id, current_location_id, current_ubication_id, functional_principles!assets_function_principle_id_fkey(name), locations!assets_current_location_id_fkey(name), ubications!assets_company_id_current_ubication_id_fkey(name), asset_operational_parameters_history!asset_operational_parameters_history_asset_id_fkey(*)").eq("is_active", true);
+    let query = this.supabase.from("assets").select("id, company_id, function_principle_id, current_location_id, current_ubication_id, functional_principles!assets_function_principle_id_fkey(name), locations!assets_current_location_id_fkey(name), ubications!assets_company_id_current_ubication_id_fkey(name), asset_operational_parameters_history!asset_operational_parameters_history_asset_id_fkey(*)").eq("is_active", true);
     if (rigId) query = query.eq("current_location_id", rigId);
     const { data, error } = await query.order("id");
     if (error) throw error;
     return (data as unknown as HourMeterAssetRow[]).filter((asset) => isHourMeterEligiblePrinciple(relationName(asset.functional_principles))).map((asset) => {
       const row = latestHistory(asset.asset_operational_parameters_history ?? []);
       const record = mapAsset(asset, row);
-      return { ...record, rigId: asset.current_location_id, rigName: relationName(asset.locations) };
+      return { ...record, rigId: asset.current_location_id, rigName: relationName(asset.locations), companyId: asset.company_id, functionalPrincipleId: asset.function_principle_id };
     });
   }
 
@@ -108,6 +110,23 @@ export class SupabaseHourMeterRepository implements IHourMeterRepository {
     }).select("*, assets!asset_operational_parameters_history_asset_id_fkey(functional_principles!assets_function_principle_id_fkey(name), locations!assets_current_location_id_fkey(name), ubications!assets_company_id_current_ubication_id_fkey(name))").single();
     if (error) throw error;
     const inserted = data as unknown as HourMeterRow & { assets: Pick<HourMeterAssetRow, "functional_principles" | "locations" | "ubications"> };
-    return mapAsset({ id: inserted.asset_id, current_location_id: "", current_ubication_id: null, ...inserted.assets }, inserted);
+    return mapAsset({ id: inserted.asset_id, company_id: "", function_principle_id: "", current_location_id: "", current_ubication_id: null, ...inserted.assets }, inserted);
   }
+
+  async getThresholds(companyId: string, functionalPrincipleId: string): Promise<MaintenanceThresholdConfiguration[]> {
+    const { data, error } = await this.supabase.from("hourmeter_maintenance_thresholds").select("id, company_id, functional_principle_id, threshold_hours").eq("company_id", companyId).eq("functional_principle_id", functionalPrincipleId).order("threshold_hours");
+    if (error) throw error;
+    return (data ?? []).map((row) => ({ id: row.id, companyId: row.company_id, functionalPrincipleId: row.functional_principle_id, thresholdHours: row.threshold_hours }));
+  }
+
+  async saveThresholds(companyId: string, functionalPrincipleId: string, thresholds: number[]): Promise<MaintenanceThresholdConfiguration[]> {
+    const { error: deleteError } = await this.supabase.from("hourmeter_maintenance_thresholds").delete().eq("company_id", companyId).eq("functional_principle_id", functionalPrincipleId);
+    if (deleteError) throw deleteError;
+    if (!thresholds.length) return [];
+    const { data, error } = await this.supabase.from("hourmeter_maintenance_thresholds").insert(thresholds.map((threshold_hours) => ({ company_id: companyId, functional_principle_id: functionalPrincipleId, threshold_hours }))).select("id, company_id, functional_principle_id, threshold_hours");
+    if (error) throw error;
+    return (data ?? []).map((row) => ({ id: row.id, companyId: row.company_id, functionalPrincipleId: row.functional_principle_id, thresholdHours: row.threshold_hours }));
+  }
+
+  async deleteThreshold(id: string): Promise<void> { const { error } = await this.supabase.from("hourmeter_maintenance_thresholds").delete().eq("id", id); if (error) throw error; }
 }

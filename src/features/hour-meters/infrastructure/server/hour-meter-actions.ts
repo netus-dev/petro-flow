@@ -2,7 +2,7 @@
 
 import { createTenantClient } from "@/src/core/lib/supabase/server";
 import { HourMeterFailure, RegisterHourMeterUseCase } from "../../application/usecases/hour-meter.usecases";
-import { DailyOperationsKpi, HourMeterRecord } from "../../domain/entities";
+import { DailyOperationsKpi, HourMeterRecord, MaintenanceThresholdConfiguration } from "../../domain/entities";
 import { RegisterHourMeterInput } from "../../domain/repositories/hour-meter.repository";
 import { SupabaseHourMeterRepository } from "../repositories/hour-meter.supabase.repository";
 
@@ -50,4 +50,16 @@ export async function readDailyOperationsKpi(assetId: string): Promise<HourMeter
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : "No fue posible cargar los indicadores." };
   }
+}
+
+export async function readMaintenanceThresholds(principleId: string): Promise<HourMeterActionResult<MaintenanceThresholdConfiguration[]>> {
+  const client = await createTenantClient(); if (!client) return { ok: false, error: "Tenant context is unavailable" };
+  try { const { data: company, error: companyError } = await client.rpc("rbac_request_company_id"); if (companyError || !company) return { ok: false, error: "Tenant context is unavailable" }; return { ok: true, data: await new SupabaseHourMeterRepository(client).getThresholds(company, principleId) }; }
+  catch (error) { return { ok: false, error: error instanceof Error ? error.message : "Unable to load thresholds." }; }
+}
+
+export async function saveMaintenanceThresholds(principleId: string, thresholds: number[]): Promise<HourMeterActionResult<MaintenanceThresholdConfiguration[]>> {
+  const client = await createTenantClient(); if (!client) return { ok: false, error: "Tenant context is unavailable" };
+  try { const { data: company, error } = await client.rpc("rbac_request_company_id"); if (error || !company) return { ok: false, error: "Tenant context is unavailable" }; return { ok: true, data: await new SupabaseHourMeterRepository(client).saveThresholds(company, principleId, thresholds) }; }
+  catch (failure) { return { ok: false, error: failure instanceof Error ? failure.message : "Unable to save thresholds." }; }
 }
