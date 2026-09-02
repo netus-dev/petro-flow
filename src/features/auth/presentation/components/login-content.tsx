@@ -50,11 +50,6 @@ export function LoginContent() {
             </p>
           </div>
         </div>
-
-        {/* Bottom stats */}
-        <div className="relative z-10 p-10 pt-0">
-          <LoginStats />
-        </div>
       </section>
 
       {/* Right Panel — Login Form */}
