@@ -20,10 +20,10 @@ export async function loadAuthorization() {
   return data ? { status: "ok" as const, projection: mapProjection(data) } : { status: "context_required" as const };
 }
 
-/** Produces selection redirect or HTTP 403 before protected content renders. */
+/** Produces dashboard redirect or HTTP 403 before protected content renders. */
 export async function enforceCapability(requirement: Capability & { moduleKey?: string }) {
   const result = await loadAuthorization();
-  if (result.status === "context_required") redirect("/select-company");
+  if (result.status === "context_required") redirect("/dashboard");
   if (!can(result.projection, requirement)) forbidden();
   return result.projection;
 }

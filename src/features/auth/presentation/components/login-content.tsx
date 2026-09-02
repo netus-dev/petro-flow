@@ -3,7 +3,6 @@
 import Image from "next/image";
 import { PetroLogo } from "@/src/core/presentation/components/ui/petro-logo";
 import { LoginForm } from "./login-form";
-import { LoginStats } from "./login-stats";
 import { Shield } from "lucide-react";
 
 export function LoginContent() {
