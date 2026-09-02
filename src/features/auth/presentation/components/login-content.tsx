@@ -36,7 +36,7 @@ export function LoginContent() {
         </div>
 
         {/* Center content */}
-        <div className="relative z-10 flex flex-col gap-6 px-10 pb-6">
+        <div className="absolute inset-0 z-10 flex items-center px-10">
           <div className="flex flex-col gap-3">
             <p className="text-xs font-medium tracking-[0.3em] uppercase text-primary">
               Control Integral
@@ -45,8 +45,8 @@ export function LoginContent() {
               La plataforma que impulsa tus operaciones petroleras
             </h1>
             <p className="max-w-md text-sm leading-relaxed text-muted-foreground">
-              Monitoreo en tiempo real, analisis predictivo y gestion
-              centralizada para optimizar cada barril de produccion.
+              Gestiona de forma centralizada los procesos administrativos,
+              y la operación diaria de tu organización.
             </p>
           </div>
         </div>
