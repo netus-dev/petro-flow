@@ -8,8 +8,8 @@ export class HourMeterRepositoryFailure implements HourMeterFailure { constructo
 /** Retrieves all hour meters without exposing infrastructure details. */
 export class GetHourMetersUseCase {
   constructor(private readonly repository: IHourMeterRepository) {}
-  async execute(): Promise<Either<HourMeterFailure, HourMeterRecord[]>> {
-    try { return right(await this.repository.getAll()); }
+  async execute(rigId?: string): Promise<Either<HourMeterFailure, HourMeterRecord[]>> {
+    try { return right(await this.repository.getAll(rigId)); }
     catch (error: any) { return left(new HourMeterRepositoryFailure(error?.message ?? "Unable to load hour meters.")); }
   }
 }

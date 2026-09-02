@@ -16,6 +16,8 @@ export interface HourMeterRecord {
   dieselAccumulatedGallons: number | null;
   dailyMwAccumulated: number | null;
   dailyMvarAccumulated: number | null;
+  rigId?: string;
+  rigName?: string;
 }
 
 export interface DailyOperationsKpi {
