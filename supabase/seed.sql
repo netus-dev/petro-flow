@@ -8,9 +8,9 @@ values
   ('91000000-0000-0000-0000-000000000003', 'seed-inactive@example.test', 'authenticated', 'authenticated')
 on conflict (id) do nothing;
 
-insert into auth.users (id, email, aud, role, encrypted_password, email_confirmed_at, confirmed_at)
-values ('91000000-0000-0000-0000-000000000004', 'hola@oalonsodev.com', 'authenticated', 'authenticated', '$2a$10$vz0guSesuHYK6JT6dPV1bOPXKq0GRl2lie.NgTPhxWymgdqni1uMG', now(), now())
-on conflict (id) do update set email = excluded.email, encrypted_password = excluded.encrypted_password, email_confirmed_at = excluded.email_confirmed_at, confirmed_at = excluded.confirmed_at;
+insert into auth.users (id, email, aud, role, encrypted_password, email_confirmed_at)
+values ('91000000-0000-0000-0000-000000000004', 'hola@oalonsodev.com', 'authenticated', 'authenticated', '$2a$10$vz0guSesuHYK6JT6dPV1bOPXKq0GRl2lie.NgTPhxWymgdqni1uMG', now())
+on conflict (id) do update set email = excluded.email, encrypted_password = excluded.encrypted_password, email_confirmed_at = excluded.email_confirmed_at;
 
 -- The auth trigger creates onboarding profiles. Complete these synthetic profiles
 -- without making the trigger provision memberships or roles.
@@ -136,9 +136,18 @@ insert into public.companies (id, name, description, is_active) values
   ('92000000-0000-0000-0000-000000000004', 'Hour Meters Test', 'Local Hour Meters fixture.', true)
 on conflict (id) do update set name = excluded.name, description = excluded.description, is_active = excluded.is_active;
 
+insert into public.hourmeters_settings (company_id)
+values ('92000000-0000-0000-0000-000000000004')
+on conflict (company_id) do nothing;
+
 insert into public.users (id, name, email, job_position, is_active, company_id) values
   ('91000000-0000-0000-0000-000000000004', 'Hour Meters Developer', 'hola@oalonsodev.com', 'Developer', true, '92000000-0000-0000-0000-000000000004')
 on conflict (id) do update set name = excluded.name, email = excluded.email, job_position = excluded.job_position, is_active = excluded.is_active, company_id = excluded.company_id;
+
+insert into public.rbac_companies (id, name, is_active) values
+  ('a2000000-0000-0000-0000-000000000001', 'Legacy Test North', true),
+  ('a2000000-0000-0000-0000-000000000002', 'Legacy Test South', false)
+on conflict (id) do update set name = excluded.name, is_active = excluded.is_active;
 
 insert into public.rbac_company_modules (company_id, module_key, enabled) values
   ('92000000-0000-0000-0000-000000000004', 'hour-meters', true),
