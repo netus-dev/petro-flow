@@ -21,7 +21,7 @@ const EMPTY_AUDIT_EVENTS: AccessControlSnapshot["auditEvents"] = [];
 export const useAccessControlStore = create<AccessControlState>((set, get) => ({
   isLoading: false, error: null,
   refresh: async () => { set({ isLoading: true, error: null }); const result = await readAccessControlSnapshot(); if (!result.ok) set({ error: result.error, isLoading: false }); else set({ ...result.data, isLoading: false }); },
-  execute: async (command) => { const result = await runAccessControlCommand(command); if (!result.ok) { set({ error: result.error }); return false; } await get().refresh(); return true; },
+  execute: async (command) => { set({ isLoading: true, error: null }); const result = await runAccessControlCommand(command); if (!result.ok) { set({ error: result.error, isLoading: false }); return false; } await get().refresh(); return true; },
 }));
 
 export const useAccessControlRoles = () => useAccessControlStore((state) => state.roles ?? EMPTY_ROLES);

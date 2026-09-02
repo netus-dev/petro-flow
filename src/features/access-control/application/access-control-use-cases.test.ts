@@ -34,6 +34,15 @@ describe("access-control use cases", () => {
     expect(result.isRight()).toBe(true);
     expect(repository.readSnapshot).toHaveBeenCalledOnce();
   });
+  it("returns a safe repository error message from snapshot reads", async () => {
+    const repository = repo();
+    vi.mocked(repository.readSnapshot).mockRejectedValue(new Error("access-control administration is forbidden"));
+
+    const result = await new ReadAccessControlSnapshot(repository, async () => projection([{ action: "manage", resource: "access-control" }])).execute();
+
+    expect(result.isLeft()).toBe(true);
+    expect(result.value).toEqual({ code: "repository", message: "access-control administration is forbidden" });
+  });
   it("requires the audit capability for reads", async () => {
     const repository = repo();
     const result = await new ReadAuthorizationAudit(repository, async () => projection([])).execute();
