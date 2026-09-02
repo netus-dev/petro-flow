@@ -14,9 +14,9 @@ export type HourMeterRow = {
 type NameRelation = { name: string } | { name: string }[] | null;
 type HourMeterAssetRow = {
   id: string;
-  current_ubication_id: string | null;
+  current_location_id: string;
   functional_principles: NameRelation;
-  ubications: NameRelation;
+  locations: NameRelation;
   asset_operational_parameters_history: HourMeterRow[];
 };
 
@@ -27,7 +27,7 @@ function relationName(relation: NameRelation): string {
 
 /** Maps one asset and its latest persisted reading into the domain model. */
 function mapAsset(asset: Omit<HourMeterAssetRow, "asset_operational_parameters_history">, row?: HourMeterRow): HourMeterRecord {
-  return mapRow(row ?? {
+  return { ...mapRow(row ?? {
     id: asset.id,
     asset_id: asset.id,
     hours: null,
@@ -36,9 +36,9 @@ function mapAsset(asset: Omit<HourMeterAssetRow, "asset_operational_parameters_h
     mw_accumulated: null,
     mvar_accumulated: null,
   } as HourMeterRow, {
-    equipment: relationName(asset.ubications) || relationName(asset.functional_principles),
-    platform: relationName(asset.ubications),
-  });
+    equipment: relationName(asset.locations) || relationName(asset.functional_principles),
+    platform: relationName(asset.locations),
+  }), rigId: asset.current_location_id, rigName: relationName(asset.locations) };
 }
 
 /** Maps a persisted history row and optional asset labels into the domain model. */
@@ -65,12 +65,15 @@ export function latestHistory(rows: readonly HourMeterRow[]): HourMeterRow | und
 export class SupabaseHourMeterRepository implements IHourMeterRepository {
   constructor(private readonly supabase: SupabaseClient) {}
 
-  async getAll(): Promise<HourMeterRecord[]> {
-    const { data, error } = await this.supabase.from("assets").select("id, current_ubication_id, functional_principles!assets_function_principle_id_fkey(name), ubications!assets_company_id_current_ubication_id_fkey(name), asset_operational_parameters_history!asset_operational_parameters_history_asset_id_fkey(*)").eq("is_active", true).order("id");
+  async getAll(rigId?: string): Promise<HourMeterRecord[]> {
+    let query = this.supabase.from("assets").select("id, current_location_id, functional_principles!assets_function_principle_id_fkey(name), locations!assets_current_location_id_fkey(name), asset_operational_parameters_history!asset_operational_parameters_history_asset_id_fkey(*)").eq("is_active", true);
+    if (rigId) query = query.eq("current_location_id", rigId);
+    const { data, error } = await query.order("id");
     if (error) throw error;
     return (data as unknown as HourMeterAssetRow[]).filter((asset) => isHourMeterEligiblePrinciple(relationName(asset.functional_principles))).map((asset) => {
       const row = latestHistory(asset.asset_operational_parameters_history ?? []);
-      return mapAsset(asset, row);
+      const record = mapAsset(asset, row);
+      return { ...record, rigId: asset.current_location_id, rigName: relationName(asset.locations) };
     });
   }
 
@@ -100,9 +103,9 @@ export class SupabaseHourMeterRepository implements IHourMeterRepository {
       company_id: companyId, asset_id: input.assetId, hours: input.currentReading, captured_at: input.capturedAt,
       diesel_accumulated_gallons: input.dieselAccumulatedGallons, mw_accumulated: input.dailyMwAccumulated,
       mvar_accumulated: input.dailyMvarAccumulated,
-    }).select("*, assets!asset_operational_parameters_history_asset_id_fkey(functional_principles!assets_function_principle_id_fkey(name), ubications!assets_company_id_current_ubication_id_fkey(name))").single();
+    }).select("*, assets!asset_operational_parameters_history_asset_id_fkey(functional_principles!assets_function_principle_id_fkey(name), locations!assets_current_location_id_fkey(name))").single();
     if (error) throw error;
-    const inserted = data as unknown as HourMeterRow & { assets: Pick<HourMeterAssetRow, "functional_principles" | "ubications"> };
-    return mapAsset({ id: inserted.asset_id, current_ubication_id: null, ...inserted.assets }, inserted);
+    const inserted = data as unknown as HourMeterRow & { assets: Pick<HourMeterAssetRow, "functional_principles" | "locations"> };
+    return mapAsset({ id: inserted.asset_id, current_location_id: "", ...inserted.assets }, inserted);
   }
 }

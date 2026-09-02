@@ -17,6 +17,7 @@ const EMPTY_MEMBERSHIPS: AccessControlSnapshot["memberships"] = [];
 const EMPTY_ENTITLEMENTS: AccessControlSnapshot["entitlements"] = [];
 const EMPTY_ASSIGNMENTS: AccessControlSnapshot["assignments"] = [];
 const EMPTY_AUDIT_EVENTS: AccessControlSnapshot["auditEvents"] = [];
+const EMPTY_OPERATIONAL_SCOPES: AccessControlSnapshot["operationalScopes"] = [];
 
 export const useAccessControlStore = create<AccessControlState>((set, get) => ({
   isLoading: false, error: null,
@@ -33,6 +34,7 @@ export const useAccessControlMemberships = () => useAccessControlStore((state) =
 export const useAccessControlEntitlements = () => useAccessControlStore((state) => state.entitlements ?? EMPTY_ENTITLEMENTS);
 export const useAccessControlAssignments = () => useAccessControlStore((state) => state.assignments ?? EMPTY_ASSIGNMENTS);
 export const useAccessControlAuditEvents = () => useAccessControlStore((state) => state.auditEvents ?? EMPTY_AUDIT_EVENTS);
+export const useAccessControlOperationalScopes = () => useAccessControlStore((state) => state.operationalScopes ?? EMPTY_OPERATIONAL_SCOPES);
 export const useAccessControlLoading = () => useAccessControlStore((state) => state.isLoading);
 export const useAccessControlError = () => useAccessControlStore((state) => state.error);
 export const useRefreshAccessControl = () => useAccessControlStore((state) => state.refresh);

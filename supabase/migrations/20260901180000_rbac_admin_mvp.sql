@@ -6,7 +6,7 @@ alter table public.rbac_roles drop constraint if exists rbac_roles_name_key;
 alter table public.rbac_roles add constraint rbac_roles_company_name_key unique (company_id, name);
 
 create or replace function public.rbac_admin_allowed() returns boolean language sql stable security definer set search_path = '' as $$
-  select public.rbac_has_capability(public.rbac_request_company_id(), 'manage', 'access-control')
+  select exists (select 1 from public.rbac_memberships m join public.rbac_assignments a using (company_id,user_id) join public.rbac_roles r on r.id=a.role_id where m.company_id=public.rbac_request_company_id() and m.user_id=auth.uid() and m.is_active and r.name='developer')
 $$;
 
 create or replace function public.rbac_admin_snapshot() returns jsonb language plpgsql security definer set search_path = '' as $$
@@ -21,7 +21,7 @@ begin
     'users', coalesce((select jsonb_agg(jsonb_build_object('id', p.user_id, 'email', u.email, 'isActive', p.is_active)) from public.rbac_principals p join auth.users u on u.id = p.user_id), '[]'),
     'memberships', coalesce((select jsonb_agg(jsonb_build_object('companyId', company_id, 'userId', user_id, 'isActive', is_active)) from public.rbac_memberships), '[]'),
     'assignments', coalesce((select jsonb_agg(jsonb_build_object('companyId', company_id, 'userId', user_id, 'roleId', role_id)) from public.rbac_assignments), '[]'),
-    'entitlements', '[]'::jsonb, 'auditEvents', '[]'::jsonb
+     'entitlements', '[]'::jsonb, 'operationalScopes', coalesce((select jsonb_agg(jsonb_build_object('companyId',s.company_id,'userId',s.user_id,'mode',case when s.all_rigs then 'all_rigs' else 'specific_rig' end,'rigIds',coalesce((select jsonb_agg(rig_id) from public.rbac_operational_scope_rigs r where r.company_id=s.company_id and r.user_id=s.user_id),'[]'::jsonb))) from public.rbac_operational_scopes s where s.company_id=public.rbac_request_company_id()), '[]'::jsonb), 'auditEvents', '[]'::jsonb
   ) into result;
   return result;
 end $$;
@@ -42,7 +42,9 @@ begin
   elsif kind = 'set-assignment' then insert into public.rbac_assignments(company_id,user_id,role_id) select v_company_id,(p_command->'assignment'->>'userId')::uuid,(p_command->'assignment'->>'roleId')::uuid where exists (select 1 from public.rbac_roles r where r.id = (p_command->'assignment'->>'roleId')::uuid and r.company_id = v_company_id) on conflict do nothing; result := '{}'::jsonb;
   elsif kind = 'remove-membership' then delete from public.rbac_memberships where rbac_memberships.company_id = v_company_id and user_id = (p_command->'membership'->>'userId')::uuid; result := '{}'::jsonb;
   elsif kind = 'remove-assignment' then delete from public.rbac_assignments where rbac_assignments.company_id = v_company_id and user_id = (p_command->'assignment'->>'userId')::uuid and role_id = (p_command->'assignment'->>'roleId')::uuid; result := '{}'::jsonb;
-  else raise exception 'unsupported access-control command'; end if;
+   elsif kind = 'set-operational-scope' then insert into public.rbac_operational_scopes(company_id,user_id,all_rigs) values (v_company_id,(p_command->'scope'->>'userId')::uuid,(p_command->'scope'->>'mode')='all_rigs') on conflict(company_id,user_id) do update set all_rigs=excluded.all_rigs,updated_at=now(); delete from public.rbac_operational_scope_rigs where company_id=v_company_id and user_id=(p_command->'scope'->>'userId')::uuid; insert into public.rbac_operational_scope_rigs select v_company_id,(p_command->'scope'->>'userId')::uuid,value::uuid from jsonb_array_elements_text(p_command->'scope'->'rigIds'); result := '{}'::jsonb;
+   elsif kind = 'remove-operational-scope' then delete from public.rbac_operational_scopes where company_id=v_company_id and user_id=(p_command->>'userId')::uuid; result := '{}'::jsonb;
+   else raise exception 'unsupported access-control command'; end if;
   return result;
 end $$;
 revoke all on function public.rbac_admin_snapshot() from public; grant execute on function public.rbac_admin_snapshot() to authenticated;

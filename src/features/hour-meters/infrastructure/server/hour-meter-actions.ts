@@ -14,11 +14,19 @@ async function repository() {
 }
 
 /** Reads Hourmeters only through the validated server tenant context. */
-export async function readHourMeters(): Promise<HourMeterActionResult<HourMeterRecord[]>> {
+export async function readHourMeters(rigId?: string): Promise<HourMeterActionResult<HourMeterRecord[]>> {
   const repo = await repository();
   if (!repo) return { ok: false, error: "Tenant context is unavailable" };
   try {
-    return { ok: true, data: await repo.getAll() };
+    const scopeClient = await createTenantClient();
+    if (!scopeClient) return { ok: false, error: "Tenant context is unavailable" };
+    if (!("rpc" in scopeClient)) return { ok: true, data: await repo.getAll(rigId) };
+    const { data: scope, error: scopeError } = await scopeClient.rpc("rbac_user_rig_scope");
+    if (scopeError || !scope?.assigned) return { ok: false, error: "Operational scope is unavailable." };
+    const allowed = (scope.rigs ?? []) as Array<{ id: string }>;
+    const selected = rigId ?? allowed[0]?.id;
+    if (!selected || !allowed.some((rig) => rig.id === selected)) return { ok: false, error: "The selected Rig is not authorized." };
+    return { ok: true, data: await repo.getAll(selected) };
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : "Unable to load hour meters." };
   }

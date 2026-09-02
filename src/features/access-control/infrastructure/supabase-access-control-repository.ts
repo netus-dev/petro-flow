@@ -1,5 +1,5 @@
 import { createTenantClient } from "../../../core/lib/supabase/server";
-import type { AccessControlRepository, AuditEvent, ModuleEntitlement, Membership, Role, RoleAssignment, AccessControlSnapshot, Company } from "../domain/access-control";
+import type { AccessControlRepository, AuditEvent, ModuleEntitlement, Membership, Role, RoleAssignment, AccessControlSnapshot, Company, OperationalScope } from "../domain/access-control";
 
 const TENANT_CONTEXT_ERROR = "A valid active company context is required.";
 
@@ -34,6 +34,8 @@ export class SupabaseAccessControlRepository implements AccessControlRepository 
   async removeMembership(value: Pick<Membership, "companyId" | "userId">) { await this.command({ type: "remove-membership", membership: value }); }
   async setAssignment(value: RoleAssignment) { await this.command({ type: "set-assignment", assignment: value }); }
   async removeAssignment(value: RoleAssignment) { await this.command({ type: "remove-assignment", assignment: value }); }
+  async setOperationalScope(value: OperationalScope) { await this.command({ type: "set-operational-scope", scope: value }); }
+  async removeOperationalScope(companyId: string, userId: string) { await this.command({ type: "remove-operational-scope", companyId, userId }); }
   async listAuditEvents(companyId?: string): Promise<AuditEvent[]> { let query = (await this.client()).from("rbac_audit_events").select("id,actor_id,company_id,event_type,outcome,target,created_at").order("created_at", { ascending: false }); if (companyId) query = query.eq("company_id", companyId); const { data, error } = await query; if (error) throw persistenceError(error, "Authorization audit read failed."); return (data ?? []).map((row) => ({ id: row.id, actorId: row.actor_id, companyId: row.company_id, eventType: row.event_type, outcome: row.outcome, target: row.target, createdAt: row.created_at })); }
   async appendAuditEvent(event: Omit<AuditEvent, "id" | "createdAt">) { const { error } = await (await this.client()).rpc("rbac_record_audit", { p_company_id: event.companyId, p_event_type: event.eventType, p_outcome: event.outcome, p_target: event.target }); if (error) throw persistenceError(error, "Authorization audit write failed."); }
   async readSnapshot(): Promise<AccessControlSnapshot> {

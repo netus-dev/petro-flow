@@ -17,6 +17,8 @@ const commandSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("remove-membership"), membership: z.object({ companyId: uuid, userId: uuid }) }),
   z.object({ type: z.literal("set-assignment"), assignment: z.object({ companyId: uuid, userId: uuid, roleId: uuid }) }),
   z.object({ type: z.literal("remove-assignment"), assignment: z.object({ companyId: uuid, userId: uuid, roleId: uuid }) }),
+  z.object({ type: z.literal("set-operational-scope"), scope: z.object({ companyId: uuid, userId: uuid, mode: z.enum(["specific_rig", "all_rigs"]), rigIds: z.array(uuid).max(500) }).superRefine((value, ctx) => { if (value.mode === "specific_rig" && value.rigIds.length === 0) ctx.addIssue({ code: "custom", message: "specific_rig requires rigs" }); if (value.mode === "all_rigs" && value.rigIds.length) ctx.addIssue({ code: "custom", message: "all_rigs cannot list rigs" }); }) }),
+  z.object({ type: z.literal("remove-operational-scope"), companyId: uuid, userId: uuid }),
 ]);
 
 /** Validates an access-control command before it reaches the server action. */

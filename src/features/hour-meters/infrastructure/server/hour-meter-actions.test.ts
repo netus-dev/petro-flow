@@ -35,7 +35,7 @@ describe("Hourmeter server actions", () => {
     const result = await readHourMeters();
 
     expect(structuredClone(result)).toEqual(result);
-    expect(result).toMatchObject({ ok: true, data: [{ assetId: "asset-1", equipment: "Motor de Combustión Interna" }] });
+    expect(result).toMatchObject({ ok: true, data: [{ assetId: "asset-1", equipment: "North Platform" }] });
   });
 
   it("rejects invalid registration input before calling the repository", async () => {

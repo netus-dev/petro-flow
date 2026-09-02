@@ -39,6 +39,8 @@ export class ExecuteAccessControlCommand {
         case "remove-membership": await this.repository.removeMembership(command.membership); break;
         case "set-assignment": await this.repository.setAssignment(command.assignment); break;
         case "remove-assignment": await this.repository.removeAssignment(command.assignment); break;
+        case "set-operational-scope": await this.repository.setOperationalScope(command.scope); break;
+        case "remove-operational-scope": await this.repository.removeOperationalScope(command.companyId, command.userId); break;
       }
       return right(undefined);
     } catch (error) {
