@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { validateMaintenanceThresholds } from "./maintenance-threshold-modal";
+import { getMaintenanceThresholdContentState, validateMaintenanceThresholds } from "./maintenance-threshold-modal";
 
 describe("MaintenanceThresholdModal form validation", () => {
   it("accepts positive integer thresholds and preserves form order", () => {
@@ -12,5 +12,11 @@ describe("MaintenanceThresholdModal form validation", () => {
     expect(validateMaintenanceThresholds(["100.5"])).toBe(message);
     expect(validateMaintenanceThresholds(["0"])).toBe(message);
     expect(validateMaintenanceThresholds(["1000", "1000"])).toBe(message);
+  });
+
+  it("keeps the modal content stable when loading finishes with an empty list", () => {
+    expect(getMaintenanceThresholdContentState([], false)).toBe("empty");
+    expect(getMaintenanceThresholdContentState([], true)).toBe("loading");
+    expect(getMaintenanceThresholdContentState(["1000"], false)).toBe("configured");
   });
 });
