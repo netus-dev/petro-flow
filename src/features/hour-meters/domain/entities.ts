@@ -18,6 +18,8 @@ export interface HourMeterRecord {
   dailyMvarAccumulated: number | null;
   rigId?: string;
   rigName?: string;
+  functionalPrincipleId?: string;
+  companyId?: string;
 }
 
 export interface DailyOperationsKpi {
@@ -102,6 +104,24 @@ export interface MaintenancePlan {
   intervalHours?: number;
   fixedThresholdHours?: number;
   activities: MaintenanceActivity[];
+}
+
+export interface MaintenanceThresholdConfiguration {
+  id?: string;
+  companyId: string;
+  functionalPrincipleId: string;
+  thresholdHours: number;
+}
+
+/** Returns the smallest configured threshold strictly above the current reading. */
+export function resolveNextMaintenanceThreshold(thresholds: readonly number[], currentReading: number): number | null {
+  return [...thresholds].filter((threshold) => threshold > currentReading).sort((a, b) => a - b)[0] ?? null;
+}
+
+/** Calculates hours until the next configured maintenance threshold. */
+export function calculateRemainingMaintenanceHours(thresholds: readonly number[], currentReading: number | null): number | null {
+  const nextThreshold = resolveNextMaintenanceThreshold(thresholds, currentReading ?? 0);
+  return nextThreshold === null ? null : nextThreshold - (currentReading ?? 0);
 }
 
 /**

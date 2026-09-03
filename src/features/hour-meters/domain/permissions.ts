@@ -3,6 +3,7 @@ export const HOUR_METER_PERMISSIONS = {
   access: "hourmeters.access",
   register: "hourmeters.register",
   inventory: "hourmeters.inventory.manage",
+  maintenanceManage: "hourmeters.maintenance.manage",
 } as const;
 
 export type HourMeterPermission = typeof HOUR_METER_PERMISSIONS[keyof typeof HOUR_METER_PERMISSIONS];

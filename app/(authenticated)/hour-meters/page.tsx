@@ -18,10 +18,11 @@ export default async function HourMetersPage() {
     if (resource !== "hour-meters") return [];
     if (action === "read") return [HOUR_METER_PERMISSIONS.access];
     if (action === "register") return [HOUR_METER_PERMISSIONS.register];
-    return [];
+    if (action === "manage" && resource === "hour-meters") return [HOUR_METER_PERMISSIONS.maintenanceManage]; return [];
   });
   const rigs = (scope?.rigs ?? []) as Array<{ id: string; name: string }>;
   const hourMeters = rigs[0] ? await readHourMeters(rigs[0].id) : { ok: false as const, error: "No active Rig is authorized." };
   const initialRecords: HourMeterRecord[] = hourMeters.ok ? hourMeters.data : [];
-  return <HourMeterContent initialRecords={initialRecords} permissions={codes} rigs={rigs} initialRigId={rigs[0]?.id} />;
+  const { data: principles } = await supabase.from("functional_principles").select("id, name").eq("company_id", company).order("name");
+  return <HourMeterContent initialRecords={initialRecords} permissions={codes} principles={(principles ?? []) as Array<{ id: string; name: string }>} rigs={rigs} initialRigId={rigs[0]?.id} />;
 }

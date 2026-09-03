@@ -4,7 +4,7 @@ const createTenantClient = vi.hoisted(() => vi.fn());
 
 vi.mock("@/src/core/lib/supabase/server", () => ({ createTenantClient }));
 
-import { readDailyOperationsKpi, readHourMeters, registerHourMeter } from "./hour-meter-actions";
+import { readDailyOperationsKpi, readHourMeters, readMaintenanceThresholds, registerHourMeter, saveMaintenanceThresholds } from "./hour-meter-actions";
 
 describe("Hourmeter server actions", () => {
   beforeEach(() => createTenantClient.mockReset());
@@ -21,7 +21,9 @@ describe("Hourmeter server actions", () => {
     const order = vi.fn().mockResolvedValue({
       data: [{
         id: "asset-1",
-        current_location_id: "location-1",
+         company_id: "company-1",
+         function_principle_id: "principle-1",
+         current_location_id: "location-1",
         functional_principles: { name: "Motor de Combustión Interna" },
         locations: { name: "North Platform" },
         asset_operational_parameters_history: [],
@@ -35,7 +37,19 @@ describe("Hourmeter server actions", () => {
     const result = await readHourMeters();
 
     expect(structuredClone(result)).toEqual(result);
-    expect(result).toMatchObject({ ok: true, data: [{ assetId: "asset-1", equipment: "North Platform" }] });
+    expect(result).toMatchObject({ ok: true, data: [{ assetId: "asset-1", equipment: "Motor de Combustión Interna" }] });
+  });
+
+  it("loads and saves thresholds in the tenant company scope", async () => {
+    const thresholds = [{ id: "threshold-1", company_id: "company-1", functional_principle_id: "principle-1", threshold_hours: 1000 }];
+    const order = vi.fn().mockResolvedValue({ data: thresholds, error: null });
+    const select = vi.fn(() => ({ eq: vi.fn(() => ({ eq: vi.fn(() => ({ order })) })) }));
+    const rpc = vi.fn().mockResolvedValue({ data: "company-1", error: null });
+    const from = vi.fn(() => ({ select }));
+    createTenantClient.mockResolvedValue({ rpc, from });
+    await expect(readMaintenanceThresholds("principle-1")).resolves.toMatchObject({ ok: true, data: [{ companyId: "company-1", thresholdHours: 1000 }] });
+    expect(rpc).toHaveBeenCalledWith("rbac_request_company_id");
+    expect(from).toHaveBeenCalledWith("hourmeter_maintenance_thresholds");
   });
 
   it("rejects invalid registration input before calling the repository", async () => {
