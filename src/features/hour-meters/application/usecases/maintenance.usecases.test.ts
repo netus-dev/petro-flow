@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { GetNextMaintenancePlanUseCase } from "./maintenance.usecases";
 import { IMaintenancePlanRepository } from "../../domain/repositories/maintenance.repository";
-import { MaintenancePlan, MaintenanceActivity, resolveNextMaintenanceThreshold } from "../../domain/entities";
+import { MaintenancePlan, MaintenanceActivity, calculateRemainingMaintenanceHours, resolveNextMaintenanceThreshold } from "../../domain/entities";
 
 // Mock repository implementation for unit tests
 class MemoryMaintenanceRepository implements IMaintenancePlanRepository {
@@ -204,6 +204,17 @@ describe("functional-principle maintenance thresholds", () => {
   it("resolves the smallest threshold strictly above the reading", () => {
     expect(resolveNextMaintenanceThreshold([2000, 1000, 3000], 1000)).toBe(2000);
     expect(resolveNextMaintenanceThreshold([2000, 1000], 2000)).toBeNull();
+  });
+
+  it.each([
+    [[500, 1000], 20, 480],
+    [[500, 1000, 2000, 5000], 4980, 20],
+  ])("calculates remaining hours from the next threshold", (thresholds, reading, expected) => {
+    expect(calculateRemainingMaintenanceHours(thresholds, reading)).toBe(expected);
+  });
+
+  it("returns no remaining hours when no threshold applies", () => {
+    expect(calculateRemainingMaintenanceHours([500, 1000], 1000)).toBeNull();
   });
 
   it("resolves thresholds by company and functional principle", async () => {

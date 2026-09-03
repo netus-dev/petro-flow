@@ -8,7 +8,7 @@ import { HourMeterRecord } from "../../domain/entities";
  * con campos auxiliares calculados para presentación.
  */
 export interface EnhancedHourMeterRecord extends HourMeterRecord {
-  remainingHours: number;
+  remainingHours: number | null;
   isCritical: boolean;
   isWarning: boolean;
   isNormal: boolean;
@@ -127,8 +127,8 @@ export function HourMeterCard({ record, isSelected, onClick }: HourMeterCardProp
           </div>
 
           <div className={`text-right text-[10px] font-mono ${textColor}`}>
-            <span className="block font-bold">{record.remainingHours <= 0 ? "Mantenimiento vencido" : "Siguiente Mantto. en"}</span>
-            <span className="block font-black text-sm tabular-nums">{Math.max(record.remainingHours, 0).toLocaleString("es-ES")} hrs</span>
+            <span className="block font-bold">{record.remainingHours === null ? "Sin configuración" : record.remainingHours <= 0 ? "Mantenimiento vencido" : "Siguiente Mantto. en"}</span>
+            {record.remainingHours !== null && <span className="block font-black text-sm tabular-nums">{Math.max(record.remainingHours, 0).toLocaleString("es-ES")} hrs</span>}
           </div>
         </div>
 

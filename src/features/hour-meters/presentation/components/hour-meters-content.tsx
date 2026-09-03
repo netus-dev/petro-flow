@@ -10,10 +10,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { RegisterHourMeterForm } from "./register-hour-meter-form";
 import { InventoryManagementModal } from "./inventory-management-modal";
 import { canUseHourMeterPermission, HOUR_METER_PERMISSIONS } from "../../domain/permissions";
-import { HourMeterRecord } from "../../domain/entities";
-import { useState } from "react";
+import { calculateRemainingMaintenanceHours, HourMeterRecord } from "../../domain/entities";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MaintenanceThresholdModal } from "./maintenance-threshold-modal";
+import { readMaintenanceThresholds } from "../../infrastructure/server/hour-meter-actions";
 
 /**
  * Componente principal de presentación (Page/Organism) que representa la vista
@@ -28,6 +29,16 @@ export function HourMeterContent({ initialRecords = [], permissions = [], princi
   const canManageMaintenance = canUseHourMeterPermission(permissions, HOUR_METER_PERMISSIONS.maintenanceManage);
   // Hook de estado para el panel lateral de mantenimiento
   const { selectedEquipmentId, resolvedPlan, isLoading, selectEquipment, closePanel } = useMaintenancePanel();
+  const [thresholdsByPrinciple, setThresholdsByPrinciple] = useState<Record<string, number[]>>({});
+
+  useEffect(() => {
+    const principleIds = [...new Set(records.map((record) => record.functionalPrincipleId).filter((id): id is string => Boolean(id)))];
+    if (!principleIds.length) return;
+    void Promise.all(principleIds.map(async (principleId) => {
+      const result = await readMaintenanceThresholds(principleId);
+      return [principleId, result.ok ? result.data.map((item) => item.thresholdHours) : []] as const;
+    })).then((entries) => setThresholdsByPrinciple(Object.fromEntries(entries)));
+  }, [records]);
 
   if (loading) {
     return (
@@ -49,10 +60,10 @@ export function HourMeterContent({ initialRecords = [], permissions = [], princi
 
   // Mapear los registros a registros enriquecidos para las tarjetas
   const enhancedRecords: EnhancedHourMeterRecord[] = records.map((record) => {
-    const remainingHours = record.currentReading === null ? record.maxThreshold : record.maxThreshold - record.currentReading;
-    const isCritical = remainingHours <= 250;
-    const isWarning = remainingHours > 250 && remainingHours <= 500;
-    const isNormal = remainingHours > 500;
+    const remainingHours = calculateRemainingMaintenanceHours(thresholdsByPrinciple[record.functionalPrincipleId ?? ""] ?? [], record.currentReading);
+    const isCritical = remainingHours !== null && remainingHours <= 250;
+    const isWarning = remainingHours !== null && remainingHours > 250 && remainingHours <= 500;
+    const isNormal = remainingHours !== null && remainingHours > 500;
     const progressValue = record.currentReading === null ? 0 : Math.min(100, Math.max(0, (record.currentReading / record.maxThreshold) * 100));
 
     return {

@@ -118,6 +118,12 @@ export function resolveNextMaintenanceThreshold(thresholds: readonly number[], c
   return [...thresholds].filter((threshold) => threshold > currentReading).sort((a, b) => a - b)[0] ?? null;
 }
 
+/** Calculates hours until the next configured maintenance threshold. */
+export function calculateRemainingMaintenanceHours(thresholds: readonly number[], currentReading: number | null): number | null {
+  const nextThreshold = resolveNextMaintenanceThreshold(thresholds, currentReading ?? 0);
+  return nextThreshold === null ? null : nextThreshold - (currentReading ?? 0);
+}
+
 /**
  * Resultado del cálculo del próximo mantenimiento para un activo.
  * Contiene el umbral más próximo calculado y la lista fusionada de actividades correspondientes.
