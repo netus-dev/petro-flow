@@ -99,7 +99,6 @@ export function HourMeterCard({ record, isSelected, onClick }: HourMeterCardProp
             <h3 className="text-sm md:text-base font-bold tracking-tight text-foreground truncate">
               {record.equipment}
             </h3>
-            <p className="truncate text-[10px] text-muted-foreground">{record.functionalPrincipleName}</p>
           </div>
 
           <span className={`shrink-0 text-[9px] font-medium tracking-wider uppercase px-2 py-0.5 rounded border ${badge.className}`}>
