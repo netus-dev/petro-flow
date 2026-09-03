@@ -92,7 +92,7 @@ export function HourMeterCard({ record, isSelected, onClick }: HourMeterCardProp
         }`}
     >
 
-      <CardContent className="p-4 flex flex-col justify-between flex-1">
+      <CardContent className="p-4 flex flex-col justify-between flex-1 min-h-0">
         {/* Nivel 1: Encabezado compacto (Título + ID a la izquierda, Badge a la derecha) */}
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
@@ -107,7 +107,7 @@ export function HourMeterCard({ record, isSelected, onClick }: HourMeterCardProp
         </div>
 
         {/* Nivel 2: contexto histórico y lectura actual destacada */}
-        <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 py-3 my-auto">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 py-3">
           <div className="min-w-0 text-[10px] font-mono leading-relaxed text-muted-foreground">
             <span className="block">Último mantto:</span>
             <span className="block">{formatMaintenanceDate(record.lastMaintenanceDate)}</span>
