@@ -11,6 +11,7 @@ import {
   Movement
 } from "../domain/entities";
 import { ITrazabilidadRepository } from "../domain/repository";
+import { uploadCertificateAction } from "./server/certificate-actions";
 
 export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
   private supabase = createClient();
@@ -220,33 +221,8 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
   }
 
   /** Uploads certificate metadata separately from movement confirmation; confirmation RPC is not implemented here. */
-  private async uploadCertificates(certificates: { file: File; name: string }[], userId: string): Promise<string[]> {
-    const certIds: string[] = [];
-    for (const cert of certificates) {
-      const id = crypto.randomUUID();
-      const ext = cert.file.name.split('.').pop() || '';
-      const storagePath = `${id}.${ext}`;
-      
-      const { error: uploadError } = await this.supabase.storage
-        .from('certificates')
-        .upload(storagePath, cert.file);
-        
-      if (uploadError) throw uploadError;
-      
-      const { error: dbError } = await this.supabase
-        .from('certificates')
-        .insert({
-           id,
-           uploaded_by: userId,
-           storage_path: storagePath,
-           file_name: cert.name,
-           mime_type: cert.file.type || 'application/octet-stream'
-        });
-        
-      if (dbError) throw dbError;
-      certIds.push(id);
-    }
-    return certIds;
+  private async uploadCertificates(assetId: string, certificates: { file: File; name: string }[]): Promise<string[]> {
+    return Promise.all(certificates.map((certificate) => uploadCertificateAction(certificate.file, certificate.name, assetId)));
   }
 
   async addCertificate(assetId: string, certificates: { file: File; name: string }[]): Promise<void> {
@@ -254,20 +230,8 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
     if (!user) throw new Error("No user authenticated");
     
     // Upload and get cert ids
-    const certIds = await this.uploadCertificates(certificates, user.id);
+     await this.uploadCertificates(assetId, certificates);
     
-    // Link to asset
-    if (certIds.length > 0) {
-      const links = certIds.map(certId => ({
-        asset_id: assetId,
-        certificate_id: certId
-      }));
-      const { error } = await this.supabase.from('assets_certificates').insert(links);
-      if (error) {
-         console.error("Error linking certificates to asset", error);
-         throw error;
-      }
-    }
   }
 
   async registerAsset(asset: Partial<Asset>): Promise<void> {
