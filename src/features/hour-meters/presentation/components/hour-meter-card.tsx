@@ -126,21 +126,15 @@ export function HourMeterCard({ record, isSelected, onClick }: HourMeterCardProp
             </div>
           </div>
 
-          <div className={`text-right text-[10px] font-mono ${textColor}`}>
-            <span className="block font-bold">{record.remainingHours === null ? "Sin configuración" : record.remainingHours <= 0 ? "Mantenimiento vencido" : "Siguiente Mantto. en"}</span>
-            {record.remainingHours !== null && <span className="block font-black text-sm tabular-nums">{Math.max(record.remainingHours, 0).toLocaleString("es-ES")} hrs</span>}
-          </div>
         </div>
 
       </CardContent>
 
-      {/* Nivel 3: Indicador de progreso integrado al borde inferior de la tarjeta */}
-      <div className="shrink-0 space-y-1 px-4 pt-1 pb-1">
-        <div className="flex justify-between text-[10px] font-mono tracking-wider text-muted-foreground">
-          <span>Progreso ({Math.round(record.progressValue)}%)</span>
-          <span>Límite: <strong className="text-foreground">{record.maxThreshold.toLocaleString()} hrs</strong></span>
-        </div>
+      <div className={`flex items-baseline justify-end gap-1 text-right text-[10px] font-mono ${textColor}`}>
+        <span className="font-bold">{record.remainingHours === null ? "Sin configuración" : record.remainingHours <= 0 ? "Mantenimiento vencido" : "Siguiente Mantto. en"}</span>
+        {record.remainingHours !== null && <span className="font-black text-sm tabular-nums">{Math.max(record.remainingHours, 0).toLocaleString("es-ES")} hrs</span>}
       </div>
+
       <div className="shrink-0 h-1 w-full bg-secondary/60 overflow-hidden rounded-b-xl">
         <div
           className={`h-full transition-all duration-1000 ease-out ${progressIndicatorColor}`}
