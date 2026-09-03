@@ -70,17 +70,17 @@ function formatMaintenanceDate(date: string | null): string {
 export function HourMeterCard({ record, isSelected, onClick }: HourMeterCardProps) {
   const accent = getFunctionalPrincipleAccent(record.functionalPrincipleName);
   const badge = getMaintenanceBadge(record);
-  const cardBg = "bg-card border-border/50 hover:border-border";
+  const cardBg = "bg-card border-border/50";
   let textColor = "text-foreground";
   let severityBorder = "border-border/50";
   let progressIndicatorColor = accent.progress;
 
   if (record.isCritical) {
-    severityBorder = "border-orange-500/70 hover:border-orange-500";
+    severityBorder = "border-orange-500/70";
     textColor = "text-orange-500";
     progressIndicatorColor = "bg-orange-500";
   } else if (record.isWarning) {
-    severityBorder = "border-amber-500/70 hover:border-amber-500";
+    severityBorder = "border-amber-500/70";
     textColor = "text-amber-500";
     progressIndicatorColor = "bg-amber-500";
   }
@@ -88,7 +88,7 @@ export function HourMeterCard({ record, isSelected, onClick }: HourMeterCardProp
   return (
     <Card
       onClick={() => onClick(record.id)}
-      className={`transition-all duration-300 cursor-pointer ${cardBg} ${severityBorder} ${accent.rail} h-full overflow-hidden flex flex-col border-l-4 p-0 ${isSelected ? "ring-2 ring-primary ring-offset-2 ring-offset-background scale-[1.01]" : ""
+      className={`transition-all duration-300 cursor-pointer hover:scale-[1.01] ${cardBg} ${severityBorder} ${accent.rail} h-full overflow-hidden flex flex-col border-l-4 p-0 ${isSelected ? "ring-2 ring-primary ring-offset-2 ring-offset-background scale-[1.01]" : ""
         }`}
     >
 
