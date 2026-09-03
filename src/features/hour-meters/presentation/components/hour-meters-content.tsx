@@ -60,6 +60,7 @@ export function HourMeterContent({ initialRecords = [], permissions = [], princi
 
   // Mapear los registros a registros enriquecidos para las tarjetas
   const enhancedRecords: EnhancedHourMeterRecord[] = records.map((record) => {
+    const functionalPrincipleName = principles.find((principle) => principle.id === record.functionalPrincipleId)?.name ?? "Sin principio funcional";
     const remainingHours = calculateRemainingMaintenanceHours(thresholdsByPrinciple[record.functionalPrincipleId ?? ""] ?? [], record.currentReading);
     const isCritical = remainingHours !== null && remainingHours <= 168;
     const isWarning = remainingHours !== null && remainingHours > 168 && remainingHours <= 336;
@@ -68,6 +69,7 @@ export function HourMeterContent({ initialRecords = [], permissions = [], princi
 
     return {
       ...record,
+      functionalPrincipleName,
       remainingHours,
       isCritical,
       isWarning,
