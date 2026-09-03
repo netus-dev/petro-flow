@@ -9,7 +9,7 @@ values
 on conflict (id) do nothing;
 
 insert into auth.users (id, email, aud, role, encrypted_password, email_confirmed_at)
-values ('91000000-0000-0000-0000-000000000004', 'hola@oalonsodev.com', 'authenticated', 'authenticated', '$2a$10$nLYP9uy0XhBovuKcp7lyMOxnm/SHwvgSW/eySK1fXh2rKNs60gjdS', now())
+values ('91000000-0000-0000-0000-000000000004', 'hola@oalonsodev.com', 'authenticated', 'authenticated', '$2a$10$Gpa8vPMIzMUDRMGXt0KsneK2VFme3kZn6tv9V18gZBLREI91N6xV.', now())
 on conflict (id) do update set email = excluded.email, encrypted_password = excluded.encrypted_password, email_confirmed_at = excluded.email_confirmed_at;
 
 -- The auth trigger creates onboarding profiles. Complete these synthetic profiles
