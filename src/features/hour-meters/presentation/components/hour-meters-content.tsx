@@ -90,7 +90,7 @@ export function HourMeterContent({ initialRecords = [], permissions = [], princi
       {/* Top Header Panel (Fixed Height) */}
       <header className="shrink-0 mb-4 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/40 pb-4">
         <div className="flex items-center gap-4">
-          {principles.length > 0 && <Dialog><DialogTrigger asChild><Button size="sm" variant="outline">Configurar mantenimientos</Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>Configurar mantenimientos</DialogTitle></DialogHeader><MaintenanceThresholdModal principles={principles} canEdit={canManageMaintenance} onSaved={() => router.refresh()} /></DialogContent></Dialog>}
+
           <div className="flex size-12 items-center justify-center rounded-xl bg-primary/10 border border-primary/20 shadow-inner">
             <Clock className="size-6 text-primary" />
           </div>
@@ -98,7 +98,7 @@ export function HourMeterContent({ initialRecords = [], permissions = [], princi
             <h1 className="text-2xl md:text-3xl font-black tracking-tight text-foreground font-mono uppercase">
               Dashboard de Horómetros
             </h1>
-             {rigs.length > 1 ? <select aria-label="Rig" className="h-8 rounded border bg-background px-2 text-xs" value={rigId ?? ""} onChange={(event) => setRigId(event.target.value)}>{rigs.map((rig) => <option key={rig.id} value={rig.id}>{rig.name}</option>)}</select> : <p className="text-xs md:text-sm font-medium tracking-widest text-muted-foreground uppercase mt-1">{rigs[0]?.name ?? "SIN RIG AUTORIZADO"}</p>}
+            {rigs.length > 1 ? <select aria-label="Rig" className="h-8 rounded border bg-background px-2 text-xs" value={rigId ?? ""} onChange={(event) => setRigId(event.target.value)}>{rigs.map((rig) => <option key={rig.id} value={rig.id}>{rig.name}</option>)}</select> : <p className="text-xs md:text-sm font-medium tracking-widest text-muted-foreground uppercase mt-1">{rigs[0]?.name ?? "SIN RIG AUTORIZADO"}</p>}
           </div>
         </div>
 
@@ -117,36 +117,23 @@ export function HourMeterContent({ initialRecords = [], permissions = [], princi
               <RegisterHourMeterForm onRegistered={() => void refresh()} />
             </DialogContent>
           </Dialog>}
+          {principles.length > 0 && <Dialog>
+            <DialogTrigger asChild>
+              <Button size="sm" variant="outline">Configurar mantenimientos</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Configurar mantenimientos</DialogTitle>
+              </DialogHeader>
+              <MaintenanceThresholdModal
+                principles={principles}
+                canEdit={canManageMaintenance}
+                onSaved={() => router.refresh()}
+              />
+            </DialogContent>
+          </Dialog>}
         </div>
       </header>
-
-      {/* Mini Stats Summary Row (Fixed Height) */}
-      <div className="shrink-0 grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-        <div className="flex flex-col bg-card/60 backdrop-blur-sm border border-border/50 rounded-lg p-3">
-          <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1">
-            Activos
-          </span>
-          <span className="text-xl font-bold font-mono text-foreground">{stats.total}</span>
-        </div>
-        <div className="flex flex-col bg-card/60 backdrop-blur-sm border border-border/50 rounded-lg p-3">
-          <span className="text-[10px] font-mono uppercase tracking-widest text-orange-500/80 mb-1">
-            Críticos (&lt; 250h)
-          </span>
-          <span className="text-xl font-bold font-mono text-orange-500">{stats.criticalCount}</span>
-        </div>
-        <div className="flex flex-col bg-card/60 backdrop-blur-sm border border-border/50 rounded-lg p-3">
-          <span className="text-[10px] font-mono uppercase tracking-widest text-amber-500/80 mb-1">
-            Próximos (&lt; 500h)
-          </span>
-          <span className="text-xl font-bold font-mono text-amber-500">{stats.warningCount}</span>
-        </div>
-        <div className="flex flex-col bg-card/60 backdrop-blur-sm border border-border/50 rounded-lg p-3">
-          <span className="text-[10px] font-mono uppercase tracking-widest text-primary/80 mb-1">
-            Uso Promedio
-          </span>
-          <span className="text-xl font-bold font-mono text-primary">{stats.avgUsage}%</span>
-        </div>
-      </div>
 
       {/* Main Container - Fills remaining space dynamically */}
       <div className="flex-1 min-h-0 flex flex-row gap-4 overflow-hidden relative">
@@ -164,11 +151,10 @@ export function HourMeterContent({ initialRecords = [], permissions = [], princi
 
         {/* Panel lateral - animación suave de derecha a izquierda desplegando ancho (desktop) */}
         <div
-          className={`hidden lg:block h-full shrink-0 transition-all duration-300 ease-in-out overflow-hidden ${
-            selectedEquipmentId
-              ? "w-[440px] opacity-100"
-              : "w-0 opacity-0 pointer-events-none"
-          }`}
+          className={`hidden lg:block h-full shrink-0 transition-all duration-300 ease-in-out overflow-hidden ${selectedEquipmentId
+            ? "w-[440px] opacity-100"
+            : "w-0 opacity-0 pointer-events-none"
+            }`}
         >
           <div className="w-[440px] h-full">
             <MaintenancePanel
