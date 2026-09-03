@@ -130,16 +130,18 @@ export function HourMeterCard({ record, isSelected, onClick }: HourMeterCardProp
 
       </CardContent>
 
-      <div className={`flex items-baseline justify-end gap-1 text-right text-[10px] font-mono ${textColor}`}>
-        <span className="font-bold">{record.remainingHours === null ? "Sin configuración" : record.remainingHours <= 0 ? "Mantenimiento vencido" : "Siguiente Mantto. en"}</span>
-        {record.remainingHours !== null && <span className="font-black text-sm tabular-nums">{Math.max(record.remainingHours, 0).toLocaleString("es-ES")} hrs</span>}
-      </div>
+      <div className="space-y-1">
+        <div className={`flex items-baseline justify-end gap-1 px-4 text-right text-[10px] font-mono ${textColor}`}>
+          <span className="font-bold">{record.remainingHours === null ? "Sin configuración" : record.remainingHours <= 0 ? "Mantenimiento vencido" : "Siguiente Mantto. en"}</span>
+          {record.remainingHours !== null && <span className="font-black text-sm tabular-nums">{Math.max(record.remainingHours, 0).toLocaleString("es-ES")} hrs</span>}
+        </div>
 
-      <div className="shrink-0 h-1 w-full bg-secondary/60 overflow-hidden rounded-b-xl">
-        <div
-          className={`h-full transition-all duration-1000 ease-out ${progressIndicatorColor}`}
-          style={{ width: `${record.progressValue}%` }}
-        />
+        <div className="shrink-0 h-1 w-full bg-secondary/60 overflow-hidden rounded-b-xl">
+          <div
+            className={`h-full transition-all duration-1000 ease-out ${progressIndicatorColor}`}
+            style={{ width: `${record.progressValue}%` }}
+          />
+        </div>
       </div>
 
     </Card>
