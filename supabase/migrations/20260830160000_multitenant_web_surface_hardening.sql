@@ -1,5 +1,5 @@
--- Close the verified web-role exposure without inventing tenant ownership for
--- legacy assets or certificates.
+-- Close web-role exposure. Tenant ownership is explicit on canonical
+-- operational rows and is never inferred from profile data.
 do $$
 declare
   business_table regclass;
@@ -27,8 +27,8 @@ revoke all on sequence public.rbac_audit_events_id_seq from public, anon, authen
 grant all on sequence public.rbac_audit_events_id_seq to service_role;
 
 -- Tenant catalog policies are read-only, so their grants must be read-only too.
--- Legacy rows with NULL company ownership and requests without x-company-id
--- intentionally remain invisible until ownership and client wiring are reconciled.
+-- Rows without company ownership and requests without x-company-id remain
+-- invisible by design.
 revoke all on table
   public.locations,
   public.functional_principles,

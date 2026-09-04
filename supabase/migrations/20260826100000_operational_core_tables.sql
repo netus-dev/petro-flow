@@ -1,5 +1,5 @@
--- Canonical operational tables. Disposable legacy compatibility objects live in
--- supabase/rehearsal and are not part of this production schema.
+-- Canonical operational tables. Tenant ownership is stored on operational rows
+-- and canonical rbac_* tables, never on the Auth profile in public.users.
 create table if not exists public.locations (
   id uuid primary key default gen_random_uuid(),
   name text not null,
@@ -15,7 +15,6 @@ create table if not exists public.users (
   job_position text,
   phone text,
   image_url text,
-  company_id uuid,
   is_active boolean not null default true,
   created_at timestamptz not null default now()
 );
@@ -41,9 +40,8 @@ create table if not exists public.certificates (
   uploaded_by uuid not null
 );
 
--- The April baseline may have created these tables with the same names. Add only
--- missing columns and make nullable the fields required by the auth trigger; all
--- changes are additive or metadata-only and retain existing rows.
+-- The clean production chain starts from an empty database after the approved
+-- destructive reset; these definitions are intentionally not compatibility DDL.
 alter table public.locations add column if not exists company_id uuid;
 alter table public.locations add column if not exists is_active boolean not null default true;
 alter table public.users add column if not exists name text;
@@ -51,10 +49,8 @@ alter table public.users add column if not exists email text;
 alter table public.users add column if not exists job_position text;
 alter table public.users add column if not exists phone text;
 alter table public.users add column if not exists image_url text;
-alter table public.users add column if not exists company_id uuid;
 alter table public.users add column if not exists is_active boolean not null default true;
 alter table public.users add column if not exists created_at timestamptz not null default now();
-alter table public.users alter column company_id drop not null;
 alter table public.functional_principles add column if not exists company_id uuid;
 alter table public.assets add column if not exists is_active boolean not null default true;
 alter table public.assets add column if not exists status text;

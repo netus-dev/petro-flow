@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 select plan(10);
 
-select ok(exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'users' and column_name = 'company_id' and is_nullable = 'YES'), 'profile company membership remains optional');
+select ok(not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'users' and column_name = 'company_id'), 'auth profile has no tenant ownership column');
 
 select ok(
   (select prosecdef from pg_proc where oid = 'public.handle_new_user()'::regprocedure),

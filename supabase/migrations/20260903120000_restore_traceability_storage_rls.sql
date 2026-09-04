@@ -1,6 +1,6 @@
 -- Restore the traceability and hourmeter security contract.
 -- Ownership is always resolved through the request company and canonical
--- company_id relationships; legacy rows with NULL ownership remain invisible.
+-- company_id relationships; unowned rows remain invisible.
 
 insert into storage.buckets (id, name, public, allowed_mime_types)
 values ('certificates', 'certificates', false, array['application/pdf', 'image/*']::text[])

@@ -60,23 +60,6 @@ $$;
 revoke all on function public.rbac_user_rig_scope(uuid) from public;
 grant execute on function public.rbac_user_rig_scope(uuid) to authenticated;
 
--- Initial local fixture: add only missing Rig 702/703 locations and scope hola.
-do $$ declare c uuid; u uuid; l uuid; n text; begin
-  select id into u from auth.users where email='hola@oalonsodev.com';
-  select company_id into c from public.rbac_memberships where user_id=u and is_active order by company_id limit 1;
-  if c is not null then
-    insert into public.rbac_operational_scopes(company_id,user_id) values(c,u) on conflict do nothing;
-    foreach n in array array['Rig 702','Rig 703'] loop
-      select id into l from public.locations where company_id=c and type::text='rig' and name=n limit 1;
-      if l is null then
-        insert into public.locations(id,name,type,company_id,is_active) values(gen_random_uuid(),n,'rig'::public.location_type,c,true) returning id into l;
-        insert into public.rigs(id) values(l);
-      end if;
-      insert into public.rbac_operational_scope_rigs(company_id,user_id,rig_id) values(c,u,l) on conflict do nothing;
-    end loop;
-  end if;
-end $$;
-
 drop policy if exists operational_scope_admin_read on public.rbac_operational_scopes;
 create policy operational_scope_admin_read on public.rbac_operational_scopes for select to authenticated using (public.rbac_operational_scope_admin_allowed(company_id));
 drop policy if exists operational_scope_rigs_admin_read on public.rbac_operational_scope_rigs;
