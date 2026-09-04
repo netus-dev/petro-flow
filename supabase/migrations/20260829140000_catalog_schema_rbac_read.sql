@@ -11,7 +11,7 @@ create table if not exists public.ubications (
   name varchar(50) not null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  company_id uuid not null references public.companies(id) on delete cascade,
+  company_id uuid not null references public.rbac_companies(id) on delete cascade,
   is_active boolean not null default true,
   allow_multi_assets boolean not null default false
 );
@@ -20,7 +20,7 @@ create table if not exists public.brands (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   is_active boolean not null default true,
-  company_id uuid not null references public.companies(id) on delete cascade,
+  company_id uuid not null references public.rbac_companies(id) on delete cascade,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -30,7 +30,7 @@ create table if not exists public.models (
   name text not null,
   brand_id uuid not null references public.brands(id) on delete cascade,
   is_active boolean not null default true,
-  company_id uuid not null references public.companies(id) on delete cascade,
+  company_id uuid not null references public.rbac_companies(id) on delete cascade,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -41,7 +41,7 @@ create table if not exists public.suppliers (
   is_active boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  company_id uuid not null references public.companies(id) on delete cascade
+  company_id uuid not null references public.rbac_companies(id) on delete cascade
 );
 
 create table if not exists public.wells (
@@ -50,7 +50,7 @@ create table if not exists public.wells (
   is_active boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  company_id uuid not null references public.companies(id) on delete cascade
+  company_id uuid not null references public.rbac_companies(id) on delete cascade
 );
 
 create table if not exists public.operating_bases (

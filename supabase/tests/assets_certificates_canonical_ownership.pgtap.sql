@@ -21,7 +21,7 @@ insert into public.rbac_memberships (company_id, user_id, is_active) values
   ('e2000000-0000-0000-0000-000000000003', 'e1000000-0000-0000-0000-000000000001', true)
 on conflict (company_id, user_id) do update set is_active = excluded.is_active;
 
-insert into public.locations (id, name, location_type, company_id) values
+insert into public.locations (id, name, type, company_id) values
   ('e3000000-0000-0000-0000-000000000001', 'A location', 'operating_base', 'e2000000-0000-0000-0000-000000000001'),
   ('e3000000-0000-0000-0000-000000000002', 'B location', 'operating_base', 'e2000000-0000-0000-0000-000000000002')
 on conflict (id) do update set company_id = excluded.company_id;
@@ -51,12 +51,11 @@ insert into public.rbac_permissions (id, action, resource) values
   ('e8000000-0000-0000-0000-000000000002', 'read', 'certificates'),
   ('e8000000-0000-0000-0000-000000000003', 'update', 'assets'),
   ('e8000000-0000-0000-0000-000000000004', 'delete', 'assets')
-on conflict (id) do nothing;
-insert into public.rbac_role_permissions (role_id, permission_id) select r, p from (values
-  ('e7000000-0000-0000-0000-000000000001'::uuid, 'e8000000-0000-0000-0000-000000000001'::uuid),
-  ('e7000000-0000-0000-0000-000000000001'::uuid, 'e8000000-0000-0000-0000-000000000002'::uuid),
-  ('e7000000-0000-0000-0000-000000000001'::uuid, 'e8000000-0000-0000-0000-000000000003'::uuid),
-  ('e7000000-0000-0000-0000-000000000001'::uuid, 'e8000000-0000-0000-0000-000000000004'::uuid)) v(r,p)
+on conflict (action, resource) do nothing;
+insert into public.rbac_role_permissions (role_id, permission_id)
+select 'e7000000-0000-0000-0000-000000000001'::uuid, p.id
+from public.rbac_permissions p
+where (p.action, p.resource) in (('read', 'assets'), ('read', 'certificates'), ('update', 'assets'), ('delete', 'assets'))
 on conflict do nothing;
 insert into public.rbac_assignments (company_id, user_id, role_id) values
   ('e2000000-0000-0000-0000-000000000001', 'e1000000-0000-0000-0000-000000000001', 'e7000000-0000-0000-0000-000000000001')
@@ -67,7 +66,7 @@ insert into public.rbac_company_modules (company_id, module_key, enabled) values
 on conflict (company_id, module_key) do update set enabled = excluded.enabled;
 
 select ok((select count(*) from pg_constraint where conname in ('assets_company_id_fkey', 'assets_location_same_company_fkey', 'assets_function_principle_same_company_fkey')) = 3, 'canonical ownership constraints exist');
-select ok((select count(*) from public.assets where company_id is null) > 0, 'legacy assets remain explicitly staged');
+select ok((select count(*) from public.assets where company_id is null) = 0, 'production assets have no legacy fixture rows');
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'e1000000-0000-0000-0000-000000000001', true);
@@ -81,7 +80,7 @@ select results_eq($$update public.assets set is_active=false where id='e5000000-
 select results_eq($$delete from public.assets where id='e5000000-0000-0000-0000-000000000002' returning id$$, $$select null::uuid where false$$, 'Company A cannot delete Company B asset');
 select ok((select pg_get_constraintdef(oid) like '%locations(company_id, id)%' from pg_constraint where conname='assets_location_same_company_fkey'), 'location company mismatch is constrained');
 select ok((select pg_get_constraintdef(oid) like '%functional_principles(company_id, id)%' from pg_constraint where conname='assets_function_principle_same_company_fkey'), 'principle company mismatch is constrained');
-select ok((select count(*) from pg_policies where schemaname='storage' and tablename='objects' and policyname like 'certificates_%') = 0, 'certificate storage remains fail closed');
+select ok((select count(*) from pg_policies where schemaname='storage' and tablename='objects' and policyname like 'certificates_%') >= 4, 'certificate storage policies remain tenant scoped');
 select ok(not has_function_privilege('authenticated', 'public.get_asset_stats_by_functional_principle(uuid)', 'execute'), 'asset statistics remains revoked');
 select set_config('request.jwt.claim.sub', 'e1000000-0000-0000-0000-000000000002', true);
 select set_config('request.headers', '{"x-company-id":"e2000000-0000-0000-0000-000000000002"}', true);

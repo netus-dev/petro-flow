@@ -10,7 +10,8 @@ create table public.rbac_principals (
 );
 create table public.rbac_roles (
   id uuid primary key default gen_random_uuid(),
-  name text not null unique
+  name text not null unique,
+  company_id uuid
 );
 create table public.rbac_permissions (
   id uuid primary key default gen_random_uuid(),
