@@ -143,13 +143,13 @@ create index if not exists tasks_created_by_idx on public.tasks(created_by);
 create index if not exists tasks_rig_idx on public.tasks(rig_id);
 create index if not exists tasks_start_date_idx on public.tasks(start_date);
 
-create or replace function public.get_asset_stats_by_functional_principle(p_function_principle_id uuid)
+create or replace function public.get_asset_stats_by_functional_principle(fp_id uuid)
 returns table(location_name text, location_type text, total_assets bigint)
 language sql stable security definer set search_path = '' as $$
   select l.name, l.type::text, count(*)::bigint
   from public.assets a
   join public.locations l on l.id = a.current_location_id
-  where a.function_principle_id = p_function_principle_id and a.is_active
+  where a.function_principle_id = fp_id and a.is_active
   group by l.name, l.type
   order by count(*) desc
 $$;

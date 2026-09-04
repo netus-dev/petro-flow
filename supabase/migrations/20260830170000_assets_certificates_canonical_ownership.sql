@@ -3,6 +3,23 @@
 
 alter table public.assets add column if not exists company_id uuid;
 
+-- Remote databases may still have the legacy tenant registry. Reuse its exact
+-- identities without inferring ownership for assets or merging tenant rows.
+do $$
+begin
+  if to_regclass('public.companies') is not null then
+    execute $sql$
+      insert into public.rbac_companies (id, name, is_active)
+      select c.id, c.name, c.is_active
+      from public.companies c
+      on conflict (id) do update
+        set name = excluded.name,
+            is_active = excluded.is_active
+    $sql$;
+  end if;
+end
+$$;
+
 alter table public.assets
   drop constraint if exists assets_company_id_fkey;
 alter table public.assets
