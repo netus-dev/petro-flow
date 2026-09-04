@@ -94,7 +94,6 @@ revoke all on function public.rbac_active_company_memberships() from public, ano
 revoke all on function public.rbac_can_read_catalog(uuid) from public, anon, authenticated;
 revoke all on function public.rbac_has_capability(uuid, text, text, text) from public, anon, authenticated;
 revoke all on function public.rbac_record_audit(uuid, text, text, jsonb) from public, anon, authenticated;
-revoke all on function public.rbac_rehearse_retire_companies() from public, anon, authenticated;
 revoke all on function public.rbac_reject_audit_mutation() from public, anon, authenticated;
 revoke all on function public.rbac_renew_authorization(uuid) from public, anon, authenticated;
 revoke all on function public.rbac_request_company_id() from public, anon, authenticated;
@@ -114,7 +113,6 @@ grant execute on function public.rbac_active_company_memberships() to service_ro
 grant execute on function public.rbac_can_read_catalog(uuid) to service_role;
 grant execute on function public.rbac_has_capability(uuid, text, text, text) to service_role;
 grant execute on function public.rbac_record_audit(uuid, text, text, jsonb) to service_role;
-grant execute on function public.rbac_rehearse_retire_companies() to service_role;
 grant execute on function public.rbac_reject_audit_mutation() to service_role;
 grant execute on function public.rbac_renew_authorization(uuid) to service_role;
 grant execute on function public.rbac_request_company_id() to service_role;

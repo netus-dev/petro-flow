@@ -105,12 +105,23 @@ select results_eq(
   $$,
   $$values
     ('authorization_projection(uuid)'::text),
+    ('get_user_profile(uuid)'::text),
     ('rbac_active_company_memberships()'::text),
+    ('rbac_admin_allowed()'::text),
+    ('rbac_admin_command(jsonb)'::text),
+    ('rbac_admin_snapshot()'::text),
     ('rbac_can_read_catalog(uuid)'::text),
     ('rbac_has_capability(uuid,text,text,text)'::text),
+    ('rbac_operational_rig_allowed(uuid,uuid)'::text),
+    ('rbac_operational_scope_admin_allowed(uuid)'::text),
     ('rbac_record_audit(uuid,text,text,jsonb)'::text),
     ('rbac_renew_authorization(uuid)'::text),
-    ('rbac_request_company_id()'::text)
+    ('rbac_request_company_id()'::text),
+    ('rbac_user_rig_scope(uuid)'::text),
+    ('register_bulk_movement(jsonb)'::text),
+    ('register_replacement_movement(jsonb)'::text),
+    ('reject_hourmeter_history_mutation()'::text),
+    ('set_updated_at()'::text)
   $$,
   'authenticated has exactly the reviewed public RPC identities'
 );
@@ -142,15 +153,23 @@ select results_eq(
   $$values
     ('authorization_projection(uuid)'::text),
     ('get_asset_stats_by_functional_principle(uuid)'::text),
+    ('get_user_profile(uuid)'::text),
     ('handle_new_user()'::text),
     ('rbac_active_company_memberships()'::text),
+    ('rbac_admin_allowed()'::text),
     ('rbac_can_read_catalog(uuid)'::text),
     ('rbac_has_capability(uuid,text,text,text)'::text),
+    ('rbac_operational_rig_allowed(uuid,uuid)'::text),
+    ('rbac_operational_scope_admin_allowed(uuid)'::text),
     ('rbac_record_audit(uuid,text,text,jsonb)'::text),
-    ('rbac_rehearse_retire_companies()'::text),
     ('rbac_reject_audit_mutation()'::text),
     ('rbac_renew_authorization(uuid)'::text),
-    ('rbac_request_company_id()'::text)
+    ('rbac_request_company_id()'::text),
+    ('rbac_user_rig_scope(uuid)'::text),
+    ('register_bulk_movement(jsonb)'::text),
+    ('register_replacement_movement(jsonb)'::text),
+    ('reject_hourmeter_history_mutation()'::text),
+    ('set_updated_at()'::text)
   $$,
   'service role retains exactly the reviewed public function identities'
 );
