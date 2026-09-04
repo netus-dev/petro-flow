@@ -63,7 +63,7 @@ alter table public.certificates add column if not exists uploaded_by uuid;
 
 -- Keep the baseline RPC available to later grants/revokes. Resolve the
 -- location column at execution time because April versions used both names.
-create or replace function public.get_asset_stats_by_functional_principle(p_function_principle_id uuid)
+create or replace function public.get_asset_stats_by_functional_principle(fp_id uuid)
 returns table(location_name text, location_type text, total_assets bigint)
 language plpgsql security definer set search_path = '' as $$
 declare
@@ -89,7 +89,7 @@ begin
       where a.function_principle_id = $1 and a.is_active
       group by l.name, l.%I
       order by count(*) desc', location_column, location_column
-  ) using p_function_principle_id;
+  ) using fp_id;
 end;
 $$;
 
