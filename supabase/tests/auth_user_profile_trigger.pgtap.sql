@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 select plan(10);
 
-select ok(not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'users' and column_name = 'company_id'), 'public.users is profile-only');
+select ok(not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'users' and column_name = 'company_id'), 'auth profile has no tenant ownership column');
 
 select ok(
   (select prosecdef from pg_proc where oid = 'public.handle_new_user()'::regprocedure),
@@ -31,6 +31,9 @@ select ok(exists (select 1 from public.users where id = 'b1000000-0000-0000-0000
 select is((select count(*) from public.rbac_memberships where user_id = 'b1000000-0000-0000-0000-000000000001'), 0::bigint, 'new user receives no RBAC membership');
 select is((select count(*) from public.rbac_assignments where user_id = 'b1000000-0000-0000-0000-000000000001'), 0::bigint, 'new user receives no RBAC role assignment');
 
+insert into auth.users (id, email)
+values ('a1000000-0000-0000-0000-000000000001', 'edited@example.test')
+on conflict (id) do nothing;
 insert into public.users (id, email, name)
 values ('a1000000-0000-0000-0000-000000000001', 'edited@example.test', 'Edited User')
 on conflict (id) do nothing;

@@ -1,8 +1,5 @@
--- Local-only onboarding support. This migration intentionally creates no RBAC
--- memberships or roles; access must be granted explicitly.
-
-alter table public.users
-  alter column company_id drop not null;
+-- Auth profile creation only. Tenant ownership is granted explicitly through
+-- canonical rbac_memberships and rbac_assignments, never through public.users.
 
 create or replace function public.handle_new_user()
 returns trigger

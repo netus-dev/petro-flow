@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(12);
+select plan(13);
 
 insert into auth.users (id, email) values
   ('e1000000-0000-0000-0000-000000000001', 'hourmeters-reader@example.test');
@@ -57,6 +57,7 @@ select results_eq($$select name from public.functional_principles order by name$
 select results_eq($$select name from public.locations order by name$$, $$values ('Rig A'::text)$$, 'reader sees locations used by eligible Hourmeters assets');
 select is(jsonb_array_length(public.rbac_user_rig_scope()->'rigs'), 1, 'user scope exposes only assigned active Rigs');
 select ok(not public.rbac_operational_rig_allowed('e2000000-0000-0000-0000-000000000001', 'e5000000-0000-0000-0000-000000000002'), 'cross-Rig access is denied');
+select ok((select with_check::text from pg_policies where schemaname = 'public' and tablename = 'asset_operational_parameters_history' and policyname = 'hourmeters_history_insert') like '%a.company_id = asset_operational_parameters_history.company_id%', 'hourmeter history insert policy qualifies asset tenant ownership');
 set local role postgres;
 delete from public.rbac_operational_scopes where company_id = 'e2000000-0000-0000-0000-000000000001' and user_id = 'e1000000-0000-0000-0000-000000000001';
 set local role authenticated;

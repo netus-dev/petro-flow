@@ -5,65 +5,11 @@ insert into auth.users (id, email, aud, role)
 values
   ('91000000-0000-0000-0000-000000000001', 'seed-admin@example.test', 'authenticated', 'authenticated'),
   ('91000000-0000-0000-0000-000000000002', 'seed-peer@example.test', 'authenticated', 'authenticated'),
-  ('91000000-0000-0000-0000-000000000003', 'seed-inactive@example.test', 'authenticated', 'authenticated')
+  ('91000000-0000-0000-0000-000000000003', 'seed-inactive@example.test', 'authenticated', 'authenticated'),
+  ('91000000-0000-0000-0000-000000000004', 'hola@oalonsodev.com', 'authenticated', 'authenticated')
 on conflict (id) do nothing;
-
-insert into auth.users (id, email, aud, role, encrypted_password, email_confirmed_at)
-values ('91000000-0000-0000-0000-000000000004', 'hola@oalonsodev.com', 'authenticated', 'authenticated', '$2a$10$nLYP9uy0XhBovuKcp7lyMOxnm/SHwvgSW/eySK1fXh2rKNs60gjdS', now())
-on conflict (id) do update set email = excluded.email, encrypted_password = excluded.encrypted_password, email_confirmed_at = excluded.email_confirmed_at;
-
--- The auth trigger creates onboarding profiles. Complete these synthetic profiles
--- without making the trigger provision memberships or roles.
-update public.users
-set name = case id
-    when '91000000-0000-0000-0000-000000000001' then 'Seed Admin'
-    when '91000000-0000-0000-0000-000000000002' then 'Seed Peer'
-    else 'Seed Inactive'
-  end,
-  is_active = id <> '91000000-0000-0000-0000-000000000003'::uuid
-where id in (
-  '91000000-0000-0000-0000-000000000001',
-  '91000000-0000-0000-0000-000000000002',
-  '91000000-0000-0000-0000-000000000003'
-);
-
--- Synthetic legacy cohort used only to rehearse company FK repointing and
--- removal of the legacy profile membership field. It is separate from canonical RBAC fixtures.
-insert into auth.users (id, email, aud, role) values
-  ('a1000000-0000-0000-0000-000000000001', 'legacy-admin@example.test', 'authenticated', 'authenticated'),
-  ('a1000000-0000-0000-0000-000000000002', 'legacy-operator@example.test', 'authenticated', 'authenticated'),
-  ('a1000000-0000-0000-0000-000000000003', 'legacy-inactive@example.test', 'authenticated', 'authenticated')
-on conflict (id) do nothing;
-insert into public.companies (id, name, description, is_active) values
-  ('a2000000-0000-0000-0000-000000000001', 'Legacy Test North', 'Synthetic legacy company.', true),
-  ('a2000000-0000-0000-0000-000000000002', 'Legacy Test South', 'Synthetic inactive legacy company.', false)
-on conflict (id) do update set name = excluded.name, description = excluded.description, is_active = excluded.is_active;
-insert into public.users (id, name, email, job_position, is_active) values
-  ('a1000000-0000-0000-0000-000000000001', 'Legacy Seed Admin', 'legacy-admin@example.test', 'Administrator', true),
-  ('a1000000-0000-0000-0000-000000000002', 'Legacy Seed Operator', 'legacy-operator@example.test', 'Operator', true),
-  ('a1000000-0000-0000-0000-000000000003', 'Legacy Seed Inactive', 'legacy-inactive@example.test', 'Operator', false)
-on conflict (id) do update set name = excluded.name, email = excluded.email, job_position = excluded.job_position, is_active = excluded.is_active;
-insert into public.roles (id, name, description, company_id) values
-  ('a3000000-0000-0000-0000-000000000001', 'legacy-manager', 'Synthetic legacy manager role.', 'a2000000-0000-0000-0000-000000000001'),
-  ('a3000000-0000-0000-0000-000000000002', 'legacy-viewer', 'Synthetic legacy viewer role.', 'a2000000-0000-0000-0000-000000000002')
-on conflict (id) do update set name = excluded.name, description = excluded.description, company_id = excluded.company_id;
-insert into public.permissions (id, name, company_id, is_custom) values
-  ('a4000000-0000-0000-0000-000000000001', 'read.legacy-documents', 'a2000000-0000-0000-0000-000000000001', true),
-  ('a4000000-0000-0000-0000-000000000002', 'update.legacy-documents', 'a2000000-0000-0000-0000-000000000002', true)
-on conflict (id) do update set name = excluded.name, company_id = excluded.company_id, is_custom = excluded.is_custom;
-insert into public.role_permissions (role_id, permission_id) values
-  ('a3000000-0000-0000-0000-000000000001', 'a4000000-0000-0000-0000-000000000001'),
-  ('a3000000-0000-0000-0000-000000000002', 'a4000000-0000-0000-0000-000000000002')
-on conflict do nothing;
-insert into public.user_roles (user_id, role_id) values
-  ('a1000000-0000-0000-0000-000000000001', 'a3000000-0000-0000-0000-000000000001'),
-  ('a1000000-0000-0000-0000-000000000003', 'a3000000-0000-0000-0000-000000000002')
-on conflict do nothing;
 
 insert into public.rbac_principals (user_id, is_active) values
-  ('a1000000-0000-0000-0000-000000000001', true),
-  ('a1000000-0000-0000-0000-000000000002', true),
-  ('a1000000-0000-0000-0000-000000000003', false),
   ('91000000-0000-0000-0000-000000000001', true),
   ('91000000-0000-0000-0000-000000000002', true),
   ('91000000-0000-0000-0000-000000000003', false)
@@ -86,21 +32,23 @@ on conflict (id) do update set name = excluded.name, company_id = excluded.compa
 insert into public.rbac_permissions (id, action, resource) values
   ('94000000-0000-0000-0000-000000000001', 'read', 'documents'),
   ('94000000-0000-0000-0000-000000000002', 'update', 'documents'),
-  ('94000000-0000-0000-0000-000000000003', 'manage', 'access-control')
+  ('94000000-0000-0000-0000-000000000003', 'manage', 'access-control'),
+  ('9a000000-0000-0000-0000-000000000001', 'read', 'hour-meters'),
+  ('9a000000-0000-0000-0000-000000000002', 'register', 'hour-meters'),
+  ('9a000000-0000-0000-0000-000000000003', 'update', 'hour-meters'),
+  ('9a000000-0000-0000-0000-000000000004', 'read', 'certificates')
 on conflict (id) do update set action = excluded.action, resource = excluded.resource;
 
 insert into public.rbac_role_permissions (role_id, permission_id) values
   ('93000000-0000-0000-0000-000000000001', '94000000-0000-0000-0000-000000000001'),
   ('93000000-0000-0000-0000-000000000001', '94000000-0000-0000-0000-000000000002'),
   ('93000000-0000-0000-0000-000000000001', '94000000-0000-0000-0000-000000000003'),
+  ('93000000-0000-0000-0000-000000000001', '9a000000-0000-0000-0000-000000000004'),
   ('93000000-0000-0000-0000-000000000002', '94000000-0000-0000-0000-000000000001'),
   ('93000000-0000-0000-0000-000000000003', '94000000-0000-0000-0000-000000000001')
 on conflict do nothing;
 
 insert into public.rbac_memberships (company_id, user_id, is_active) values
-  ('a2000000-0000-0000-0000-000000000001', 'a1000000-0000-0000-0000-000000000001', true),
-  ('a2000000-0000-0000-0000-000000000001', 'a1000000-0000-0000-0000-000000000002', true),
-  ('a2000000-0000-0000-0000-000000000002', 'a1000000-0000-0000-0000-000000000003', false),
   ('92000000-0000-0000-0000-000000000001', '91000000-0000-0000-0000-000000000001', true),
   ('92000000-0000-0000-0000-000000000002', '91000000-0000-0000-0000-000000000001', true),
   ('92000000-0000-0000-0000-000000000001', '91000000-0000-0000-0000-000000000002', true),
@@ -132,17 +80,9 @@ insert into public.rbac_role_permissions (role_id, permission_id) values
   ('93000000-0000-0000-0000-000000000004', '9a000000-0000-0000-0000-000000000003')
 on conflict do nothing;
 
-insert into public.companies (id, name, description, is_active) values
-  ('92000000-0000-0000-0000-000000000004', 'Hour Meters Test', 'Local Hour Meters fixture.', true)
-on conflict (id) do update set name = excluded.name, description = excluded.description, is_active = excluded.is_active;
-
 insert into public.hourmeters_settings (company_id)
 values ('92000000-0000-0000-0000-000000000004')
 on conflict (company_id) do nothing;
-
-insert into public.users (id, name, email, job_position, is_active, company_id) values
-  ('91000000-0000-0000-0000-000000000004', 'Hour Meters Developer', 'hola@oalonsodev.com', 'Developer', true, '92000000-0000-0000-0000-000000000004')
-on conflict (id) do update set name = excluded.name, email = excluded.email, job_position = excluded.job_position, is_active = excluded.is_active, company_id = excluded.company_id;
 
 insert into public.rbac_companies (id, name, is_active) values
   ('a2000000-0000-0000-0000-000000000001', 'Legacy Test North', true),
@@ -250,10 +190,3 @@ insert into storage.objects (id, bucket_id, name, owner, metadata) values
   ('9a000000-0000-0000-0000-000000000002', 'certificates', 'seed/path-mismatch.pdf', '91000000-0000-0000-0000-000000000002', '{"mimetype":"application/pdf"}'),
   ('a6000000-0000-0000-0000-000000000001', 'certificates', 'seed/legacy-reference.pdf', 'a1000000-0000-0000-0000-000000000001', '{"mimetype":"application/pdf"}')
  on conflict (id) do nothing;
-
--- Run the rehearsal after the synthetic legacy cohort is present. The function
--- uses a transaction-scoped preflight table and retains no exception ledger.
-select public.rbac_rehearse_legacy_consolidation();
-select public.rbac_rehearse_company_fk_repoint();
-select public.rbac_rehearse_remove_users_company_id();
-select public.rbac_rehearse_retire_companies();

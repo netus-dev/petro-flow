@@ -24,21 +24,15 @@ insert into public.rbac_permissions (id, action, resource) values
   ('c4000000-0000-0000-0000-000000000003', 'update', 'assets'),
   ('c4000000-0000-0000-0000-000000000004', 'delete', 'assets'),
   ('c4000000-0000-0000-0000-000000000005', 'create', 'assets'),
-  ('c4000000-0000-0000-0000-000000000006', 'read', 'certificates');
+  ('c4000000-0000-0000-0000-000000000006', 'read', 'certificates')
+on conflict (action, resource) do nothing;
 insert into public.rbac_role_permissions (role_id, permission_id)
 select r.role_id, p.permission_id
 from (values
   ('c3000000-0000-0000-0000-000000000001'::uuid),
   ('c3000000-0000-0000-0000-000000000002'::uuid)
 ) r(role_id)
-cross join (values
-  ('c4000000-0000-0000-0000-000000000001'::uuid),
-  ('c4000000-0000-0000-0000-000000000002'::uuid),
-  ('c4000000-0000-0000-0000-000000000003'::uuid),
-  ('c4000000-0000-0000-0000-000000000004'::uuid),
-  ('c4000000-0000-0000-0000-000000000005'::uuid),
-  ('c4000000-0000-0000-0000-000000000006'::uuid)
-) p(permission_id);
+cross join lateral (select p.id permission_id from public.rbac_permissions p where (p.action, p.resource) in (('read', 'catalogs'), ('read', 'assets'), ('update', 'assets'), ('delete', 'assets'), ('create', 'assets'), ('read', 'certificates'))) p;
 insert into public.rbac_assignments (company_id, user_id, role_id) values
   ('c2000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-000000000001', 'c3000000-0000-0000-0000-000000000001'),
   ('c2000000-0000-0000-0000-000000000002', 'c1000000-0000-0000-0000-000000000002', 'c3000000-0000-0000-0000-000000000002');
@@ -59,7 +53,7 @@ insert into public.suppliers (id, name, company_id) values
 insert into public.wells (id, name, company_id) values
   ('c5300000-0000-0000-0000-000000000001', 'A well', 'c2000000-0000-0000-0000-000000000001'),
   ('c5300000-0000-0000-0000-000000000002', 'B well', 'c2000000-0000-0000-0000-000000000002');
-insert into public.locations (id, name, location_type, company_id) values
+insert into public.locations (id, name, type, company_id) values
   ('c5400000-0000-0000-0000-000000000001', 'A location', 'operating_base', 'c2000000-0000-0000-0000-000000000001'),
   ('c5400000-0000-0000-0000-000000000002', 'B location', 'operating_base', 'c2000000-0000-0000-0000-000000000002');
 insert into public.operating_bases (id, supplier_id) values
@@ -104,10 +98,10 @@ select results_eq($$delete from public.assets where id='c5700000-0000-0000-0000-
 select throws_ok($$insert into public.assets (id, company_id, current_location_id, function_principle_id) values ('c5700000-0000-0000-0000-000000000003','c2000000-0000-0000-0000-000000000002','c5400000-0000-0000-0000-000000000002','c5500000-0000-0000-0000-000000000002')$$, '42501', null, 'A cannot insert B asset');
 select throws_ok($$insert into public.assets (id, company_id, current_location_id, function_principle_id) values ('c5700000-0000-0000-0000-000000000004','c2000000-0000-0000-0000-000000000001','c5400000-0000-0000-0000-000000000002','c5500000-0000-0000-0000-000000000001')$$, null, null, 'asset location company mismatch is rejected');
 select throws_ok($$insert into public.assets (id, company_id, current_location_id, function_principle_id) values ('c5700000-0000-0000-0000-000000000005','c2000000-0000-0000-0000-000000000001','c5400000-0000-0000-0000-000000000001','c5500000-0000-0000-0000-000000000002')$$, null, null, 'asset principle company mismatch is rejected');
-select is((select count(*) from storage.objects where bucket_id='certificates'), 0::bigint, 'Storage remains fail closed');
-select throws_ok($$insert into storage.objects(id, bucket_id, name, owner, metadata) values ('c5900000-0000-0000-0000-000000000001', 'certificates', 'tenant-fixture-a.pdf', 'c1000000-0000-0000-0000-000000000001', '{}'::jsonb)$$, '42501', null, 'authenticated cannot insert certificate Storage object');
+select is((select count(*) from storage.objects where bucket_id='certificates'), 0::bigint, 'Storage starts empty');
+select lives_ok($$insert into storage.objects(id, bucket_id, name, owner, metadata) values ('c5900000-0000-0000-0000-000000000001', 'certificates', 'c5900000-0000-0000-0000-000000000001.pdf', 'c1000000-0000-0000-0000-000000000001', '{"mimetype":"application/pdf"}'::jsonb)$$, 'owner can upload before certificate metadata exists');
 select results_eq($$update storage.objects set metadata='{"tampered":true}' where name='tenant-fixture-a.pdf' returning id$$, $$select null::uuid where false$$, 'authenticated cannot update certificate Storage object');
-select throws_ok($$delete from storage.objects where name='tenant-fixture-a.pdf'$$, '42501', null, 'authenticated cannot delete certificate Storage object');
+select throws_ok($$delete from storage.objects where name='tenant-fixture-a.pdf'$$, '42501', null, 'authenticated cannot delete certificate Storage object without certificate metadata');
 
 select set_config('request.headers', '{}', true);
 select is((select count(*) from public.assets), 0::bigint, 'authenticated without company header sees no assets');

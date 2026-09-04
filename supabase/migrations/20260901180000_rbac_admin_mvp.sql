@@ -4,6 +4,9 @@ update public.rbac_roles set company_id = (select id from public.rbac_companies 
 alter table public.rbac_roles alter column company_id set not null;
 alter table public.rbac_roles drop constraint if exists rbac_roles_name_key;
 alter table public.rbac_roles add constraint rbac_roles_company_name_key unique (company_id, name);
+alter table public.rbac_roles add constraint rbac_roles_company_id_key unique (company_id, id);
+alter table public.rbac_assignments add constraint rbac_assignments_role_scope_fk
+  foreign key (role_id, company_id) references public.rbac_roles(id, company_id) on delete cascade;
 
 create or replace function public.rbac_admin_allowed() returns boolean language sql stable security definer set search_path = '' as $$
   select exists (select 1 from public.rbac_memberships m join public.rbac_assignments a using (company_id,user_id) join public.rbac_roles r on r.id=a.role_id where m.company_id=public.rbac_request_company_id() and m.user_id=auth.uid() and m.is_active and r.name='developer')
