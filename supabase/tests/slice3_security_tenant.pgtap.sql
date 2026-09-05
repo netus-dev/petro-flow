@@ -20,7 +20,7 @@ insert into public.rbac_memberships (company_id, user_id, is_active) values
 insert into public.rbac_company_modules (company_id, module_key, enabled) values
   ('d2000000-0000-0000-0000-000000000001', 'operations', true),
   ('d2000000-0000-0000-0000-000000000002', 'operations', true);
-insert into public.locations (id, name, location_type, company_id) values
+insert into public.locations (id, name, type, company_id) values
   ('d3000000-0000-0000-0000-000000000001', 'A location', 'operating_base', 'd2000000-0000-0000-0000-000000000001'),
   ('d3000000-0000-0000-0000-000000000002', 'B location', 'operating_base', 'd2000000-0000-0000-0000-000000000002');
 insert into public.functional_principles (id, name, company_id) values
@@ -38,7 +38,7 @@ insert into public.assets_certificates (company_id, asset_id, certificate_id) va
 
 select ok(exists (select 1 from information_schema.columns where table_schema='public' and table_name='certificates' and column_name='company_id'), 'certificates use canonical company ownership');
 select ok((select count(*) from pg_constraint where conname='assets_certificates_company_id_certificate_id_fkey') = 1, 'certificate ownership uses the canonical asset relation');
-select ok((select count(*) from pg_policies where schemaname='storage' and tablename='objects' and policyname like 'certificates_%') = 0, 'Storage certificate policies remain closed');
+select ok((select count(*) from pg_policies where schemaname='storage' and tablename='objects' and policyname like 'certificates_%') >= 4, 'Storage certificate policies are tenant-scoped');
 select diag('Storage ACLs are environment-managed; effective RLS/policy behavior is asserted below.');
 set local role authenticated;
 select is((select count(*) from storage.objects), 0::bigint, 'authenticated cannot read Storage objects');

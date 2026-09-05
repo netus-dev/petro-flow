@@ -9,19 +9,36 @@ import { Button } from "@/src/core/presentation/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/src/core/presentation/components/ui/dialog";
 import { RegisterHourMeterForm } from "./register-hour-meter-form";
 import { InventoryManagementModal } from "./inventory-management-modal";
-import { canUseHourMeterPermission, HOUR_METER_PERMISSIONS } from "../../domain/permissions";
-import { HourMeterRecord } from "../../domain/entities";
+import { canUseHourMeterCapability, HOUR_METER_CAPABILITIES, HourMeterAuthorization } from "../../domain/permissions";
+import { calculateRemainingMaintenanceHours, HourMeterRecord } from "../../domain/entities";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { MaintenanceThresholdModal } from "./maintenance-threshold-modal";
+import { readMaintenanceThresholds } from "../../infrastructure/server/hour-meter-actions";
 
 /**
  * Componente principal de presentación (Page/Organism) que representa la vista
  * del Dashboard de Horómetros con telemetría en tiempo real y panel de mantenimiento.
  */
-export function HourMeterContent({ initialRecords = [], permissions = [] }: { initialRecords?: HourMeterRecord[]; permissions?: string[] }) {
-  const { records, loading, refresh, error } = useHourMeters(initialRecords);
-  const canRegister = canUseHourMeterPermission(permissions, HOUR_METER_PERMISSIONS.access);
-  const canManageInventory = canUseHourMeterPermission(permissions, HOUR_METER_PERMISSIONS.inventory);
+export function HourMeterContent({ initialRecords = [], authorization = { capabilities: [], enabledModules: [] }, principles = [], rigs = [], initialRigId }: { initialRecords?: HourMeterRecord[]; authorization?: HourMeterAuthorization; principles?: Array<{ id: string; name: string }>; rigs?: Array<{ id: string; name: string }>; initialRigId?: string }) {
+  const [rigId, setRigId] = useState(initialRigId ?? rigs[0]?.id);
+  const router = useRouter();
+  const { records, loading, refresh, error } = useHourMeters(initialRecords, rigId);
+  const canRegister = canUseHourMeterCapability(authorization, HOUR_METER_CAPABILITIES.register);
+  const canManageInventory = canUseHourMeterCapability(authorization, HOUR_METER_CAPABILITIES.manage);
+  const canManageMaintenance = canUseHourMeterCapability(authorization, HOUR_METER_CAPABILITIES.manage);
   // Hook de estado para el panel lateral de mantenimiento
   const { selectedEquipmentId, resolvedPlan, isLoading, selectEquipment, closePanel } = useMaintenancePanel();
+  const [thresholdsByPrinciple, setThresholdsByPrinciple] = useState<Record<string, number[]>>({});
+
+  useEffect(() => {
+    const principleIds = [...new Set(records.map((record) => record.functionalPrincipleId).filter((id): id is string => Boolean(id)))];
+    if (!principleIds.length) return;
+    void Promise.all(principleIds.map(async (principleId) => {
+      const result = await readMaintenanceThresholds(principleId);
+      return [principleId, result.ok ? result.data.map((item) => item.thresholdHours) : []] as const;
+    })).then((entries) => setThresholdsByPrinciple(Object.fromEntries(entries)));
+  }, [records]);
 
   if (loading) {
     return (
@@ -43,14 +60,16 @@ export function HourMeterContent({ initialRecords = [], permissions = [] }: { in
 
   // Mapear los registros a registros enriquecidos para las tarjetas
   const enhancedRecords: EnhancedHourMeterRecord[] = records.map((record) => {
-    const remainingHours = record.currentReading === null ? record.maxThreshold : record.maxThreshold - record.currentReading;
-    const isCritical = remainingHours <= 250;
-    const isWarning = remainingHours > 250 && remainingHours <= 500;
-    const isNormal = remainingHours > 500;
+    const functionalPrincipleName = principles.find((principle) => principle.id === record.functionalPrincipleId)?.name ?? "Sin principio funcional";
+    const remainingHours = calculateRemainingMaintenanceHours(thresholdsByPrinciple[record.functionalPrincipleId ?? ""] ?? [], record.currentReading);
+    const isCritical = remainingHours !== null && remainingHours <= 168;
+    const isWarning = remainingHours !== null && remainingHours > 168 && remainingHours <= 336;
+    const isNormal = remainingHours !== null && remainingHours > 336;
     const progressValue = record.currentReading === null ? 0 : Math.min(100, Math.max(0, (record.currentReading / record.maxThreshold) * 100));
 
     return {
       ...record,
+      functionalPrincipleName,
       remainingHours,
       isCritical,
       isWarning,
@@ -73,6 +92,7 @@ export function HourMeterContent({ initialRecords = [], permissions = [] }: { in
       {/* Top Header Panel (Fixed Height) */}
       <header className="shrink-0 mb-4 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/40 pb-4">
         <div className="flex items-center gap-4">
+
           <div className="flex size-12 items-center justify-center rounded-xl bg-primary/10 border border-primary/20 shadow-inner">
             <Clock className="size-6 text-primary" />
           </div>
@@ -80,9 +100,7 @@ export function HourMeterContent({ initialRecords = [], permissions = [] }: { in
             <h1 className="text-2xl md:text-3xl font-black tracking-tight text-foreground font-mono uppercase">
               Dashboard de Horómetros
             </h1>
-            <p className="text-xs md:text-sm font-medium tracking-widest text-muted-foreground uppercase mt-1">
-              RIG 702 / 703
-            </p>
+            {rigs.length > 1 ? <select aria-label="Rig" className="h-8 rounded border bg-background px-2 text-xs" value={rigId ?? ""} onChange={(event) => setRigId(event.target.value)}>{rigs.map((rig) => <option key={rig.id} value={rig.id}>{rig.name}</option>)}</select> : <p className="text-xs md:text-sm font-medium tracking-widest text-muted-foreground uppercase mt-1">{rigs[0]?.name ?? "SIN RIG AUTORIZADO"}</p>}
           </div>
         </div>
 
@@ -101,36 +119,23 @@ export function HourMeterContent({ initialRecords = [], permissions = [] }: { in
               <RegisterHourMeterForm onRegistered={() => void refresh()} />
             </DialogContent>
           </Dialog>}
+          {principles.length > 0 && <Dialog>
+            <DialogTrigger asChild>
+              <Button size="sm" variant="outline">Configurar mantenimientos</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Configurar mantenimientos</DialogTitle>
+              </DialogHeader>
+              <MaintenanceThresholdModal
+                principles={principles}
+                canEdit={canManageMaintenance}
+                onSaved={() => router.refresh()}
+              />
+            </DialogContent>
+          </Dialog>}
         </div>
       </header>
-
-      {/* Mini Stats Summary Row (Fixed Height) */}
-      <div className="shrink-0 grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-        <div className="flex flex-col bg-card/60 backdrop-blur-sm border border-border/50 rounded-lg p-3">
-          <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1">
-            Activos
-          </span>
-          <span className="text-xl font-bold font-mono text-foreground">{stats.total}</span>
-        </div>
-        <div className="flex flex-col bg-card/60 backdrop-blur-sm border border-border/50 rounded-lg p-3">
-          <span className="text-[10px] font-mono uppercase tracking-widest text-orange-500/80 mb-1">
-            Críticos (&lt; 250h)
-          </span>
-          <span className="text-xl font-bold font-mono text-orange-500">{stats.criticalCount}</span>
-        </div>
-        <div className="flex flex-col bg-card/60 backdrop-blur-sm border border-border/50 rounded-lg p-3">
-          <span className="text-[10px] font-mono uppercase tracking-widest text-amber-500/80 mb-1">
-            Próximos (&lt; 500h)
-          </span>
-          <span className="text-xl font-bold font-mono text-amber-500">{stats.warningCount}</span>
-        </div>
-        <div className="flex flex-col bg-card/60 backdrop-blur-sm border border-border/50 rounded-lg p-3">
-          <span className="text-[10px] font-mono uppercase tracking-widest text-primary/80 mb-1">
-            Uso Promedio
-          </span>
-          <span className="text-xl font-bold font-mono text-primary">{stats.avgUsage}%</span>
-        </div>
-      </div>
 
       {/* Main Container - Fills remaining space dynamically */}
       <div className="flex-1 min-h-0 flex flex-row gap-4 overflow-hidden relative">
@@ -148,11 +153,10 @@ export function HourMeterContent({ initialRecords = [], permissions = [] }: { in
 
         {/* Panel lateral - animación suave de derecha a izquierda desplegando ancho (desktop) */}
         <div
-          className={`hidden lg:block h-full shrink-0 transition-all duration-300 ease-in-out overflow-hidden ${
-            selectedEquipmentId
-              ? "w-[440px] opacity-100"
-              : "w-0 opacity-0 pointer-events-none"
-          }`}
+          className={`hidden lg:block h-full shrink-0 transition-all duration-300 ease-in-out overflow-hidden ${selectedEquipmentId
+            ? "w-[440px] opacity-100"
+            : "w-0 opacity-0 pointer-events-none"
+            }`}
         >
           <div className="w-[440px] h-full">
             <MaintenancePanel

@@ -1,5 +1,5 @@
--- Slice 2: establish canonical ownership without guessing legacy tenants.
--- Existing legacy rows remain NULL-owned and therefore fail closed in RLS.
+-- Canonical ownership for assets and certificates. Tenant ownership is sourced
+-- exclusively from rbac_companies and the request-company authorization APIs.
 
 alter table public.assets add column if not exists company_id uuid;
 
@@ -8,6 +8,12 @@ alter table public.assets
 alter table public.assets
   add constraint assets_company_id_fkey
   foreign key (company_id) references public.rbac_companies(id);
+
+-- Required before any composite foreign key can reference assets(company_id, id).
+alter table public.assets
+  drop constraint if exists assets_company_id_id_key;
+alter table public.assets
+  add constraint assets_company_id_id_key unique (company_id, id);
 
 -- These composite keys prevent an owned asset from pointing at another
 -- company's location or functional-principle row.
@@ -131,5 +137,5 @@ create policy certificates_same_company_delete on public.certificates
     )
   );
 
--- Do not make company_id NOT NULL until every legacy asset has an evidenced owner.
--- Do not restore certificate Storage policies or the statistics RPC in this slice.
+-- Certificate Storage policies and the statistics RPC are finalized by later
+-- migrations in this clean production chain.

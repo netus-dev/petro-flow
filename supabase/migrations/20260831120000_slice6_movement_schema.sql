@@ -32,10 +32,6 @@ alter table public.ubications
 alter table public.ubications
   add constraint ubications_company_id_id_key unique (company_id, id);
 
-alter table public.assets
-  drop constraint if exists assets_company_id_id_key;
-alter table public.assets
-  add constraint assets_company_id_id_key unique (company_id, id);
 alter table public.assets add column if not exists current_ubication_id uuid;
 alter table public.assets drop constraint if exists assets_company_id_current_ubication_id_fkey;
 alter table public.assets

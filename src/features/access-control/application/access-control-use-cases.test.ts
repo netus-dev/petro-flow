@@ -3,7 +3,7 @@ import { ExecuteAccessControlCommand, ReadAccessControlSnapshot, ReadAuthorizati
 import type { AccessControlRepository } from "../domain/access-control";
 import type { AuthorizationProjection } from "../../authorization/domain/authorization";
 
-const repo = (): AccessControlRepository => ({ readSnapshot: vi.fn().mockResolvedValue({ roles: [], permissions: [], rolePermissions: [], companies: [], users: [], memberships: [], entitlements: [], assignments: [], auditEvents: [] }), createRole: vi.fn(), updateRole: vi.fn(), deleteRole: vi.fn(), createCompany: vi.fn(), updateCompany: vi.fn(), setCompany: vi.fn(), setUser: vi.fn(), setRolePermission: vi.fn(), setEntitlement: vi.fn(), setMembership: vi.fn(), removeMembership: vi.fn(), setAssignment: vi.fn(), removeAssignment: vi.fn(), listAuditEvents: vi.fn().mockResolvedValue([]), appendAuditEvent: vi.fn() });
+const repo = (): AccessControlRepository => ({ readSnapshot: vi.fn().mockResolvedValue({ roles: [], permissions: [], rolePermissions: [], companies: [], users: [], memberships: [], entitlements: [], assignments: [], operationalScopes: [], auditEvents: [] }), createRole: vi.fn(), updateRole: vi.fn(), deleteRole: vi.fn(), createCompany: vi.fn(), updateCompany: vi.fn(), setCompany: vi.fn(), setUser: vi.fn(), setRolePermission: vi.fn(), setEntitlement: vi.fn(), setMembership: vi.fn(), removeMembership: vi.fn(), setAssignment: vi.fn(), removeAssignment: vi.fn(), setOperationalScope: vi.fn(), removeOperationalScope: vi.fn(), listAuditEvents: vi.fn().mockResolvedValue([]), appendAuditEvent: vi.fn() });
 const projection = (capabilities: AuthorizationProjection["capabilities"]): AuthorizationProjection => ({ userId: "u", activeCompanyId: "c", roles: [], capabilities, enabledModules: [] });
 
 describe("access-control use cases", () => {
@@ -33,6 +33,15 @@ describe("access-control use cases", () => {
     const result = await new ReadAccessControlSnapshot(repository, async () => projection([{ action: "manage", resource: "access-control" }])).execute();
     expect(result.isRight()).toBe(true);
     expect(repository.readSnapshot).toHaveBeenCalledOnce();
+  });
+  it("returns a safe repository error message from snapshot reads", async () => {
+    const repository = repo();
+    vi.mocked(repository.readSnapshot).mockRejectedValue(new Error("access-control administration is forbidden"));
+
+    const result = await new ReadAccessControlSnapshot(repository, async () => projection([{ action: "manage", resource: "access-control" }])).execute();
+
+    expect(result.isLeft()).toBe(true);
+    expect(result.value).toEqual({ code: "repository", message: "access-control administration is forbidden" });
   });
   it("requires the audit capability for reads", async () => {
     const repository = repo();

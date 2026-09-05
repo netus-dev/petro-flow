@@ -1,14 +1,19 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { GetNextMaintenancePlanUseCase } from "./maintenance.usecases";
 import { IMaintenancePlanRepository } from "../../domain/repositories/maintenance.repository";
-import { MaintenancePlan, MaintenanceActivity } from "../../domain/entities";
+import { MaintenancePlan, MaintenanceActivity, calculateRemainingMaintenanceHours, resolveNextMaintenanceThreshold } from "../../domain/entities";
 
 // Mock repository implementation for unit tests
 class MemoryMaintenanceRepository implements IMaintenancePlanRepository {
   public plans: MaintenancePlan[] = [];
+  public thresholds = [{ companyId: "company-1", functionalPrincipleId: "principle-1", thresholdHours: 1000 }, { companyId: "company-1", functionalPrincipleId: "principle-1", thresholdHours: 2000 }];
 
   async getPlansByEquipmentId(equipmentId: string): Promise<MaintenancePlan[]> {
     return this.plans.filter((p) => p.equipmentId === equipmentId);
+  }
+
+  async getThresholds(companyId: string, functionalPrincipleId: string) {
+    return this.thresholds.filter((item) => item.companyId === companyId && item.functionalPrincipleId === functionalPrincipleId);
   }
 }
 
@@ -82,7 +87,7 @@ describe("GetNextMaintenancePlanUseCase", () => {
     }
   });
 
-  it("omite el umbral fijo si la lectura actual lo supera (vencido)", async () => {
+  it("does not invent a threshold when a fixed plan is expired", async () => {
     repository.plans = [
       {
         id: "plan-3",
@@ -98,8 +103,7 @@ describe("GetNextMaintenancePlanUseCase", () => {
     expect(result.isRight()).toBe(true);
     if (result.isRight()) {
       const plan = result.value;
-      expect(plan?.nextThresholdHours).toBe(6300);
-      expect(plan?.activities).toHaveLength(1);
+      expect(plan).toBeNull();
     }
   });
 
@@ -166,19 +170,18 @@ describe("GetNextMaintenancePlanUseCase", () => {
     }
   });
 
-  it("crea un plan preventivo fallback cuando no hay planes para el activo", async () => {
+  it("does not invent a maintenance plan when no plan is configured", async () => {
     repository.plans = [];
 
     const result = await useCase.execute("EQ-6", "Equipo Test 6", 7200);
 
     expect(result.isRight()).toBe(true);
     if (result.isRight()) {
-      expect(result.value?.nextThresholdHours).toBe(7700);
-      expect(result.value?.activities[0].category).toBe("inspeccion");
+      expect(result.value).toBeNull();
     }
   });
 
-  it("crea un plan preventivo cuando todos los planes fijos están vencidos", async () => {
+  it("does not invent a threshold when all fixed plans are expired", async () => {
     repository.plans = [
       {
         id: "plan-fixed-vencido",
@@ -192,8 +195,33 @@ describe("GetNextMaintenancePlanUseCase", () => {
 
     expect(result.isRight()).toBe(true);
     if (result.isRight()) {
-      expect(result.value?.nextThresholdHours).toBe(6300);
-      expect(result.value?.activities).toHaveLength(1);
+      expect(result.value).toBeNull();
     }
+  });
+});
+
+describe("functional-principle maintenance thresholds", () => {
+  it("resolves the smallest threshold strictly above the reading", () => {
+    expect(resolveNextMaintenanceThreshold([2000, 1000, 3000], 1000)).toBe(2000);
+    expect(resolveNextMaintenanceThreshold([2000, 1000], 2000)).toBeNull();
+  });
+
+  it.each([
+    [[500, 1000], 20, 480],
+    [[500, 1000, 2000, 5000], 4980, 20],
+  ])("calculates remaining hours from the next threshold", (thresholds, reading, expected) => {
+    expect(calculateRemainingMaintenanceHours(thresholds, reading)).toBe(expected);
+  });
+
+  it("returns no remaining hours when no threshold applies", () => {
+    expect(calculateRemainingMaintenanceHours([500, 1000], 1000)).toBeNull();
+  });
+
+  it("resolves thresholds by company and functional principle", async () => {
+    const repository = new MemoryMaintenanceRepository();
+    const useCase = new GetNextMaintenancePlanUseCase(repository);
+    const result = await useCase.executeForPrinciple("asset-1", "Motor", "principle-1", "company-1", 1500);
+    expect(result.isRight()).toBe(true);
+    if (result.isRight()) expect(result.value?.nextThresholdHours).toBe(2000);
   });
 });

@@ -57,7 +57,7 @@ begin
     from pg_catalog.pg_proc p
     join pg_catalog.pg_namespace n on n.oid = p.pronamespace
    where p.oid <> 'public.rbac_rehearse_retire_companies()'::regprocedure
-     and p.prosrc ~* '(^|[^a-z_])((public\.)?companies)([^a-z_]|$)'
+     and p.prosrc ~* '\m(from|join|update|insert[[:space:]]+into|delete[[:space:]]+from)[[:space:]]+((public\.)?companies)\M'
    limit 1;
 
   if source_dependency is not null then

@@ -1,0 +1,13 @@
+begin;
+create extension if not exists pgtap with schema extensions;
+select plan(9);
+select is((select count(*) from public.rbac_principals where user_id in ('4dbc406c-fb80-4943-862a-7bc84cccb9c1','0d86291d-979d-4d9a-b70a-f8eefdfcdfa7','07561522-9356-4193-af7e-8ec413c78347','c803e640-e226-4f8b-976e-df1ab7852f68','46ca8d61-7245-41b7-b4f1-12c626d8de9f') and is_active), 5::bigint, 'five Ixachi principals are active');
+select is((select count(*) from public.rbac_memberships where company_id = 'f1000000-0000-0000-0000-000000000001' and is_active), 5::bigint, 'five Ixachi memberships are active');
+select is((select count(*) from public.rbac_assignments where company_id = 'f1000000-0000-0000-0000-000000000001'), 5::bigint, 'five deterministic role assignments exist');
+select is((select count(*) from public.rigs where id in ('f4000000-0000-0000-0000-000000000001','f4000000-0000-0000-0000-000000000002')), 2::bigint, 'both deterministic rigs exist');
+select is((select count(*) from public.rbac_operational_scopes where company_id = 'f1000000-0000-0000-0000-000000000001' and not all_rigs), 5::bigint, 'all users have specific-rig scopes');
+select is((select count(*) from public.rbac_operational_scope_rigs where company_id = 'f1000000-0000-0000-0000-000000000001'), 5::bigint, 'each user has the assigned rig scope row');
+select is((select count(*) from public.rbac_assignments a join public.rbac_roles r on r.id = a.role_id where a.company_id = 'f1000000-0000-0000-0000-000000000001' and r.name = 'Supervisor Electrician'), 2::bigint, 'electricians receive supervisor role');
+select is((select count(*) from public.rbac_assignments a join public.rbac_roles r on r.id = a.role_id where a.company_id = 'f1000000-0000-0000-0000-000000000001' and r.name = 'Supervisor Mechanic'), 2::bigint, 'mechanics receive supervisor role');
+select is((select count(*) from public.rbac_assignments a join public.rbac_roles r on r.id = a.role_id where a.company_id = 'f1000000-0000-0000-0000-000000000001' and r.name = 'Tool Pusher'), 1::bigint, 'tool pusher receives tool pusher role');
+select * from finish(); rollback;

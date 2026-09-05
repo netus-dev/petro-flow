@@ -1,24 +1,22 @@
-/** Permissions used by the Hourmeters presentation boundary. */
-export const HOUR_METER_PERMISSIONS = {
-  access: "hourmeters.access",
-  register: "hourmeters.register",
-  inventory: "hourmeters.inventory.manage",
+export const HOUR_METERS_MODULE = "hour-meters";
+
+/** Canonical capabilities enforced by the deployed Hour Meters RLS policies. */
+export const HOUR_METER_CAPABILITIES = {
+  read: { action: "read", resource: "hour-meters" },
+  register: { action: "register", resource: "hour-meters" },
+  update: { action: "update", resource: "hour-meters" },
+  manage: { action: "manage", resource: "hour-meters" },
 } as const;
 
-export type HourMeterPermission = typeof HOUR_METER_PERMISSIONS[keyof typeof HOUR_METER_PERMISSIONS];
+export type HourMeterCapability = typeof HOUR_METER_CAPABILITIES[keyof typeof HOUR_METER_CAPABILITIES];
 
-export type PermissionRoleRow = {
-  roles: { role_permissions: { permissions: { name: string } | null }[] } | null;
+export type HourMeterAuthorization = {
+  capabilities: readonly { action: string; resource: string }[];
+  enabledModules: readonly string[];
 };
 
-/** Extracts permission names from the nested authorization query result. */
-export function extractPermissionNames(rows: readonly PermissionRoleRow[]): string[] {
-  return rows.flatMap((row) =>
-    row.roles?.role_permissions.map((item) => item.permissions?.name).filter((name): name is string => Boolean(name)) ?? [],
-  );
-}
-
-/** Returns whether a user may perform the requested Hourmeters action. */
-export function canUseHourMeterPermission(permissions: readonly string[], permission: HourMeterPermission): boolean {
-  return permissions.includes(permission);
+/** Evaluates the same action/resource/module triple used by RLS. */
+export function canUseHourMeterCapability(authorization: HourMeterAuthorization, capability: HourMeterCapability): boolean {
+  return authorization.enabledModules.includes(HOUR_METERS_MODULE)
+    && authorization.capabilities.some(({ action, resource }) => action === capability.action && resource === capability.resource);
 }
