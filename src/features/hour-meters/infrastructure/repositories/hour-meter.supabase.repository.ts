@@ -70,7 +70,7 @@ export class SupabaseHourMeterRepository implements IHourMeterRepository {
   constructor(private readonly supabase: SupabaseClient) {}
 
   async getAll(rigId?: string): Promise<HourMeterRecord[]> {
-    let query = this.supabase.from("assets").select("id, company_id, function_principle_id, current_location_id, current_ubication_id, functional_principles!assets_function_principle_id_fkey(name), locations!assets_current_location_id_fkey(name), ubications!assets_company_id_current_ubication_id_fkey(name), asset_operational_parameters_history!asset_operational_parameters_history_asset_id_fkey(*)").eq("is_active", true);
+    let query = this.supabase.from("assets").select("id, company_id, function_principle_id, current_location_id, current_ubication_id, functional_principles!assets_function_principle_same_company_fkey(name), locations!assets_current_location_id_fkey(name), ubications!assets_company_id_current_ubication_id_fkey(name), asset_operational_parameters_history!asset_operational_parameters_history_asset_id_fkey(*)").eq("is_active", true);
     if (rigId) query = query.eq("current_location_id", rigId);
     const { data, error } = await query.order("id");
     if (error) throw error;
@@ -107,7 +107,7 @@ export class SupabaseHourMeterRepository implements IHourMeterRepository {
       company_id: companyId, asset_id: input.assetId, hours: input.currentReading, captured_at: input.capturedAt,
       diesel_accumulated_gallons: input.dieselAccumulatedGallons, mw_accumulated: input.dailyMwAccumulated,
       mvar_accumulated: input.dailyMvarAccumulated,
-    }).select("*, assets!asset_operational_parameters_history_asset_id_fkey(functional_principles!assets_function_principle_id_fkey(name), locations!assets_current_location_id_fkey(name), ubications!assets_company_id_current_ubication_id_fkey(name))").single();
+    }).select("*, assets!asset_operational_parameters_history_asset_id_fkey(functional_principles!assets_function_principle_same_company_fkey(name), locations!assets_current_location_id_fkey(name), ubications!assets_company_id_current_ubication_id_fkey(name))").single();
     if (error) throw error;
     const inserted = data as unknown as HourMeterRow & { assets: Pick<HourMeterAssetRow, "functional_principles" | "locations" | "ubications"> };
     return mapAsset({ id: inserted.asset_id, company_id: "", function_principle_id: "", current_location_id: "", current_ubication_id: null, ...inserted.assets }, inserted);
