@@ -3,9 +3,10 @@
 import { create } from "zustand";
 import type { AccessControlCommand, AccessControlSnapshot } from "../domain/access-control";
 import { runAccessControlCommand, readAccessControlSnapshot } from "../infrastructure/server/access-control-actions";
+import { inviteUser } from "../infrastructure/server/invite-user-action";
 
 interface AccessControlState extends Partial<AccessControlSnapshot> {
-  isLoading: boolean; error: string | null; refresh: () => Promise<void>; execute: (command: AccessControlCommand) => Promise<boolean>;
+  isLoading: boolean; error: string | null; refresh: () => Promise<void>; execute: (command: AccessControlCommand) => Promise<boolean>; invite: (input: { email: string; fullName: string; companyId: string; roleId: string }) => ReturnType<typeof inviteUser>;
 }
 
 const EMPTY_ROLES: AccessControlSnapshot["roles"] = [];
@@ -23,6 +24,7 @@ export const useAccessControlStore = create<AccessControlState>((set, get) => ({
   isLoading: false, error: null,
   refresh: async () => { set({ isLoading: true, error: null }); const result = await readAccessControlSnapshot(); if (!result.ok) set({ error: result.error, isLoading: false }); else set({ ...result.data, isLoading: false }); },
   execute: async (command) => { set({ isLoading: true, error: null }); const result = await runAccessControlCommand(command); if (!result.ok) { set({ error: result.error, isLoading: false }); return false; } await get().refresh(); return true; },
+  invite: (input) => inviteUser(input),
 }));
 
 export const useAccessControlRoles = () => useAccessControlStore((state) => state.roles ?? EMPTY_ROLES);
@@ -39,3 +41,4 @@ export const useAccessControlLoading = () => useAccessControlStore((state) => st
 export const useAccessControlError = () => useAccessControlStore((state) => state.error);
 export const useRefreshAccessControl = () => useAccessControlStore((state) => state.refresh);
 export const useExecuteAccessControl = () => useAccessControlStore((state) => state.execute);
+export const useInviteAccessControlUser = () => useAccessControlStore((state) => state.invite);
