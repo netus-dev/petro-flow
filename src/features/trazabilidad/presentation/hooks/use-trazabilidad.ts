@@ -1,18 +1,11 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { AssetMovementPayload, Asset, TrazabilidadStats, Movement } from "../../domain/entities";
-import { SupabaseTrazabilidadRepository } from "../../infrastructure/supabase-repository";
 import {
-  AddCertificateUseCase,
-  GetAssetListUseCase,
-  GetDashboardStatsUseCase,
-  RegisterMovementUseCase,
-  RegisterBulkMovementUseCase,
-  RegisterAssetUseCase,
-  EditAssetUseCase,
-  DisableAssetUseCase,
-  RegisterReplacementUseCase,
-  GetMovementListUseCase
-} from "../../application/use-cases";
+  addTrazabilidadCertificates, disableTrazabilidadAsset, editTrazabilidadAsset,
+  getTrazabilidadAsset, readTrazabilidadData, registerTrazabilidadAsset,
+  registerTrazabilidadBulkMovement, registerTrazabilidadMovement,
+  registerTrazabilidadReplacement,
+} from "../../infrastructure/server/trazabilidad-actions";
 
 export type TrazabilidadView = "dashboard" | "list" | "detail" | "movement_list" | "movement_detail";
 
@@ -33,78 +26,19 @@ export function useTrazabilidad() {
   const [filterUbication, setFilterUbication] = useState<string>("all");
   const [filterDisabled, setFilterDisabled] = useState<boolean>(false);
 
-  const repository = useMemo(() =>
-    new SupabaseTrazabilidadRepository()
-    ,[],
-  );
-  
-  const getAssetListUseCase = useMemo(
-    () => new GetAssetListUseCase(repository),
-    [repository],
-  );
-
-  const getDashboardStatsUseCase = useMemo(
-    () => new GetDashboardStatsUseCase(repository),
-    [repository],
-  );
-
-  const registerMovementUseCase = useMemo(
-    () => new RegisterMovementUseCase(repository),
-    [repository],
-  );
-
-  const registerBulkMovementUseCase = useMemo(
-    () => new RegisterBulkMovementUseCase(repository),
-    [repository],
-  );
-
-  const addCertificateUseCase = useMemo(
-    () => new AddCertificateUseCase(repository),
-    [repository],
-  );
-
-  const registerAssetUseCase = useMemo(
-    () => new RegisterAssetUseCase(repository),
-    [repository],
-  );
-
-  const editAssetUseCase = useMemo(
-    () => new EditAssetUseCase(repository),
-    [repository],
-  );
-
-  const disableAssetUseCase = useMemo(
-    () => new DisableAssetUseCase(repository),
-    [repository],
-  );
-
-  const registerReplacementUseCase = useMemo(
-    () => new RegisterReplacementUseCase(repository),
-    [repository],
-  );
-
-  const getMovementListUseCase = useMemo(
-    () => new GetMovementListUseCase(repository),
-    [repository]
-  );
-
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [assetsData, statsData, movementsData] = await Promise.all([
-        getAssetListUseCase.execute(),
-        getDashboardStatsUseCase.execute(),
-        getMovementListUseCase.execute(),
-      ]);
-      setAssetList(assetsData);
-      setStats(statsData);
-      setMovementList(movementsData);
+      const [assets, dashboardStats, movements] = await readTrazabilidadData();
+      setAssetList(assets);
+      setStats(dashboardStats);
+      setMovementList(movements);
     } catch (error) {
       console.error("Error fetching trazabilidad data:", error);
     } finally {
       setLoading(false);
     }
-  }, [getAssetListUseCase, getDashboardStatsUseCase, getMovementListUseCase]);
+  }, []);
 
   useEffect(() => {
     fetchData();
@@ -136,52 +70,52 @@ export function useTrazabilidad() {
   }, [assetList, search, filterLocation, filterStatus, filterType, filterUbication, filterDisabled]);
 
   const handleRegisterMovement = async (assetId: string, movement: any) => {
-    await registerMovementUseCase.execute(assetId, movement);
+    await registerTrazabilidadMovement(assetId, movement);
     await fetchData(); // Refresh data
     if (selectedAsset?.id === assetId) {
-      const updated = await repository.getAssetById(assetId);
+      const updated = await getTrazabilidadAsset(assetId);
       if (updated) setSelectedAsset(updated);
     }
   };
 
   const handleRegisterBulkMovement = async (payload: AssetMovementPayload) => {
-    await registerBulkMovementUseCase.execute(payload);
+    await registerTrazabilidadBulkMovement(payload);
     await fetchData(); // Refresh data
   };
 
   const handleRegisterReplacementMovement = async (payload: any) => {
-    await registerReplacementUseCase.execute(payload);
+    await registerTrazabilidadReplacement(payload);
     await fetchData(); // Refresh data
   };
 
   const handleAddCertificate = async (assetId: string, certificates: { file: File; name: string }[]) => {
-    await addCertificateUseCase.execute(assetId, certificates);
+    await addTrazabilidadCertificates(assetId, certificates);
     await fetchData(); // Refresh data
     if (selectedAsset?.id === assetId) {
-      const updated = await repository.getAssetById(assetId);
+      const updated = await getTrazabilidadAsset(assetId);
       if (updated) setSelectedAsset(updated);
     }
   };
 
   const handleRegisterAsset = async (asset: Partial<Asset>) => {
-    await registerAssetUseCase.execute(asset);
+    await registerTrazabilidadAsset(asset);
     await fetchData(); // Refresh data
   };
 
   const handleEditAsset = async (id: string, asset: Partial<Asset>) => {
-    await editAssetUseCase.execute(id, asset);
+    await editTrazabilidadAsset(id, asset);
     await fetchData(); // Refresh data
     if (selectedAsset?.id === id) {
-      const updated = await repository.getAssetById(id);
+      const updated = await getTrazabilidadAsset(id);
       if (updated) setSelectedAsset(updated);
     }
   };
 
   const handleDisableAsset = async (id: string) => {
-    await disableAssetUseCase.execute(id);
+    await disableTrazabilidadAsset(id);
     await fetchData(); // Refresh data
     if (selectedAsset?.id === id) {
-      const updated = await repository.getAssetById(id);
+      const updated = await getTrazabilidadAsset(id);
       if (updated) setSelectedAsset(updated);
     }
   };

@@ -4,18 +4,11 @@ import {
   AssetLocationStat,
   Asset
 } from "../../domain/entities";
-import { SupabaseTrazabilidadRepository } from "../../infrastructure/supabase-repository";
-import { 
-  GetFunctionalPrinciplesUseCase,
-  GetAssetStatsUseCase,
-  GetAssetsUnderInspectionUseCase
-} from "../../application/use-cases";
-
-// Dependency Injection
-const repository = new SupabaseTrazabilidadRepository();
-const getPrinciplesUseCase = new GetFunctionalPrinciplesUseCase(repository);
-const getAssetStatsUseCase = new GetAssetStatsUseCase(repository);
-const getAssetsUnderInspectionUseCase = new GetAssetsUnderInspectionUseCase(repository);
+import {
+  getTrazabilidadAssetStats,
+  getTrazabilidadAssetsUnderInspection,
+  getTrazabilidadDashboardData,
+} from "../../infrastructure/server/trazabilidad-actions";
 
 interface TrazabilidadDashboardState {
   principles: FunctionalPrincipleCatalog[];
@@ -47,13 +40,11 @@ export const useTrazabilidadDashboardStore = create<TrazabilidadDashboardState>(
   fetchInitialData: async () => {
     set({ isInitialLoading: true, error: null });
     try {
-      const principles = await getPrinciplesUseCase.execute();
+      const { principles, stats } = await getTrazabilidadDashboardData();
       
       if (principles.length > 0) {
         const firstId = principles[0].id;
         set({ principles, selectedPrincipleId: firstId });
-        // Fetch initial stats
-        const stats = await getAssetStatsUseCase.execute(firstId);
         set({ stats, isInitialLoading: false });
       } else {
         set({ principles: [], selectedPrincipleId: null, stats: [], isInitialLoading: false });
@@ -72,7 +63,7 @@ export const useTrazabilidadDashboardStore = create<TrazabilidadDashboardState>(
   fetchStats: async (id: string) => {
     set({ isLoading: true });
     try {
-      const stats = await getAssetStatsUseCase.execute(id);
+      const stats = await getTrazabilidadAssetStats(id);
       set({ stats, isLoading: false });
     } catch (err: any) {
       set({ error: err.message || "Error al actualizar estadísticas", isLoading: false });
@@ -82,7 +73,7 @@ export const useTrazabilidadDashboardStore = create<TrazabilidadDashboardState>(
   fetchAssetsUnderInspection: async () => {
     set({ isInspectionLoading: true });
     try {
-      const data = await getAssetsUnderInspectionUseCase.execute();
+      const data = await getTrazabilidadAssetsUnderInspection();
       set({ assetsUnderInspection: data, isInspectionLoading: false });
     } catch (err: any) {
       set({ error: err.message || "No se pudieron cargar los activos para inspección", isInspectionLoading: false });

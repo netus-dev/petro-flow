@@ -1,9 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { EquipmentKpi, ReliabilityPeriod } from "../../domain/entities";
-import { GetEquipmentKpiUseCase } from "../../application/usecases/kpi.usecases";
-import { kpiRepository } from "../../infrastructure/repository";
-
-const getEquipmentKpiUseCase = new GetEquipmentKpiUseCase(kpiRepository);
+import { readEquipmentKpi } from "../../infrastructure/server/kpi-actions";
 
 /**
  * Hook personalizado para obtener los KPIs operacionales de un activo reactivamente.
@@ -29,15 +26,15 @@ export function useEquipmentKpi(assetId: string | null) {
       setKpi(null);
       activeLoadingId.current = assetId;
 
-      const result = await getEquipmentKpiUseCase.execute(assetId);
+       const result = await readEquipmentKpi(assetId);
 
       if (activeLoadingId.current === assetId) {
         setIsLoading(false);
-        if (result.isRight()) {
-          setKpi(result.value);
+        if (result.ok) {
+          setKpi(result.data);
         } else {
           setKpi(null);
-          console.error("Falla al obtener KPIs:", result.value.message);
+          console.error("Falla al obtener KPIs:", result.error);
         }
       }
     };
