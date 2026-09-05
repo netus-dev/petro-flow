@@ -9,7 +9,7 @@ import { Button } from "@/src/core/presentation/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/src/core/presentation/components/ui/dialog";
 import { RegisterHourMeterForm } from "./register-hour-meter-form";
 import { InventoryManagementModal } from "./inventory-management-modal";
-import { canUseHourMeterPermission, HOUR_METER_PERMISSIONS } from "../../domain/permissions";
+import { canUseHourMeterCapability, HOUR_METER_CAPABILITIES, HourMeterAuthorization } from "../../domain/permissions";
 import { calculateRemainingMaintenanceHours, HourMeterRecord } from "../../domain/entities";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -20,13 +20,13 @@ import { readMaintenanceThresholds } from "../../infrastructure/server/hour-mete
  * Componente principal de presentación (Page/Organism) que representa la vista
  * del Dashboard de Horómetros con telemetría en tiempo real y panel de mantenimiento.
  */
-export function HourMeterContent({ initialRecords = [], permissions = [], principles = [], rigs = [], initialRigId }: { initialRecords?: HourMeterRecord[]; permissions?: string[]; principles?: Array<{ id: string; name: string }>; rigs?: Array<{ id: string; name: string }>; initialRigId?: string }) {
+export function HourMeterContent({ initialRecords = [], authorization = { capabilities: [], enabledModules: [] }, principles = [], rigs = [], initialRigId }: { initialRecords?: HourMeterRecord[]; authorization?: HourMeterAuthorization; principles?: Array<{ id: string; name: string }>; rigs?: Array<{ id: string; name: string }>; initialRigId?: string }) {
   const [rigId, setRigId] = useState(initialRigId ?? rigs[0]?.id);
   const router = useRouter();
   const { records, loading, refresh, error } = useHourMeters(initialRecords, rigId);
-  const canRegister = canUseHourMeterPermission(permissions, HOUR_METER_PERMISSIONS.access);
-  const canManageInventory = canUseHourMeterPermission(permissions, HOUR_METER_PERMISSIONS.inventory);
-  const canManageMaintenance = canUseHourMeterPermission(permissions, HOUR_METER_PERMISSIONS.maintenanceManage);
+  const canRegister = canUseHourMeterCapability(authorization, HOUR_METER_CAPABILITIES.register);
+  const canManageInventory = canUseHourMeterCapability(authorization, HOUR_METER_CAPABILITIES.manage);
+  const canManageMaintenance = canUseHourMeterCapability(authorization, HOUR_METER_CAPABILITIES.manage);
   // Hook de estado para el panel lateral de mantenimiento
   const { selectedEquipmentId, resolvedPlan, isLoading, selectEquipment, closePanel } = useMaintenancePanel();
   const [thresholdsByPrinciple, setThresholdsByPrinciple] = useState<Record<string, number[]>>({});
