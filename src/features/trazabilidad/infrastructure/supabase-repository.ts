@@ -1,4 +1,4 @@
-import { createClient } from "@/src/core/lib/supabase/client";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { 
   Asset,
   AssetStatus,
@@ -14,7 +14,7 @@ import { ITrazabilidadRepository } from "../domain/repository";
 import { uploadCertificateAction } from "./server/certificate-actions";
 
 export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
-  private supabase = createClient();
+  constructor(private readonly supabase: SupabaseClient) {}
 
   async getFunctionalPrinciples(): Promise<FunctionalPrincipleCatalog[]> {
     const { data, error } = await this.supabase

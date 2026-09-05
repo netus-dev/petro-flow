@@ -29,7 +29,7 @@ describe("Hourmeter infrastructure mapping", () => {
     expect(calculateOperationalDeltas(null, { dieselAccumulatedGallons: 135, dailyMwAccumulated: 28 })).toMatchObject({ dieselGallons: null, generatedMw: null });
   });
 
-  it("reads assets using the columns and relations available in the local schema", async () => {
+  it("keeps eligible assets when PostgREST returns the tenant-safe principle relation", async () => {
     const order = vi.fn().mockResolvedValue({
       data: [{
         id: "asset-1",
@@ -52,7 +52,7 @@ describe("Hourmeter infrastructure mapping", () => {
     await expect(repository.getAll()).resolves.toMatchObject([
        { assetId: "asset-1", equipment: "North Position", platform: "North Rig", rigName: "North Rig" },
     ]);
-      expect(select).toHaveBeenCalledWith("id, company_id, function_principle_id, current_location_id, current_ubication_id, functional_principles!assets_function_principle_id_fkey(name), locations!assets_current_location_id_fkey(name), ubications!assets_company_id_current_ubication_id_fkey(name), asset_operational_parameters_history!asset_operational_parameters_history_asset_id_fkey(*)");
+      expect(select).toHaveBeenCalledWith("id, company_id, function_principle_id, current_location_id, current_ubication_id, functional_principles!assets_function_principle_same_company_fkey(name), locations!assets_current_location_id_fkey(name), ubications!assets_company_id_current_ubication_id_fkey(name), asset_operational_parameters_history!asset_operational_parameters_history_asset_id_fkey(*)");
   });
 
   it("falls back to the functional principle when an asset has no ubication", async () => {
@@ -99,6 +99,6 @@ describe("Hourmeter infrastructure mapping", () => {
 
     expect(rpc).toHaveBeenCalledWith("rbac_request_company_id");
     expect(insert).toHaveBeenCalledWith(expect.objectContaining({ company_id: "company-1", asset_id: "asset-1" }));
-     expect(historySelect).toHaveBeenCalledWith("*, assets!asset_operational_parameters_history_asset_id_fkey(functional_principles!assets_function_principle_id_fkey(name), locations!assets_current_location_id_fkey(name), ubications!assets_company_id_current_ubication_id_fkey(name))");
+      expect(historySelect).toHaveBeenCalledWith("*, assets!asset_operational_parameters_history_asset_id_fkey(functional_principles!assets_function_principle_same_company_fkey(name), locations!assets_current_location_id_fkey(name), ubications!assets_company_id_current_ubication_id_fkey(name))");
   });
 });

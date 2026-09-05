@@ -1,20 +1,25 @@
 import { describe, expect, it } from "vitest";
-import { canUseHourMeterPermission, extractPermissionNames, HOUR_METER_PERMISSIONS } from "./permissions";
+import { canUseHourMeterCapability, HOUR_METER_CAPABILITIES, HOUR_METERS_MODULE } from "./permissions";
 
 describe("hour-meter permissions", () => {
-  it("matches only the typed permission requested", () => {
-    expect(canUseHourMeterPermission([HOUR_METER_PERMISSIONS.register], HOUR_METER_PERMISSIONS.register)).toBe(true);
-    expect(canUseHourMeterPermission([], HOUR_METER_PERMISSIONS.inventory)).toBe(false);
+  it("matches the deployed action, resource, and module triple", () => {
+    expect(canUseHourMeterCapability(
+      { capabilities: [HOUR_METER_CAPABILITIES.register], enabledModules: [HOUR_METERS_MODULE] },
+      HOUR_METER_CAPABILITIES.register,
+    )).toBe(true);
   });
 
-  it("does not authorize a permission with a similar name", () => {
-    expect(canUseHourMeterPermission(["hourmeters.register.extra"], HOUR_METER_PERMISSIONS.register)).toBe(false);
+  it("fails closed when the Hour Meters module is disabled", () => {
+    expect(canUseHourMeterCapability(
+      { capabilities: [HOUR_METER_CAPABILITIES.read], enabledModules: [] },
+      HOUR_METER_CAPABILITIES.read,
+    )).toBe(false);
   });
 
-  it("extracts deployed permission names and ignores missing nested values", () => {
-    expect(extractPermissionNames([
-      { roles: { role_permissions: [{ permissions: { name: HOUR_METER_PERMISSIONS.register } }, { permissions: null }] } },
-      { roles: null },
-    ])).toEqual([HOUR_METER_PERMISSIONS.register]);
+  it("does not treat read access as registration access", () => {
+    expect(canUseHourMeterCapability(
+      { capabilities: [HOUR_METER_CAPABILITIES.read], enabledModules: [HOUR_METERS_MODULE] },
+      HOUR_METER_CAPABILITIES.register,
+    )).toBe(false);
   });
 });
