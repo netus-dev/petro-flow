@@ -16,9 +16,12 @@ insert into public.rbac_roles (id, name, company_id) values
   ('63000000-0000-0000-0000-000000000001', 'provision-admin', '62000000-0000-0000-0000-000000000001'),
   ('63000000-0000-0000-0000-000000000002', 'provision-reader', '62000000-0000-0000-0000-000000000002');
 insert into public.rbac_permissions (id, action, resource)
-values ('64000000-0000-0000-0000-000000000001', 'manage', 'access-control');
+values ('64000000-0000-0000-0000-000000000001', 'manage', 'access-control')
+on conflict (action, resource) do nothing;
 insert into public.rbac_role_permissions (role_id, permission_id)
-values ('63000000-0000-0000-0000-000000000001', '64000000-0000-0000-0000-000000000001');
+select '63000000-0000-0000-0000-000000000001', id
+from public.rbac_permissions
+where action = 'manage' and resource = 'access-control';
 insert into public.rbac_memberships (company_id, user_id, is_active) values
   ('62000000-0000-0000-0000-000000000001', '61000000-0000-0000-0000-000000000001', true),
   ('62000000-0000-0000-0000-000000000001', '61000000-0000-0000-0000-000000000003', true);
