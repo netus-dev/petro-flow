@@ -114,6 +114,7 @@ select results_eq(
     ('rbac_has_capability(uuid,text,text,text)'::text),
     ('rbac_operational_rig_allowed(uuid,uuid)'::text),
     ('rbac_operational_scope_admin_allowed(uuid)'::text),
+    ('rbac_provision_user_access(uuid,uuid,uuid)'::text),
     ('rbac_record_audit(uuid,text,text,jsonb)'::text),
     ('rbac_renew_authorization(uuid)'::text),
     ('rbac_request_company_id()'::text),
