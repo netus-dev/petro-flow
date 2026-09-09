@@ -1,13 +1,13 @@
 import { IEquipmentKpiRepository } from "../../domain/repositories/kpi.repository";
 import { EquipmentKpi } from "../../domain/entities";
-import { MockKpiDatasource } from "../datasources/kpi.datasource";
+import { KpiDatasource } from "../datasources/kpi.datasource";
 
 /**
  * Implementación concreta del repositorio de KPIs de activos.
  * Delega la obtención de datos a un datasource de datos simulados (Mock).
  */
 export class KpiRepositoryImpl implements IEquipmentKpiRepository {
-  constructor(private datasource: MockKpiDatasource) {}
+  constructor(private datasource: KpiDatasource) {}
 
   /**
    * Obtiene los KPIs calculados de un activo dado llamando al datasource.

@@ -88,16 +88,11 @@ export function KpiMetricCard({
 
       <div className="flex items-baseline gap-0.5 mt-1">
         <span className="text-lg font-black font-mono tracking-tight text-foreground leading-none">
-          {value !== null ? value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 }) : "—"}
+          {value !== null ? value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 }) : "No disponible"}
         </span>
         {value !== null && (
           <span className="text-[9px] font-mono text-muted-foreground/80 font-bold ml-0.5">
             {unit}
-          </span>
-        )}
-        {value === null && (
-          <span className="text-[7px] font-mono text-muted-foreground/40 italic ml-1">
-            Sin datos
           </span>
         )}
       </div>

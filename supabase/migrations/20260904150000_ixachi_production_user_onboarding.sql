@@ -17,8 +17,11 @@ begin
       ('07561522-9356-4193-af7e-8ec413c78347'::uuid, 'f2000000-0000-0000-0000-000000000002'::uuid),
       ('c803e640-e226-4f8b-976e-df1ab7852f68'::uuid, 'f2000000-0000-0000-0000-000000000002'::uuid),
       ('46ca8d61-7245-41b7-b4f1-12c626d8de9f'::uuid, 'f2000000-0000-0000-0000-000000000003'::uuid)
-    ) as assignments(user_id, role_id)
-  loop
+     ) as assignments(user_id, role_id)
+     where exists (
+       select 1 from public.users u where u.id = assignments.user_id
+     )
+   loop
     insert into public.rbac_principals (user_id, is_active)
     values (v_user, true)
     on conflict (user_id) do update set is_active = true;

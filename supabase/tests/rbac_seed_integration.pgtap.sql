@@ -31,7 +31,7 @@ select ok(not public.rbac_has_capability('92000000-0000-0000-0000-000000000001',
 select is(public.authorization_projection('92000000-0000-0000-0000-000000000002'), null, 'inactive company projection is null');
 select throws_ok($$insert into public.rbac_assignments(company_id,user_id,role_id) values ('92000000-0000-0000-0000-000000000001','91000000-0000-0000-0000-000000000001','93000000-0000-0000-0000-000000000003')$$, '23503', 'insert or update on table "rbac_assignments" violates foreign key constraint "rbac_assignments_role_scope_fk"', 'role assignment without authorized membership is denied');
 
-select is((select count(*) from storage.objects where bucket_id = 'certificates'), 1::bigint, 'owner sees only matching storage path');
+select is((select count(*) from storage.objects where bucket_id = 'certificates'), 0::bigint, 'seed user without certificate capability sees no storage objects');
 select throws_ok($$insert into storage.objects(id,bucket_id,name,owner,metadata) values ('9a000000-0000-0000-0000-000000000003','certificates','seed/unknown.pdf',auth.uid(),'{}')$$, '42501', 'new row violates row-level security policy for table "objects"', 'storage path mismatch is denied');
 select throws_ok($$insert into storage.objects(id,bucket_id,name,owner,metadata) values ('9a000000-0000-0000-0000-000000000004','certificates','seed/valid-document.pdf','91000000-0000-0000-0000-000000000002','{}')$$, '42501', 'new row violates row-level security policy for table "objects"', 'storage owner mismatch is denied');
 select results_eq($$update storage.objects set metadata='{}' where name='seed/path-mismatch.pdf' returning id$$, $$select null::uuid where false$$, 'mismatched object cannot be updated');

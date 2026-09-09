@@ -1,4 +1,9 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { EquipmentKpi, ReliabilityPeriod } from "../../domain/entities";
+
+export interface KpiDatasource {
+  getKpiByAssetId(assetId: string): Promise<EquipmentKpi | null>;
+}
 
 /**
  * Interface interna para definir los parámetros base del cálculo de KPIs mock.
@@ -16,7 +21,7 @@ interface MockKpiBase {
  * 
  * TODO: Replace with SupabaseKpiDatasource before production.
  */
-export class MockKpiDatasource {
+export class MockKpiDatasource implements KpiDatasource {
   private static readonly mockBaseData: Record<string, MockKpiBase> = {
     "ODO-001": { mtbf: null, mttr: null, failureHoursMonth: 0, totalHoursMonth: 0 },
     "ODO-002": { mtbf: null, mttr: null, failureHoursMonth: 0, totalHoursMonth: 0 },
@@ -68,6 +73,30 @@ export class MockKpiDatasource {
       mttr: base.mttr,
       availability,
       reliability,
+    };
+  }
+}
+
+/** Reads KPI source data from the tenant-scoped Supabase client. */
+export class SupabaseKpiDatasource implements KpiDatasource {
+  constructor(private readonly supabase: SupabaseClient) {}
+
+  async getKpiByAssetId(assetId: string): Promise<EquipmentKpi | null> {
+    const { data, error } = await this.supabase
+      .from("asset_operational_parameters_history")
+      .select("asset_id")
+      .eq("asset_id", assetId)
+      .limit(1);
+    if (error) throw error;
+    if (!data?.length) return null;
+
+    // Failure-source tables are not available in this schema. Never fabricate KPI values.
+    return {
+      assetId,
+      mtbf: null,
+      mttr: null,
+      availability: null,
+      reliability: { "1w": null, "1m": null, "3m": null },
     };
   }
 }

@@ -2,9 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SupabaseTrazabilidadRepository } from "./supabase-repository";
 
 const { rpc, uploadCertificateAction } = vi.hoisted(() => ({ rpc: vi.fn(), uploadCertificateAction: vi.fn() }));
-vi.mock("@/src/core/lib/supabase/client", () => ({
-  createClient: () => ({ rpc, auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: "user" } } }) } }),
-}));
+const client = { rpc, auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: "user" } } }) } } as never;
 vi.mock("./server/certificate-actions", () => ({ uploadCertificateAction }));
 
 describe("SupabaseTrazabilidadRepository movement writes", () => {
@@ -12,14 +10,14 @@ describe("SupabaseTrazabilidadRepository movement writes", () => {
 
   it("delegates certificate upload and tenant metadata to the server boundary", async () => {
     uploadCertificateAction.mockResolvedValue("certificate-id");
-    const repository = new SupabaseTrazabilidadRepository();
+    const repository = new SupabaseTrazabilidadRepository(client);
     await repository.addCertificate("asset", [{ file: new File(["x"], "certificate.pdf", { type: "application/pdf" }), name: "certificate.pdf" }]);
     expect(uploadCertificateAction).toHaveBeenCalledWith(expect.any(File), "certificate.pdf", "asset");
   });
 
   it("uses the atomic bulk RPC and does not send certificate files", async () => {
     rpc.mockResolvedValue({ data: "transaction-id", error: null });
-    const repository = new SupabaseTrazabilidadRepository();
+    const repository = new SupabaseTrazabilidadRepository(client);
     const certificates = [{ file: new File(["x"], "certificate.pdf"), name: "certificate.pdf" }];
 
     await repository.registerBulkMovement({
@@ -41,7 +39,7 @@ describe("SupabaseTrazabilidadRepository movement writes", () => {
   it("propagates atomic RPC failures without attempting fallback writes", async () => {
     const error = new Error("cross-tenant reference rejected");
     rpc.mockResolvedValue({ data: null, error });
-    const repository = new SupabaseTrazabilidadRepository();
+    const repository = new SupabaseTrazabilidadRepository(client);
 
     await expect(repository.registerReplacementMovement({
       type: "replacement",
