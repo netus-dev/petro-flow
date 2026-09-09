@@ -58,7 +58,6 @@ create table public.rbac_audit_events (
   target jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now()
 );
-
 alter table public.rbac_companies enable row level security;
 alter table public.rbac_principals enable row level security;
 alter table public.rbac_roles enable row level security;
@@ -69,12 +68,10 @@ alter table public.rbac_assignments enable row level security;
 alter table public.rbac_company_modules enable row level security;
 alter table public.rbac_documents enable row level security;
 alter table public.rbac_audit_events enable row level security;
-
 create function public.rbac_request_company_id() returns uuid
 language sql stable set search_path = '' as $$
   select nullif(current_setting('request.headers', true)::jsonb ->> 'x-company-id', '')::uuid
 $$;
-
 create function public.rbac_renew_authorization(p_company_id uuid) returns boolean
 language sql stable security definer set search_path = '' as $$
   select exists (
@@ -85,7 +82,6 @@ language sql stable security definer set search_path = '' as $$
       and c.is_active and c.id = p_company_id
   )
 $$;
-
 create function public.rbac_has_capability(
   p_company_id uuid, p_action text, p_resource text, p_module_key text default null
 ) returns boolean
@@ -103,7 +99,6 @@ language sql stable security definer set search_path = '' as $$
         and p.action = p_action and p.resource = p_resource
     )
 $$;
-
 create function public.authorization_projection(p_company_id uuid) returns jsonb
 language sql stable security definer set search_path = '' as $$
   select case when public.rbac_renew_authorization(p_company_id) then jsonb_build_object(
@@ -119,7 +114,6 @@ language sql stable security definer set search_path = '' as $$
       where cm.company_id = p_company_id and cm.enabled)
   ) end
 $$;
-
 create policy rbac_documents_select on public.rbac_documents for select to authenticated using (
   company_id = public.rbac_request_company_id()
   and public.rbac_has_capability(company_id, 'read', 'documents', 'operations')
@@ -134,7 +128,6 @@ create policy rbac_documents_update on public.rbac_documents for update to authe
 create policy rbac_audit_select on public.rbac_audit_events for select to authenticated using (
   actor_id = auth.uid() and public.rbac_renew_authorization(company_id)
 );
-
 -- Administration is capability-gated; tenant mutations still require an active membership.
 create policy rbac_companies_admin on public.rbac_companies for all to authenticated using (
   public.rbac_has_capability(public.rbac_request_company_id(), 'manage', 'access-control')
@@ -171,7 +164,6 @@ create policy rbac_modules_admin on public.rbac_company_modules for all to authe
 ) with check (
   public.rbac_has_capability(company_id, 'manage', 'access-control')
 );
-
 create function public.rbac_record_audit(
   p_company_id uuid, p_event_type text, p_outcome text, p_target jsonb default '{}'::jsonb
 ) returns void language plpgsql security definer set search_path = '' as $$
@@ -180,14 +172,12 @@ begin
   values (auth.uid(), p_company_id, p_event_type, p_outcome, p_target);
 end
 $$;
-
 create function public.rbac_reject_audit_mutation() returns trigger
 language plpgsql set search_path = '' as $$
 begin raise exception 'authorization audit events are immutable' using errcode = '42501'; end
 $$;
 create trigger rbac_audit_immutable before update or delete on public.rbac_audit_events
 for each row execute function public.rbac_reject_audit_mutation();
-
 revoke all on public.rbac_companies, public.rbac_principals, public.rbac_roles,
   public.rbac_permissions, public.rbac_role_permissions, public.rbac_memberships,
   public.rbac_assignments, public.rbac_company_modules, public.rbac_documents,

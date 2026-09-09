@@ -19,7 +19,6 @@ begin
   return new;
 end;
 $$;
-
 do $$
 begin
   if not exists (

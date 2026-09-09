@@ -1,0 +1,38 @@
+-- Seed all tubular functional principles and their catalog property metadata.
+do $$
+declare
+  v_company_id uuid := null;
+  v_scope_id uuid;
+  v_principle record;
+begin
+  if v_company_id is null then raise exception 'Set v_company_id before executing this snippet'; end if;
+  select id into v_scope_id from public.functional_principle_scopes where company_id=v_company_id and code='tubular' limit 1;
+  if v_scope_id is null then raise exception 'Functional-principle scope tubular was not found for company %', v_company_id; end if;
+  create temporary table _tubular_principles(name text, property_1 text, property_2 text, property_3 text, property_4 text, property_5 text, property_6 text, property_7 text, property_8 text, property_9 text, property_10 text, property_11 text, property_12 text, property_13 text, property_14 text, property_15 text, property_16 text, property_17 text, property_18 text, property_19 text, property_20 text) on commit drop;
+  insert into _tubular_principles(name, property_1, property_2, property_3, property_4, property_5, property_6, property_7, property_8, property_9, property_10, property_11, property_12, property_13, property_14, property_15, property_16, property_17, property_18, property_19, property_20) values
+    ('TUBERIA DE PERFORACIÓN', 'ID TOOL JOIN', 'OD TOOL JOIN', 'TIPO DE CONEXION', 'RANGO', 'GRADO DE ACERO', null::text, null::text, null::text, null::text, null::text, 'CUELLO DE PESCA', 'DIAMETRO INTERNO', 'DIAMETRO EXTERNO', null::text, null::text, 'LONGITUD', 'PESO', null::text, null::text, null::text),
+    ('COMBINACION', null::text, null::text, null::text, null::text, null::text, 'CAJA', 'PIÑON', 'OD', 'ID', 'CONDICION', null::text, null::text, null::text, null::text, null::text, 'LONGITUD (M)', null::text, null::text, null::text, null::text),
+    ('DOBLE CAJA', null::text, null::text, null::text, null::text, null::text, 'CAJA', 'PIÑON', 'OD', 'ID', 'CONDICION', null::text, null::text, null::text, null::text, null::text, 'LONGITUD (M)', null::text, null::text, null::text, null::text),
+    ('DOBLE PIN', null::text, null::text, null::text, null::text, null::text, 'CAJA', 'PIÑON', 'OD', 'ID', 'CONDICION', null::text, null::text, null::text, null::text, null::text, 'LONGITUD (M)', null::text, null::text, null::text, null::text),
+    ('DRILL COLLAR 4 3/4''''', null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text),
+    ('DRILL COLLAR 5 1/2''''', null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text),
+    ('DRILL COLLAR 6 1/2''''', null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text),
+    ('DRILL COLLAR 8''''', null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text),
+    ('DRILL COLLAR 9 1/2''''', null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text),
+    ('DRILL PIPE 4''''', null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text),
+    ('HEAVE WEIGHT DRILL PIPE 4''''', null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text),
+    ('HEAVE WEIGHT DRILL PIPE 5 1/2''''', null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text),
+    ('MADRINA DE CARGA', null::text, null::text, null::text, null::text, null::text, 'CAJA', 'PIÑON', 'OD', 'ID', 'CONDICION', null::text, null::text, null::text, null::text, null::text, 'LONGITUD (M)', null::text, null::text, null::text, null::text),
+    ('VALVULA DE PIE', null::text, null::text, null::text, null::text, null::text, 'CAJA', 'PIÑON', 'OD', 'ID', 'CONDICION', null::text, null::text, null::text, null::text, null::text, 'LONGITUD (M)', null::text, null::text, null::text, null::text),
+    ('VALVULA IBOP TOP DRIVE', null::text, null::text, null::text, null::text, null::text, 'CAJA', 'PIÑON', 'OD', 'ID', 'CONDICION', null::text, null::text, null::text, null::text, null::text, 'LONGITUD (M)', null::text, null::text, null::text, null::text),
+    ('VALVULA MANUAL TOP DRIVE', null::text, null::text, null::text, null::text, null::text, 'CAJA', 'PIÑON', 'OD', 'ID', 'CONDICION', null::text, null::text, null::text, null::text, null::text, 'LONGITUD (M)', null::text, null::text, null::text, null::text),
+    ('VALVULA INSIDE BOP', null::text, null::text, null::text, null::text, null::text, 'CAJA', 'PIÑON', 'OD', 'ID', 'CONDICION', null::text, null::text, null::text, null::text, null::text, 'LONGITUD (M)', null::text, null::text, null::text, null::text),
+    ('LINE OUTLET', null::text, null::text, null::text, null::text, null::text, 'CAJA', 'PIÑON', 'OD', 'ID', 'CONDICION', null::text, null::text, null::text, null::text, null::text, 'LONGITUD (M)', null::text, null::text, null::text, null::text),
+    ('VALVULA CONTRA PRESION', null::text, null::text, null::text, null::text, null::text, 'CAJA', 'PIÑON', 'OD', 'ID', 'CONDICION', null::text, null::text, null::text, null::text, null::text, 'LONGITUD (M)', null::text, null::text, null::text, null::text),
+    ('SIDE ENTRY CON LATERAL 1502', null::text, null::text, null::text, null::text, null::text, 'CAJA', 'PIÑON', 'OD', 'ID', 'CONDICION', null::text, null::text, null::text, null::text, null::text, 'LONGITUD (M)', null::text, null::text, null::text, null::text),
+    ('BOTELLA DE CIRCULACION', null::text, null::text, null::text, null::text, null::text, 'CAJA', 'PIÑON', 'OD', 'ID', 'CONDICION', null::text, null::text, null::text, null::text, null::text, 'LONGITUD (M)', null::text, null::text, null::text, null::text);
+  insert into public.functional_principles(name,company_id,scope_id,is_active,property_1,property_2,property_3,property_4,property_5,property_6,property_7,property_8,property_9,property_10,property_11,property_12,property_13,property_14,property_15,property_16,property_17,property_18,property_19,property_20)
+      values(v_principle.name,v_company_id,v_scope_id,true,v_principle.property_1,v_principle.property_2,v_principle.property_3,v_principle.property_4,v_principle.property_5,v_principle.property_6,v_principle.property_7,v_principle.property_8,v_principle.property_9,v_principle.property_10,v_principle.property_11,v_principle.property_12,v_principle.property_13,v_principle.property_14,v_principle.property_15,v_principle.property_16,v_principle.property_17,v_principle.property_18,v_principle.property_19,v_principle.property_20);
+    end if;
+  end loop;
+end $$;

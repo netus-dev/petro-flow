@@ -7,7 +7,6 @@ create table if not exists public.locations (
   company_id uuid,
   is_active boolean not null default true
 );
-
 create table if not exists public.users (
   id uuid primary key references auth.users(id) on delete cascade,
   name text,
@@ -18,13 +17,11 @@ create table if not exists public.users (
   is_active boolean not null default true,
   created_at timestamptz not null default now()
 );
-
 create table if not exists public.functional_principles (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   company_id uuid
 );
-
 create table if not exists public.assets (
   id uuid primary key default gen_random_uuid(),
   current_location_id uuid not null references public.locations(id),
@@ -32,14 +29,12 @@ create table if not exists public.assets (
   is_active boolean not null default true,
   status text
 );
-
 create table if not exists public.certificates (
   id uuid primary key default gen_random_uuid(),
   asset_id uuid,
   storage_path text not null unique,
   uploaded_by uuid not null
 );
-
 -- The clean production chain starts from an empty database after the approved
 -- destructive reset; these definitions are intentionally not compatibility DDL.
 alter table public.locations add column if not exists company_id uuid;
@@ -56,7 +51,6 @@ alter table public.assets add column if not exists is_active boolean not null de
 alter table public.assets add column if not exists status text;
 alter table public.certificates add column if not exists asset_id uuid;
 alter table public.certificates add column if not exists uploaded_by uuid;
-
 -- Keep the baseline RPC available to later grants/revokes. Resolve the
 -- location column at execution time because April versions used both names.
 create or replace function public.get_asset_stats_by_functional_principle(fp_id uuid)
@@ -88,5 +82,4 @@ begin
   ) using fp_id;
 end;
 $$;
-
--- Auth profile creation is owned by 20260826150000 to avoid duplicate triggers.
+-- Auth profile creation is owned by 20260826150000 to avoid duplicate triggers.;

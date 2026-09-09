@@ -7,11 +7,9 @@ alter table public.rbac_roles add constraint rbac_roles_company_name_key unique 
 alter table public.rbac_roles add constraint rbac_roles_company_id_key unique (company_id, id);
 alter table public.rbac_assignments add constraint rbac_assignments_role_scope_fk
   foreign key (role_id, company_id) references public.rbac_roles(id, company_id) on delete cascade;
-
 create or replace function public.rbac_admin_allowed() returns boolean language sql stable security definer set search_path = '' as $$
   select exists (select 1 from public.rbac_memberships m join public.rbac_assignments a using (company_id,user_id) join public.rbac_roles r on r.id=a.role_id where m.company_id=public.rbac_request_company_id() and m.user_id=auth.uid() and m.is_active and r.name='developer')
 $$;
-
 create or replace function public.rbac_admin_snapshot() returns jsonb language plpgsql security definer set search_path = '' as $$
 declare result jsonb;
 begin
@@ -28,7 +26,6 @@ begin
   ) into result;
   return result;
 end $$;
-
 create or replace function public.rbac_admin_command(p_command jsonb) returns jsonb language plpgsql security definer set search_path = '' as $$
 declare result jsonb; kind text := p_command->>'type'; v_company_id uuid := coalesce((p_command->>'companyId')::uuid, (p_command->'membership'->>'companyId')::uuid, (p_command->'assignment'->>'companyId')::uuid, (p_command->'entitlement'->>'companyId')::uuid);
 begin
@@ -50,5 +47,7 @@ begin
    else raise exception 'unsupported access-control command'; end if;
   return result;
 end $$;
-revoke all on function public.rbac_admin_snapshot() from public; grant execute on function public.rbac_admin_snapshot() to authenticated;
-revoke all on function public.rbac_admin_command(jsonb) from public; grant execute on function public.rbac_admin_command(jsonb) to authenticated;
+revoke all on function public.rbac_admin_snapshot() from public;
+grant execute on function public.rbac_admin_snapshot() to authenticated;
+revoke all on function public.rbac_admin_command(jsonb) from public;
+grant execute on function public.rbac_admin_command(jsonb) to authenticated;
