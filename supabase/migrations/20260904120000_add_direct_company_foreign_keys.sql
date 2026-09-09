@@ -7,24 +7,20 @@ where ac.asset_id = a.id
   and a.current_location_id = l.id
   and l.name in ('Base Norte', 'Pozo Alfa')
   and l.company_id is null;
-
 delete from public.transaction_details td
 using public.assets a, public.locations l
 where td.asset_id = a.id
   and a.current_location_id = l.id
   and l.name in ('Base Norte', 'Pozo Alfa')
   and l.company_id is null;
-
 delete from public.assets a
 using public.locations l
 where a.current_location_id = l.id
   and l.name in ('Base Norte', 'Pozo Alfa')
   and l.company_id is null;
-
 delete from public.locations
 where name in ('Base Norte', 'Pozo Alfa')
   and company_id is null;
-
 -- Allow the FK's internal SET NULL action while keeping audit rows immutable to callers.
 create or replace function public.rbac_reject_audit_mutation() returns trigger
 language plpgsql set search_path = '' as $$
@@ -35,7 +31,6 @@ begin
   raise exception 'authorization audit events are immutable' using errcode = '42501';
 end
 $$;
-
 do $$
 declare
   invalid_count bigint;
@@ -59,7 +54,6 @@ begin
   end if;
 end
 $$;
-
 alter table public.locations
   drop constraint if exists locations_company_id_fkey;
 alter table public.locations
@@ -67,7 +61,6 @@ alter table public.locations
   foreign key (company_id)
   references public.rbac_companies(id)
   on delete restrict;
-
 alter table public.rbac_roles
   drop constraint if exists rbac_roles_company_id_fkey;
 alter table public.rbac_roles
@@ -75,7 +68,6 @@ alter table public.rbac_roles
   foreign key (company_id)
   references public.rbac_companies(id)
   on delete cascade;
-
 alter table public.rbac_audit_events
   drop constraint if exists rbac_audit_events_company_id_fkey;
 alter table public.rbac_audit_events

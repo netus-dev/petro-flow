@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(18);
+select plan(19);
 
 insert into auth.users (id, email) values
   ('e1000000-0000-0000-0000-000000000001', 'slice2-a@example.test'),
@@ -57,11 +57,15 @@ select 'e7000000-0000-0000-0000-000000000001'::uuid, p.id
 from public.rbac_permissions p
 where (p.action, p.resource) in (('read', 'assets'), ('read', 'certificates'), ('update', 'assets'), ('delete', 'assets'))
 on conflict do nothing;
+insert into public.rbac_permissions (action, resource) values
+  ('read', 'assets'), ('read', 'certificates'), ('update', 'assets'), ('delete', 'assets')
+on conflict (action, resource) do nothing;
 insert into public.rbac_assignments (company_id, user_id, role_id) values
   ('e2000000-0000-0000-0000-000000000001', 'e1000000-0000-0000-0000-000000000001', 'e7000000-0000-0000-0000-000000000001')
 on conflict do nothing;
 insert into public.rbac_company_modules (company_id, module_key, enabled) values
   ('e2000000-0000-0000-0000-000000000001', 'operations', true),
+  ('e2000000-0000-0000-0000-000000000001', 'trazabilidad', true),
   ('e2000000-0000-0000-0000-000000000002', 'operations', true)
 on conflict (company_id, module_key) do update set enabled = excluded.enabled;
 
@@ -71,6 +75,7 @@ select ok((select count(*) from public.assets where company_id is null) = 0, 'pr
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'e1000000-0000-0000-0000-000000000001', true);
 select set_config('request.headers', '{"x-company-id":"e2000000-0000-0000-0000-000000000001"}', true);
+select ok(public.rbac_renew_authorization('e2000000-0000-0000-0000-000000000001'), 'Company A authorization is renewed');
 select is((select count(*) from public.assets), 1::bigint, 'Company A reads only its asset');
 select is((select count(*) from public.assets_certificates ac join public.certificates c on c.id = ac.certificate_id and c.company_id = ac.company_id), 1::bigint, 'Company A owns only its certificate link');
 select is((select count(*) from public.assets where company_id is null), 0::bigint, 'legacy assets are invisible');

@@ -38,7 +38,9 @@ insert into public.rbac_assignments (company_id, user_id, role_id) values
   ('c2000000-0000-0000-0000-000000000002', 'c1000000-0000-0000-0000-000000000002', 'c3000000-0000-0000-0000-000000000002');
 insert into public.rbac_company_modules (company_id, module_key, enabled) values
   ('c2000000-0000-0000-0000-000000000001', 'operations', true),
-  ('c2000000-0000-0000-0000-000000000002', 'operations', true);
+  ('c2000000-0000-0000-0000-000000000001', 'trazabilidad', true),
+  ('c2000000-0000-0000-0000-000000000002', 'operations', true),
+  ('c2000000-0000-0000-0000-000000000002', 'trazabilidad', true);
 
 -- Catalog columns are limited to the verified migration columns and real FKs.
 insert into public.brands (id, name, company_id) values

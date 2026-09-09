@@ -14,11 +14,9 @@ begin
     ('f2000000-0000-0000-0000-000000000003', v_company_id, 'Tool Pusher')
   on conflict (id) do update set company_id = excluded.company_id, name = excluded.name;
 end $$;
-
 insert into public.rbac_permissions (id, action, resource) values
   (gen_random_uuid(), 'read', 'trazabilidad')
 on conflict (action, resource) do nothing;
-
 insert into public.rbac_role_permissions (role_id, permission_id)
 select r.id, p.id from public.rbac_roles r cross join public.rbac_permissions p
 where r.name in ('Supervisor Electrician', 'Supervisor Mechanic') and p.resource = 'hour-meters' and p.action in ('read', 'register', 'update')
@@ -31,12 +29,10 @@ insert into public.rbac_role_permissions (role_id, permission_id)
 select r.id, p.id from public.rbac_roles r cross join public.rbac_permissions p
 where r.name in ('Supervisor Electrician', 'Supervisor Mechanic', 'Tool Pusher') and p.resource = 'trazabilidad' and p.action = 'read'
 on conflict do nothing;
-
 insert into public.locations (id, name, type, company_id, is_active) values
   ('f4000000-0000-0000-0000-000000000001', 'Rig 702', 'rig', 'f1000000-0000-0000-0000-000000000001', true),
   ('f4000000-0000-0000-0000-000000000002', 'Rig 703', 'rig', 'f1000000-0000-0000-0000-000000000001', true)
 on conflict (id) do update set name = excluded.name, type = excluded.type, company_id = excluded.company_id, is_active = excluded.is_active;
-
 do $$
 declare b record; v_brand_id uuid; ixachi_id uuid := 'f1000000-0000-0000-0000-000000000001';
 begin

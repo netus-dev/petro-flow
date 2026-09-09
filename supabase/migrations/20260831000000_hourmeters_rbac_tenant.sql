@@ -7,7 +7,6 @@ create table if not exists public.hourmeters_settings (
   ],
   updated_at timestamptz not null default now()
 );
-
 create table if not exists public.asset_operational_parameters_history (
   id uuid primary key default gen_random_uuid(),
   company_id uuid not null references public.rbac_companies(id) on delete cascade,
@@ -24,20 +23,16 @@ create table if not exists public.asset_operational_parameters_history (
   check (mw_accumulated is null or mw_accumulated >= 0),
   check (mvar_accumulated is null or mvar_accumulated >= 0)
 );
-
 insert into public.hourmeters_settings (company_id)
 select id from public.rbac_companies
 on conflict (company_id) do nothing;
-
 alter table public.asset_operational_parameters_history
   drop constraint if exists asset_history_asset_same_company_fkey;
 alter table public.asset_operational_parameters_history
   add constraint asset_history_asset_same_company_fkey
   foreign key (company_id, asset_id) references public.assets(company_id, id);
-
 create index if not exists asset_history_asset_captured_idx
   on public.asset_operational_parameters_history(asset_id, captured_at desc);
-
 create or replace function public.reject_hourmeter_history_mutation()
 returns trigger language plpgsql set search_path = '' as $$
 begin
@@ -48,13 +43,11 @@ drop trigger if exists asset_history_append_only on public.asset_operational_par
 create trigger asset_history_append_only
 before update or delete on public.asset_operational_parameters_history
 for each row execute function public.reject_hourmeter_history_mutation();
-
 alter table public.hourmeters_settings enable row level security;
 alter table public.asset_operational_parameters_history enable row level security;
 revoke all on public.hourmeters_settings, public.asset_operational_parameters_history from anon, authenticated;
 grant select, update on public.hourmeters_settings to authenticated;
 grant select, insert on public.asset_operational_parameters_history to authenticated;
-
 drop policy if exists hourmeters_settings_read on public.hourmeters_settings;
 create policy hourmeters_settings_read on public.hourmeters_settings for select to authenticated
 using (company_id = public.rbac_request_company_id()
@@ -69,7 +62,6 @@ drop policy if exists hourmeters_settings_insert on public.hourmeters_settings;
 create policy hourmeters_settings_insert on public.hourmeters_settings for insert to authenticated
 with check (company_id = public.rbac_request_company_id()
   and public.rbac_has_capability(company_id, 'update', 'hourmeters', 'operations'));
-
 drop policy if exists hourmeters_history_select on public.asset_operational_parameters_history;
 create policy hourmeters_history_select on public.asset_operational_parameters_history for select to authenticated
 using (company_id = public.rbac_request_company_id()

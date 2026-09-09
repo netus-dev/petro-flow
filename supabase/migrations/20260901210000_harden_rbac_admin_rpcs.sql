@@ -26,7 +26,6 @@ begin
   return result;
 end
 $$;
-
 create or replace function public.rbac_admin_command(p_command jsonb) returns jsonb
 language plpgsql security definer set search_path = '' as $$
 declare
@@ -90,7 +89,6 @@ begin
   return result;
 end
 $$;
-
 revoke all on function public.rbac_admin_snapshot() from public, anon, service_role;
 revoke all on function public.rbac_admin_command(jsonb) from public, anon, service_role;
 grant execute on function public.rbac_admin_snapshot() to authenticated;

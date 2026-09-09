@@ -19,7 +19,6 @@ alter table public.rbac_operational_scopes enable row level security;
 alter table public.rbac_operational_scope_rigs enable row level security;
 revoke all on public.rbac_operational_scopes, public.rbac_operational_scope_rigs from anon, authenticated;
 grant select on public.rbac_operational_scopes, public.rbac_operational_scope_rigs to authenticated;
-
 create or replace function public.rbac_operational_scope_admin_allowed(p_company_id uuid)
 returns boolean language sql stable security definer set search_path = '' as $$
   select exists (
@@ -29,7 +28,6 @@ returns boolean language sql stable security definer set search_path = '' as $$
     where m.company_id=p_company_id and m.user_id=auth.uid() and m.is_active and r.name='developer'
   )
 $$;
-
 create or replace function public.rbac_operational_rig_allowed(p_company_id uuid, p_rig_id uuid)
 returns boolean language sql stable security definer set search_path = '' as $$
   select exists (select 1 from public.locations l where l.id=p_rig_id and l.company_id=p_company_id and l.type::text='rig' and l.is_active
@@ -38,14 +36,11 @@ returns boolean language sql stable security definer set search_path = '' as $$
 $$;
 revoke all on function public.rbac_operational_rig_allowed(uuid,uuid) from public;
 grant execute on function public.rbac_operational_rig_allowed(uuid,uuid) to authenticated;
-
 create or replace function public.rbac_admin_allowed() returns boolean language sql stable security definer set search_path = '' as $$
   select exists (select 1 from public.rbac_memberships m join public.rbac_assignments a using (company_id,user_id)
     join public.rbac_roles r on r.id=a.role_id where m.company_id=public.rbac_request_company_id()
     and m.user_id=auth.uid() and m.is_active and r.name='developer')
 $$;
-
-
 create or replace function public.rbac_user_rig_scope(p_company_id uuid default null)
 returns jsonb language sql stable security definer set search_path = '' as $$
   with c as (select coalesce(p_company_id, public.rbac_request_company_id()) as company_id),
@@ -59,12 +54,10 @@ returns jsonb language sql stable security definer set search_path = '' as $$
 $$;
 revoke all on function public.rbac_user_rig_scope(uuid) from public;
 grant execute on function public.rbac_user_rig_scope(uuid) to authenticated;
-
 drop policy if exists operational_scope_admin_read on public.rbac_operational_scopes;
 create policy operational_scope_admin_read on public.rbac_operational_scopes for select to authenticated using (public.rbac_operational_scope_admin_allowed(company_id));
 drop policy if exists operational_scope_rigs_admin_read on public.rbac_operational_scope_rigs;
 create policy operational_scope_rigs_admin_read on public.rbac_operational_scope_rigs for select to authenticated using (public.rbac_operational_scope_admin_allowed(company_id));
-
 drop policy if exists hourmeters_history_select on public.asset_operational_parameters_history;
 create policy hourmeters_history_select on public.asset_operational_parameters_history for select to authenticated using (company_id=public.rbac_request_company_id() and public.rbac_has_capability(company_id,'read','hour-meters','hour-meters') and exists (select 1 from public.assets a where a.id=asset_id and public.rbac_operational_rig_allowed(company_id,a.current_location_id)));
 drop policy if exists assets_same_company_read on public.assets;

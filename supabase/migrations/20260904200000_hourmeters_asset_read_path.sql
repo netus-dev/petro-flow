@@ -4,7 +4,6 @@ select id
 from public.rbac_companies
 where name = 'Perforadora Integral de Oriente Ixachi'
 on conflict (company_id) do nothing;
-
 drop policy if exists assets_same_company_read on public.assets;
 create policy assets_same_company_read on public.assets
 for select to authenticated
@@ -27,6 +26,5 @@ using (
     )
   )
 );
-
 comment on policy assets_same_company_read on public.assets is
   'Traceability readers see company assets; Hour Meters readers see only eligible active assets in their authorized Rigs.';

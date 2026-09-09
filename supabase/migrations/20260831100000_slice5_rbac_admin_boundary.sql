@@ -9,10 +9,8 @@ begin
   execute 'drop policy if exists rbac_role_permissions_admin on public.rbac_role_permissions';
 end
 $$;
-
 revoke all on public.rbac_companies, public.rbac_roles,
   public.rbac_permissions, public.rbac_role_permissions from authenticated;
-
 create policy rbac_roles_admin on public.rbac_roles for all to authenticated
 using (
   company_id = public.rbac_request_company_id()
@@ -22,9 +20,7 @@ with check (
   company_id = public.rbac_request_company_id()
   and public.rbac_has_capability(company_id, 'manage', 'access-control')
 );
-
 grant select, insert, update, delete on public.rbac_roles to authenticated;
-
 create policy rbac_role_permissions_admin on public.rbac_role_permissions for all to authenticated
 using (
   exists (
@@ -40,13 +36,10 @@ with check (
   )
   and public.rbac_has_capability(public.rbac_request_company_id(), 'manage', 'access-control')
 );
-
 grant select, insert, delete on public.rbac_role_permissions to authenticated;
-
 grant select on public.rbac_companies to authenticated;
 grant select, insert, update, delete on public.rbac_memberships,
   public.rbac_assignments, public.rbac_company_modules to authenticated;
-
 -- Tenant writes remain bounded by company_id and the active request context.
 drop policy if exists rbac_assignments_admin on public.rbac_assignments;
 create policy rbac_assignments_admin on public.rbac_assignments for all to authenticated
@@ -58,7 +51,6 @@ with check (
   company_id = public.rbac_request_company_id()
   and public.rbac_has_capability(company_id, 'manage', 'access-control')
 );
-
 create or replace function public.rbac_record_audit(
   p_company_id uuid, p_event_type text, p_outcome text, p_target jsonb default '{}'::jsonb
 ) returns void language plpgsql security definer set search_path = '' as $$

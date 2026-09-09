@@ -69,6 +69,5 @@ begin
   return result;
 end
 $$;
-
 revoke all on function public.rbac_admin_command(jsonb) from public, anon, service_role;
 grant execute on function public.rbac_admin_command(jsonb) to authenticated;
