@@ -74,6 +74,5 @@ as $$
     )
   )
 $$;
-
 revoke all on function public.get_user_profile(uuid) from public, anon;
 grant execute on function public.get_user_profile(uuid) to authenticated;

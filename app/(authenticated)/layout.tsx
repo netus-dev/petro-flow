@@ -27,7 +27,7 @@ export default async function AuthenticatedLayout({
   }
 
   const authorization = await loadAuthorization();
-  if (authorization.status === "context_required") redirect("/select-company");
+  if (authorization.status === "context_required") redirect("/dashboard");
 
   // 3. Consultar el perfil extendido en la base de datos
   const { data: profile } = await supabase

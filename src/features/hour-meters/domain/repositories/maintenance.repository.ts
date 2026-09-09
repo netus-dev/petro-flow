@@ -1,4 +1,4 @@
-import { MaintenancePlan } from "../entities";
+import { MaintenancePlan, MaintenanceThresholdConfiguration } from "../entities";
 
 /**
  * Interface para el repositorio de planes de mantenimiento.
@@ -11,4 +11,7 @@ export interface IMaintenancePlanRepository {
    * @returns Promesa que resuelve a una lista de planes de mantenimiento.
    */
   getPlansByEquipmentId(equipmentId: string): Promise<MaintenancePlan[]>;
+  getThresholds?(companyId: string, functionalPrincipleId: string): Promise<MaintenanceThresholdConfiguration[]>;
+  saveThresholds?(companyId: string, functionalPrincipleId: string, thresholds: number[]): Promise<MaintenanceThresholdConfiguration[]>;
+  deleteThreshold?(id: string): Promise<void>;
 }

@@ -7,8 +7,8 @@ import { GetHourMetersUseCase, RegisterHourMeterUseCase } from "../../applicatio
 import { readHourMeters, registerHourMeter as registerHourMeterAction } from "../../infrastructure/server/hour-meter-actions";
 
 const repository = {
-  getAll: async () => {
-    const result = await readHourMeters();
+    getAll: async (rigId?: string) => {
+    const result = await readHourMeters(rigId);
     if (!result.ok) throw new Error(result.error);
     return result.data;
   },
@@ -40,18 +40,18 @@ function sortHourMeters(records: HourMeterRecord[]): HourMeterRecord[] {
 }
 
 /** Presentation adapter for hour-meter reads and manual registration. */
-export function useHourMeters(initialRecords: HourMeterRecord[] = []) {
+export function useHourMeters(initialRecords: HourMeterRecord[] = [], rigId?: string) {
   const [records, setRecords] = useState<HourMeterRecord[]>(initialRecords);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     setLoading(true);
-    const result = await getHourMeters.execute();
+    const result = await getHourMeters.execute(rigId);
     if (result.isLeft()) setError(result.value.message);
     else { setRecords(sortHourMeters(result.value)); setError(null); }
     setLoading(false);
-  }, []);
+  }, [rigId]);
 
   useEffect(() => { void refresh(); }, [refresh]);
 

@@ -9,7 +9,6 @@ drop policy if exists certificates_select_owned on storage.objects;
 drop policy if exists certificates_insert_owned on storage.objects;
 drop policy if exists certificates_update_owned on storage.objects;
 drop policy if exists certificates_delete_owned on storage.objects;
-
 revoke all on function public.get_asset_stats_by_functional_principle(uuid)
   from public, anon, authenticated;
 grant execute on function public.get_asset_stats_by_functional_principle(uuid)

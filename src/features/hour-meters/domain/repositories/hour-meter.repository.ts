@@ -11,7 +11,7 @@ export interface RegisterHourMeterInput {
 
 /** Provides hour-meter reads and manual registrations to the application layer. */
 export interface IHourMeterRepository {
-  getAll(): Promise<HourMeterRecord[]>;
+  getAll(rigId?: string): Promise<HourMeterRecord[]>;
   register(input: RegisterHourMeterInput): Promise<HourMeterRecord>;
 }
 

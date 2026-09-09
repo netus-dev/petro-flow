@@ -1,5 +1,4 @@
-import { MockMaintenanceDatasource } from "./datasources/maintenance.datasource";
-import { MaintenancePlanRepositoryImpl } from "./repositories/maintenance.repository.impl";
+import { SupabaseHourMeterRepository } from "./repositories/hour-meter.supabase.repository";
 import { MockKpiDatasource } from "./datasources/kpi.datasource";
 import { KpiRepositoryImpl } from "./repositories/kpi.repository";
 
@@ -13,9 +12,7 @@ if (process.env.NODE_ENV === "production") {
  * Proporciona un único punto de acceso a la capa de datos de mantenimiento,
  * inyectando el datasource simulado para entorno de desarrollo.
  */
-export const maintenanceRepository = new MaintenancePlanRepositoryImpl(
-  new MockMaintenanceDatasource()
-);
+export const maintenanceRepository = new SupabaseHourMeterRepository(null as never);
 
 /**
  * Singleton del repositorio de KPIs de activos.
@@ -25,4 +22,3 @@ export const maintenanceRepository = new MaintenancePlanRepositoryImpl(
 export const kpiRepository = new KpiRepositoryImpl(
   new MockKpiDatasource()
 );
-

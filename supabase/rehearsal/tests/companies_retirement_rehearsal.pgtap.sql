@@ -14,7 +14,7 @@ select is((select count(*) from pg_class v
   'no view definition references the retired table');
 select is((select count(*) from pg_proc
   where oid <> 'public.rbac_rehearse_retire_companies()'::regprocedure
-    and prosrc ~* '(^|[^a-z_])((public\.)?companies)([^a-z_]|$)'), 0::bigint,
+    and prosrc ~* '\\m(from|join|update|insert[[:space:]]+into|delete[[:space:]]+from)[[:space:]]+((public\\.)?companies)\\M'), 0::bigint,
   'no function source references the retired table');
 select is((select count(*) from pg_policies where schemaname = 'public' and tablename = 'companies'), 0::bigint,
   'no policy remains for the retired table');

@@ -7,6 +7,8 @@ export interface AdminUser { id: string; email: string | null; isActive: boolean
 export interface ModuleEntitlement { companyId: string; moduleKey: string; enabled: boolean }
 export interface Membership { companyId: string; userId: string; isActive: boolean }
 export interface RoleAssignment { companyId: string; userId: string; roleId: string }
+export type OperationalScopeMode = "specific_rig" | "all_rigs"
+export interface OperationalScope { companyId: string; userId: string; mode: OperationalScopeMode; rigIds: string[] }
 export interface RolePermission { roleId: string; permissionId: string }
 export interface AccessControlSnapshot {
   roles: Role[];
@@ -17,6 +19,7 @@ export interface AccessControlSnapshot {
   memberships: Membership[];
   entitlements: ModuleEntitlement[];
   assignments: RoleAssignment[];
+  operationalScopes: OperationalScope[];
   auditEvents: AuditEvent[];
 }
 export interface AuditEvent {
@@ -43,7 +46,9 @@ export type AccessControlCommand =
   | { type: "set-membership"; membership: Membership }
   | { type: "remove-membership"; membership: Pick<Membership, "companyId" | "userId"> }
   | { type: "set-assignment"; assignment: RoleAssignment }
-  | { type: "remove-assignment"; assignment: RoleAssignment };
+  | { type: "remove-assignment"; assignment: RoleAssignment }
+  | { type: "set-operational-scope"; scope: OperationalScope }
+  | { type: "remove-operational-scope"; companyId: string; userId: string };
 
 export interface AccessControlRepository {
   readSnapshot(): Promise<AccessControlSnapshot>;
@@ -60,6 +65,8 @@ export interface AccessControlRepository {
   removeMembership(membership: Pick<Membership, "companyId" | "userId">): Promise<void>;
   setAssignment(assignment: RoleAssignment): Promise<void>;
   removeAssignment(assignment: RoleAssignment): Promise<void>;
+  setOperationalScope(scope: OperationalScope): Promise<void>;
+  removeOperationalScope(companyId: string, userId: string): Promise<void>;
   listAuditEvents(companyId?: string): Promise<AuditEvent[]>;
   appendAuditEvent(event: Omit<AuditEvent, "id" | "createdAt">): Promise<void>;
 }

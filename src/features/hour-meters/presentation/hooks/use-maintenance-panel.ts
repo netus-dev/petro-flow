@@ -1,10 +1,7 @@
 import { useState, useCallback, useRef } from "react";
 import { HourMeterRecord, ResolvedMaintenancePlan } from "../../domain/entities";
-import { GetNextMaintenancePlanUseCase } from "../../application/usecases/maintenance.usecases";
-import { maintenanceRepository } from "../../infrastructure/repository";
-
-// Instanciación del caso de uso inyectando el singleton del repositorio
-const getNextMaintenancePlanUseCase = new GetNextMaintenancePlanUseCase(maintenanceRepository);
+import { readMaintenanceThresholds } from "../../infrastructure/server/hour-meter-actions";
+import { resolveNextMaintenanceThreshold } from "../../domain/entities";
 
 /**
  * Contrato de retorno para el hook useMaintenancePanel.
@@ -63,20 +60,16 @@ export function useMaintenancePanel(): UseMaintenancePanelReturn {
     setIsLoading(true);
     activeLoadingId.current = record.id;
 
-    const result = await getNextMaintenancePlanUseCase.execute(
-      record.assetId,
-      record.equipment,
-      record.currentReading ?? 0
-    );
-
+    const result = record.companyId && record.functionalPrincipleId ? await readMaintenanceThresholds(record.functionalPrincipleId) : { ok: false as const, error: "Maintenance scope is unavailable." };
+    const next = result.ok ? resolveNextMaintenanceThreshold(result.data.map((item) => item.thresholdHours), record.currentReading ?? 0) : null;
     // Evitar actualización si el usuario ya cambió a otra tarjeta mientras cargaba
     if (activeLoadingId.current === record.id) {
       setIsLoading(false);
-      if (result.isRight()) {
-        setResolvedPlan(result.value);
+      if (result.ok && next !== null) {
+        setResolvedPlan({ equipmentId: record.assetId, equipmentName: record.equipment, currentReading: record.currentReading ?? 0, nextThresholdHours: next, activities: [], planType: "cyclic" });
       } else {
         setResolvedPlan(null);
-        console.error("Falla al resolver plan de mantenimiento:", result.value.message);
+        if (!result.ok) console.error("Falla al resolver plan de mantenimiento:", result.error);
       }
     }
   }, [selectedEquipmentId, closePanel]);

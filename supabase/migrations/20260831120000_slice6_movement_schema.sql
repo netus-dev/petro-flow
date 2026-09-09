@@ -7,14 +7,12 @@ begin
   end if;
 end
 $$;
-
 -- The prior local fixture and policies used certificates.asset_id. The canonical
 -- relation is the tenant-scoped assets_certificates join table instead.
 drop policy if exists certificates_same_company_read on public.certificates;
 drop policy if exists certificates_same_company_write on public.certificates;
 drop policy if exists certificates_same_company_update on public.certificates;
 drop policy if exists certificates_same_company_delete on public.certificates;
-
 alter table public.certificates add column if not exists company_id uuid;
 alter table public.certificates drop constraint if exists certificates_asset_id_fkey;
 alter table public.certificates drop column if exists asset_id;
@@ -26,23 +24,16 @@ alter table public.certificates
   drop constraint if exists certificates_company_id_id_key;
 alter table public.certificates
   add constraint certificates_company_id_id_key unique (company_id, id);
-
 alter table public.ubications
   drop constraint if exists ubications_company_id_id_key;
 alter table public.ubications
   add constraint ubications_company_id_id_key unique (company_id, id);
-
-alter table public.assets
-  drop constraint if exists assets_company_id_id_key;
-alter table public.assets
-  add constraint assets_company_id_id_key unique (company_id, id);
 alter table public.assets add column if not exists current_ubication_id uuid;
 alter table public.assets drop constraint if exists assets_company_id_current_ubication_id_fkey;
 alter table public.assets
   add constraint assets_company_id_current_ubication_id_fkey
   foreign key (company_id, current_ubication_id)
     references public.ubications(company_id, id);
-
 create table if not exists public.transactions (
   id uuid primary key default gen_random_uuid(),
   company_id uuid not null,
@@ -67,7 +58,6 @@ create table if not exists public.transactions (
     references public.ubications(company_id, id),
   unique (company_id, id)
 );
-
 create table if not exists public.transaction_details (
   id uuid primary key default gen_random_uuid(),
   company_id uuid not null,
@@ -82,7 +72,6 @@ create table if not exists public.transaction_details (
     references public.assets(company_id, id),
   unique (company_id, transaction_id, asset_id)
 );
-
 create table if not exists public.assets_certificates (
   id uuid primary key default gen_random_uuid(),
   company_id uuid not null,
@@ -95,11 +84,9 @@ create table if not exists public.assets_certificates (
     references public.certificates(company_id, id) on delete cascade,
   unique (company_id, asset_id, certificate_id)
 );
-
 alter table public.transactions enable row level security;
 alter table public.transaction_details enable row level security;
 alter table public.assets_certificates enable row level security;
-
 create or replace function public.register_bulk_movement(p_payload jsonb)
 returns uuid
 language plpgsql
@@ -174,7 +161,6 @@ begin
   return v_transaction_id;
 end;
 $$;
-
 create or replace function public.register_replacement_movement(p_payload jsonb)
 returns void
 language plpgsql security definer set search_path = '' as $$
@@ -214,7 +200,6 @@ begin
   update public.assets set current_ubication_id = v_b_old where company_id = v_company_id and id = v_a;
   update public.assets set current_ubication_id = v_b_dest where company_id = v_company_id and id = v_b;
 end; $$;
-
 revoke all on function public.register_bulk_movement(jsonb) from public;
 revoke all on function public.register_replacement_movement(jsonb) from public;
 revoke execute on function public.register_bulk_movement(jsonb) from anon;

@@ -1,5 +1,5 @@
 import { Either, left, right } from "../../../../core/utils/either";
-import { ResolvedMaintenancePlan, MaintenancePlan } from "../../domain/entities";
+import { ResolvedMaintenancePlan, MaintenancePlan, resolveNextMaintenanceThreshold } from "../../domain/entities";
 import { IMaintenancePlanRepository } from "../../domain/repositories/maintenance.repository";
 
 /**
@@ -41,20 +41,7 @@ export class GetNextMaintenancePlanUseCase {
       const plans = await this.repository.getPlansByEquipmentId(equipmentId);
 
       if (!plans || plans.length === 0) {
-        return right({
-          equipmentId,
-          equipmentName,
-          currentReading,
-          nextThresholdHours: currentReading + 500,
-          activities: [{
-            id: `fallback-${equipmentId}`,
-            name: "Inspección preventiva general",
-            description: "Revisión preventiva del equipo y registro de hallazgos.",
-            estimatedDuration: "1h",
-            category: "inspeccion",
-          }],
-          planType: "cyclic",
-        });
+        return right(null);
       }
 
       // Estructura para almacenar cada plan asociado con su siguiente umbral calculado
@@ -80,14 +67,7 @@ export class GetNextMaintenancePlanUseCase {
       }
 
       if (resolvedThresholds.length === 0) {
-        return right({
-          equipmentId,
-          equipmentName,
-          currentReading,
-          nextThresholdHours: currentReading + 500,
-          activities: plans.flatMap((plan) => plan.activities),
-          planType: "cyclic",
-        });
+        return right(null);
       }
 
       // Encontrar el menor de los umbrales calculados
@@ -124,5 +104,14 @@ export class GetNextMaintenancePlanUseCase {
     } catch (error: any) {
       return left(new RepositoryFailure(error?.message || "Error desconocido al procesar planes de mantenimiento."));
     }
+  }
+
+  async executeForPrinciple(equipmentId: string, equipmentName: string, principleId: string, companyId: string, currentReading: number): Promise<Either<Failure, ResolvedMaintenancePlan | null>> {
+    try {
+      if (!this.repository.getThresholds) return right(null);
+      const thresholds = await this.repository.getThresholds(companyId, principleId);
+      const next = resolveNextMaintenanceThreshold(thresholds.map((item) => item.thresholdHours), currentReading);
+      return right(next === null ? null : { equipmentId, equipmentName, currentReading, nextThresholdHours: next, activities: [], planType: "cyclic" });
+    } catch (error) { return left(new RepositoryFailure(error instanceof Error ? error.message : "Unable to resolve maintenance.")); }
   }
 }

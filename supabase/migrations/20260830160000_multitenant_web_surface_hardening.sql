@@ -1,5 +1,5 @@
--- Close the verified web-role exposure without inventing tenant ownership for
--- legacy assets or certificates.
+-- Close web-role exposure. Tenant ownership is explicit on canonical
+-- operational rows and is never inferred from profile data.
 do $$
 declare
   business_table regclass;
@@ -15,20 +15,17 @@ begin
   end loop;
 end
 $$;
-
 alter table public.locations enable row level security;
 alter table public.functional_principles enable row level security;
 alter table public.ubications enable row level security;
 alter table public.assets enable row level security;
 alter table public.certificates enable row level security;
-
 revoke all on table public.assets, public.certificates from authenticated;
 revoke all on sequence public.rbac_audit_events_id_seq from public, anon, authenticated;
 grant all on sequence public.rbac_audit_events_id_seq to service_role;
-
 -- Tenant catalog policies are read-only, so their grants must be read-only too.
--- Legacy rows with NULL company ownership and requests without x-company-id
--- intentionally remain invisible until ownership and client wiring are reconciled.
+-- Rows without company ownership and requests without x-company-id remain
+-- invisible by design.
 revoke all on table
   public.locations,
   public.functional_principles,
@@ -51,14 +48,12 @@ grant select on table
   public.operating_bases,
   public.rigs
 to authenticated;
-
 -- Certificate storage is fail-closed until canonical company ownership exists.
 drop policy if exists certificates_select_owned on storage.objects;
 drop policy if exists certificates_insert_owned on storage.objects;
 drop policy if exists certificates_update_owned on storage.objects;
 drop function if exists rbac_private.certificate_storage_path_uploaded_by_owned(text, uuid);
 drop schema if exists rbac_private;
-
 create or replace function public.rbac_record_audit(
   p_company_id uuid,
   p_event_type text,
@@ -84,7 +79,6 @@ begin
   values (auth.uid(), p_company_id, p_event_type, p_outcome, p_target);
 end
 $$;
-
 -- PostgreSQL grants EXECUTE to PUBLIC by default. Revoke every current public
 -- function explicitly before restoring only the reviewed role contracts.
 revoke all on function public.authorization_projection(uuid) from public, anon, authenticated;
@@ -94,11 +88,9 @@ revoke all on function public.rbac_active_company_memberships() from public, ano
 revoke all on function public.rbac_can_read_catalog(uuid) from public, anon, authenticated;
 revoke all on function public.rbac_has_capability(uuid, text, text, text) from public, anon, authenticated;
 revoke all on function public.rbac_record_audit(uuid, text, text, jsonb) from public, anon, authenticated;
-revoke all on function public.rbac_rehearse_retire_companies() from public, anon, authenticated;
 revoke all on function public.rbac_reject_audit_mutation() from public, anon, authenticated;
 revoke all on function public.rbac_renew_authorization(uuid) from public, anon, authenticated;
 revoke all on function public.rbac_request_company_id() from public, anon, authenticated;
-
 grant execute on function public.authorization_projection(uuid) to authenticated;
 grant execute on function public.rbac_active_company_memberships() to authenticated;
 grant execute on function public.rbac_can_read_catalog(uuid) to authenticated;
@@ -106,7 +98,6 @@ grant execute on function public.rbac_has_capability(uuid, text, text, text) to 
 grant execute on function public.rbac_record_audit(uuid, text, text, jsonb) to authenticated;
 grant execute on function public.rbac_renew_authorization(uuid) to authenticated;
 grant execute on function public.rbac_request_company_id() to authenticated;
-
 grant execute on function public.authorization_projection(uuid) to service_role;
 grant execute on function public.get_asset_stats_by_functional_principle(uuid) to service_role;
 grant execute on function public.handle_new_user() to service_role;
@@ -114,7 +105,6 @@ grant execute on function public.rbac_active_company_memberships() to service_ro
 grant execute on function public.rbac_can_read_catalog(uuid) to service_role;
 grant execute on function public.rbac_has_capability(uuid, text, text, text) to service_role;
 grant execute on function public.rbac_record_audit(uuid, text, text, jsonb) to service_role;
-grant execute on function public.rbac_rehearse_retire_companies() to service_role;
 grant execute on function public.rbac_reject_audit_mutation() to service_role;
 grant execute on function public.rbac_renew_authorization(uuid) to service_role;
 grant execute on function public.rbac_request_company_id() to service_role;
