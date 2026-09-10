@@ -28,11 +28,33 @@ export interface DailyOperationsKpi {
   lastUpdated: string;
 }
 
+export interface NextMaintenanceEvent {
+  nextThresholdHours: number;
+  remainingHours: number;
+  triggeringFrequency: number;
+}
+
 /** Calculates consumption from two consecutive accumulated readings. */
-export function calculateOperationalDeltas(previous: Pick<HourMeterRecord, "dieselAccumulatedGallons" | "dailyMwAccumulated"> | null, current: Pick<HourMeterRecord, "dieselAccumulatedGallons" | "dailyMwAccumulated">): DailyOperationsKpi {
+export function calculateOperationalDeltas(
+  previous: Pick<
+    HourMeterRecord,
+    "dieselAccumulatedGallons" | "dailyMwAccumulated"
+  > | null,
+  current: Pick<
+    HourMeterRecord,
+    "dieselAccumulatedGallons" | "dailyMwAccumulated"
+  >,
+): DailyOperationsKpi {
   return {
-    dieselGallons: previous?.dieselAccumulatedGallons == null || current.dieselAccumulatedGallons == null ? null : current.dieselAccumulatedGallons - previous.dieselAccumulatedGallons,
-    generatedMw: previous?.dailyMwAccumulated == null || current.dailyMwAccumulated == null ? null : current.dailyMwAccumulated - previous.dailyMwAccumulated,
+    dieselGallons:
+      previous?.dieselAccumulatedGallons == null ||
+      current.dieselAccumulatedGallons == null
+        ? null
+        : current.dieselAccumulatedGallons - previous.dieselAccumulatedGallons,
+    generatedMw:
+      previous?.dailyMwAccumulated == null || current.dailyMwAccumulated == null
+        ? null
+        : current.dailyMwAccumulated - previous.dailyMwAccumulated,
     lastUpdated: new Date().toISOString(),
   };
 }
@@ -59,7 +81,9 @@ export interface AssetInventoryItem {
 export type InventoryAvailability = "sufficient" | "critical" | "out_of_stock";
 
 /** Calculates stock availability without coupling consumers to threshold rules. */
-export function getInventoryAvailability(item: Pick<AssetInventoryItem, "quantityInStock" | "minimumStock">): InventoryAvailability {
+export function getInventoryAvailability(
+  item: Pick<AssetInventoryItem, "quantityInStock" | "minimumStock">,
+): InventoryAvailability {
   if (item.quantityInStock <= 0) return "out_of_stock";
   return item.quantityInStock <= item.minimumStock ? "critical" : "sufficient";
 }
@@ -113,15 +137,41 @@ export interface MaintenanceThresholdConfiguration {
   thresholdHours: number;
 }
 
-/** Returns the smallest configured threshold strictly above the current reading. */
-export function resolveNextMaintenanceThreshold(thresholds: readonly number[], currentReading: number): number | null {
-  return [...thresholds].filter((threshold) => threshold > currentReading).sort((a, b) => a - b)[0] ?? null;
+/** 
+ * Calcula el próximo mantenimiento basándose en frecuencias cíclicas.
+ * Retorna el hito más cercano, cuántas horas faltan y qué frecuencia lo disparó.
+ */
+export function calculateNextCyclicMaintenance(
+  frequencies: readonly number[], 
+  currentReading: number | null
+): NextMaintenanceEvent | null {
+  if (!frequencies.length) return null;
+  const reading = currentReading ?? 0;
+  // Calculamos el próximo hito para cada frecuencia cíclica
+  const events = frequencies.map(freq => {
+    // Math.ceil((reading + 1) / freq) asegura que siempre encontremos un múltiplo estrictamente mayor que el reading actual.
+    const nextHit = Math.ceil((reading + 1) / freq) * freq;
+    return {
+      nextThresholdHours: nextHit,
+      remainingHours: nextHit - reading,
+      triggeringFrequency: freq
+    };
+  });
+  // Ordenamos para encontrar el mantenimiento más próximo
+  events.sort((a, b) => a.nextThresholdHours - b.nextThresholdHours);
+  
+  const closestEvent = events[0];
+  if (!closestEvent) return null;
+  // Si hay empate (ej. a las 1000hs coinciden el de 500 y 1000), priorizamos el de mayor impacto (mayor frecuencia)
+  const tiedEvents = events.filter(e => e.nextThresholdHours === closestEvent.nextThresholdHours);
+  tiedEvents.sort((a, b) => b.triggeringFrequency - a.triggeringFrequency); // Mayor a menor
+  return tiedEvents[0];
 }
 
 /** Calculates hours until the next configured maintenance threshold. */
-export function calculateRemainingMaintenanceHours(thresholds: readonly number[], currentReading: number | null): number | null {
-  const nextThreshold = resolveNextMaintenanceThreshold(thresholds, currentReading ?? 0);
-  return nextThreshold === null ? null : nextThreshold - (currentReading ?? 0);
+export function calculateRemainingMaintenanceHours(frequencies: readonly number[], currentReading: number | null): number | null {
+  const event = calculateNextCyclicMaintenance(frequencies, currentReading);
+  return event ? event.remainingHours : null;
 }
 
 /**
@@ -146,9 +196,9 @@ export type ReliabilityPeriod = "1w" | "1m" | "3m";
  * Mapa de horas para cada período de confiabilidad soportado.
  */
 export const RELIABILITY_PERIOD_HOURS: Record<ReliabilityPeriod, number> = {
-  "1w": 168,    // 7 días × 24h
-  "1m": 720,    // 30 días × 24h
-  "3m": 2160,   // 90 días × 24h
+  "1w": 168, // 7 días × 24h
+  "1m": 720, // 30 días × 24h
+  "3m": 2160, // 90 días × 24h
 };
 
 /**

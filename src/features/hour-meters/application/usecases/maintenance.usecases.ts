@@ -1,5 +1,5 @@
 import { Either, left, right } from "../../../../core/utils/either";
-import { ResolvedMaintenancePlan, MaintenancePlan, resolveNextMaintenanceThreshold } from "../../domain/entities";
+import { ResolvedMaintenancePlan, MaintenancePlan, calculateNextCyclicMaintenance } from "../../domain/entities";
 import { IMaintenancePlanRepository } from "../../domain/repositories/maintenance.repository";
 
 /**
@@ -110,8 +110,8 @@ export class GetNextMaintenancePlanUseCase {
     try {
       if (!this.repository.getThresholds) return right(null);
       const thresholds = await this.repository.getThresholds(companyId, principleId);
-      const next = resolveNextMaintenanceThreshold(thresholds.map((item) => item.thresholdHours), currentReading);
-      return right(next === null ? null : { equipmentId, equipmentName, currentReading, nextThresholdHours: next, activities: [], planType: "cyclic" });
+      const next = calculateNextCyclicMaintenance(thresholds.map((item) => item.thresholdHours), currentReading);
+      return right(next === null ? null : { equipmentId, equipmentName, currentReading, nextThresholdHours: next.nextThresholdHours, activities: [], planType: "cyclic" });
     } catch (error) { return left(new RepositoryFailure(error instanceof Error ? error.message : "Unable to resolve maintenance.")); }
   }
 }

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { GetNextMaintenancePlanUseCase } from "./maintenance.usecases";
 import { IMaintenancePlanRepository } from "../../domain/repositories/maintenance.repository";
-import { MaintenancePlan, MaintenanceActivity, calculateRemainingMaintenanceHours, resolveNextMaintenanceThreshold } from "../../domain/entities";
+import { MaintenancePlan, MaintenanceActivity, calculateRemainingMaintenanceHours, calculateNextCyclicMaintenance } from "../../domain/entities";
 
 // Mock repository implementation for unit tests
 class MemoryMaintenanceRepository implements IMaintenancePlanRepository {
@@ -200,12 +200,7 @@ describe("GetNextMaintenancePlanUseCase", () => {
   });
 });
 
-describe("functional-principle maintenance thresholds", () => {
-  it("resolves the smallest threshold strictly above the reading", () => {
-    expect(resolveNextMaintenanceThreshold([2000, 1000, 3000], 1000)).toBe(2000);
-    expect(resolveNextMaintenanceThreshold([2000, 1000], 2000)).toBeNull();
-  });
-
+describe("calculate remaining hours", () => {
   it.each([
     [[500, 1000], 20, 480],
     [[500, 1000, 2000, 5000], 4980, 20],
@@ -214,7 +209,7 @@ describe("functional-principle maintenance thresholds", () => {
   });
 
   it("returns no remaining hours when no threshold applies", () => {
-    expect(calculateRemainingMaintenanceHours([500, 1000], 1000)).toBeNull();
+    expect(calculateRemainingMaintenanceHours([], 1000)).toBeNull();
   });
 
   it("resolves thresholds by company and functional principle", async () => {
@@ -223,5 +218,31 @@ describe("functional-principle maintenance thresholds", () => {
     const result = await useCase.executeForPrinciple("asset-1", "Motor", "principle-1", "company-1", 1500);
     expect(result.isRight()).toBe(true);
     if (result.isRight()) expect(result.value?.nextThresholdHours).toBe(2000);
+  });
+});
+
+describe("Cyclic Maintenance Calculations", () => {
+  const frequencies = [500, 1000, 10000];
+  it("calculates correctly before first threshold", () => {
+    const result = calculateNextCyclicMaintenance(frequencies, 200);
+    expect(result).toEqual({ nextThresholdHours: 500, remainingHours: 300, triggeringFrequency: 500 });
+  });
+  it("calculates correctly exactly at first threshold", () => {
+    const result = calculateNextCyclicMaintenance(frequencies, 500);
+    expect(result).toEqual({ nextThresholdHours: 1000, remainingHours: 500, triggeringFrequency: 1000 });
+  });
+  it("reuses 500h frequency at 1200h reading", () => {
+    const result = calculateNextCyclicMaintenance(frequencies, 1200);
+    expect(result).toEqual({ nextThresholdHours: 1500, remainingHours: 300, triggeringFrequency: 500 });
+  });
+  it("reuses 1000h frequency at 1800h reading", () => {
+    const result = calculateNextCyclicMaintenance(frequencies, 1800);
+    expect(result).toEqual({ nextThresholdHours: 2000, remainingHours: 200, triggeringFrequency: 1000 });
+  });
+  it("prioritizes larger frequency on ties (e.g. at 10000h)", () => {
+    // Al llegar a 9900h, el próximo hito es a las 10000h. 
+    // Coinciden las frecuencias de 500, 1000 y 10000. Debe priorizar la de 10000.
+    const result = calculateNextCyclicMaintenance(frequencies, 9900);
+    expect(result).toEqual({ nextThresholdHours: 10000, remainingHours: 100, triggeringFrequency: 10000 });
   });
 });
