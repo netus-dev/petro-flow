@@ -140,7 +140,7 @@ export function HourMeterContent({ initialRecords = [], authorization = { capabi
       {/* Main Container - Fills remaining space dynamically */}
       <div className="flex-1 min-h-0 flex flex-row gap-4 overflow-hidden relative">
         {/* Grid de tarjetas — se ajusta automáticamente al espacio disponible */}
-        <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 overflow-hidden">
+        <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 overflow-visible p-2">
           {enhancedRecords.length === 0 ? <p className="col-span-full p-8 text-center text-muted-foreground">No hay activos elegibles para horómetros.</p> : enhancedRecords.map((record) => (
             <HourMeterCard
               key={record.id}
