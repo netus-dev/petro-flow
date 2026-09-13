@@ -1,6 +1,6 @@
 "use client";
 
-import { X, Clock, AlertTriangle, Settings, Package } from "lucide-react";
+import { X, Clock, AlertTriangle, Settings, Package, Settings2 } from "lucide-react";
 import { getInventoryAvailability, ResolvedMaintenancePlan } from "../../../domain/entities";
 import { ActivityList } from "./activity-list";
 import { useEquipmentKpi } from "../../hooks/use-equipment-kpi";
@@ -85,10 +85,10 @@ export function MaintenancePanel({ resolvedPlan, isLoading, onClose }: Maintenan
     );
   }
 
-  // 2. Estado vacío (Sin activo seleccionado o sin datos)
+  // 2. Estado de activo seleccionado sin configuración
   if (!resolvedPlan) {
     return (
-      <aside className="w-full lg:w-[440px] shrink-0 border border-border/50 bg-card/25 backdrop-blur-md rounded-xl p-6 flex flex-col items-center justify-center text-center h-full">
+      <aside className="relative w-full lg:w-[440px] shrink-0 border border-border/50 bg-card/25 backdrop-blur-md rounded-xl p-6 flex flex-col items-center justify-center text-center h-full">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-muted/80 text-muted-foreground transition-colors"
@@ -97,13 +97,13 @@ export function MaintenancePanel({ resolvedPlan, isLoading, onClose }: Maintenan
           <X className="size-5" />
         </button>
         <div className="flex size-14 items-center justify-center rounded-2xl bg-muted/30 border border-border/50 text-muted-foreground/60 mb-4">
-          <Clock className="size-7" />
+          <Settings2 className="size-7" />
         </div>
         <h3 className="font-mono text-sm tracking-widest text-muted-foreground uppercase font-bold">
-          Sin Selección
+          Activo sin configuración
         </h3>
         <p className="text-xs text-muted-foreground max-w-[240px] mt-2">
-          Seleccione un activo del panel izquierdo para visualizar su plan de mantenimiento estimado.
+          Por favor, configure los umbrales del equipo para su uso.
         </p>
       </aside>
     );
