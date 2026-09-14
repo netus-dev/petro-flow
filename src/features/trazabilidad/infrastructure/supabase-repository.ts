@@ -17,6 +17,21 @@ function nullableValue(value: unknown) {
   return value === "" || value === undefined ? null : value;
 }
 
+function assetPropertyValue(key: string, value: unknown) {
+  const normalized = nullableValue(value);
+  if (normalized === null) return null;
+  if (/^property_(1[1-9]|20)$/.test(key)) {
+    const numeric = Number(normalized);
+    return Number.isNaN(numeric) ? null : numeric;
+  }
+  return normalized;
+}
+
+function relationRecord(relation: unknown): Record<string, any> {
+  if (Array.isArray(relation)) return relation[0] ?? {};
+  return relation && typeof relation === "object" ? relation as Record<string, any> : {};
+}
+
 export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
   constructor(private readonly supabase: SupabaseClient) {}
 
@@ -127,7 +142,7 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
         models:model_id ( name ),
         functional_principles:function_principle_id ( *, scopes:functional_principle_scopes(code) ),
         locations:current_location_id ( name ),
-        ubications:current_ubication_id ( name ),
+        ubications:ubications!assets_company_id_current_ubication_id_fkey ( name ),
         assets_certificates (
           certificates ( id, storage_path, file_name, uploaded_at )
         ),
@@ -135,11 +150,10 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
           comments,
           transactions (
             id, type, date, justification, origin_location_id, destination_location_id,
-            origin:locations!fk_origin_location(name),
-            destination:locations!fk_destination_location(name),
-            origin_ubication:ubications!transactions_origin_ubication_id_fkey(name),
-            destination_ubication:ubications!transactions_destination_ubication_id_fkey(name),
-            users:created_by(name)
+            origin:locations!transactions_company_id_origin_location_id_fkey(name),
+            destination:locations!transactions_company_id_destination_location_id_fkey(name),
+            origin_ubication:ubications!transactions_company_id_origin_ubication_id_fkey(name),
+            destination_ubication:ubications!transactions_company_id_destination_ubication_id_fkey(name)
           )
         )
       `)
@@ -252,7 +266,7 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
       last_inspection_code: nullableValue(rawAsset.last_inspection_code),
       ...Array.from({ length: 20 }, (_, i) => `property_${i + 1}`).reduce((acc: any, key) => {
         if (rawAsset[key] !== undefined && rawAsset[key] !== "") {
-          acc[key] = nullableValue(rawAsset[key]);
+          acc[key] = assetPropertyValue(key, rawAsset[key]);
         }
         return acc;
       }, {})
@@ -273,14 +287,16 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
       serial_number: rawAsset.serial_number || rawAsset.serialNumber,
       status: rawAsset.status,
       // intentionally omit function_principle_id since it shouldn't be altered
-      current_location_id: rawAsset.current_location_id,
       current_ubication_id: nullableValue(rawAsset.current_ubication_id),
       capacity: nullableValue(rawAsset.capacity),
       last_inspection_code: nullableValue(rawAsset.last_inspection_code),
+      ...(rawAsset.current_location_id
+        ? { current_location_id: rawAsset.current_location_id }
+        : {}),
       ...Array.from({ length: 20 }, (_, i) => `property_${i + 1}`).reduce((acc: any, key) => {
         // Here we can save empty strings to reset properties if needed, but we'll stick to updating provided keys
         if (rawAsset[key] !== undefined) {
-          acc[key] = nullableValue(rawAsset[key]);
+          acc[key] = assetPropertyValue(key, rawAsset[key]);
         }
         return acc;
       }, {})
@@ -354,11 +370,16 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
   }
 
   private async mapRowToAsset(row: any): Promise<Asset> {
-    const brand = row.brands?.name || "Sin marca";
-    const model = row.models?.name || "Sin modelo";
+    const brandRelation = relationRecord(row.brands);
+    const modelRelation = relationRecord(row.models);
+    const locationRelation = relationRecord(row.locations);
+    const ubicationRelation = relationRecord(row.ubications);
+    const brand = brandRelation.name || "Sin marca";
+    const model = modelRelation.name || "Sin modelo";
     const serialNumber = row.serial_number || "Sin SN";
-    const functionalPrinciple = row.functional_principles?.name || "Componente";
-    const currentLocation = row.locations?.name || "Base";
+    const functionalPrincipleRelation = relationRecord(row.functional_principles);
+    const functionalPrinciple = functionalPrincipleRelation.name || "Componente";
+    const currentLocation = locationRelation.name || "Base";
     
     // Map properties
     const properties: any[] = [];
@@ -444,7 +465,7 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
       id: row.id,
       code: serialNumber, // Fallback code
       functionalPrinciple: functionalPrinciple as any,
-      function_principle_id: row.functional_principles?.id,
+      function_principle_id: row.function_principle_id || functionalPrincipleRelation.id,
       brand: brand,
       model: model,
       brand_id: row.brands?.id,
@@ -453,9 +474,9 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
       lastInspectionCode: row.last_inspection_code,
       serialNumber: serialNumber,
       currentLocation: currentLocation,
-      current_location_id: row.locations?.id,
-      position: row.ubications?.name || "N/A",
-      current_ubication_id: row.ubications?.id,
+      current_location_id: row.current_location_id || locationRelation.id,
+      position: ubicationRelation.name || "N/A",
+      current_ubication_id: row.current_ubication_id || ubicationRelation.id,
       status: this.mapAssetStatus(row.status),
       is_active: row.is_active,
       lastMovementDate: row.updated_at ? row.updated_at.split("T")[0] : "N/A",

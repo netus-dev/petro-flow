@@ -92,6 +92,13 @@ export function RegisterAssetModal({ mode = "create", assetToEdit, onRegister, o
   };
 
   const [formData, setFormData] = useState<any>(initialFormState);
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (nextOpen) {
+      setFormData(initialFormState);
+    }
+    setOpen(nextOpen);
+  };
   
   useEffect(() => {
     if (open) {
@@ -114,8 +121,6 @@ export function RegisterAssetModal({ mode = "create", assetToEdit, onRegister, o
           setModels(mods.data);
         })
         .catch(console.error);
-    } else {
-      setFormData(initialFormState);
     }
   }, [open]);
 
@@ -180,7 +185,7 @@ export function RegisterAssetModal({ mode = "create", assetToEdit, onRegister, o
     : [];
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         {trigger || (
           <Button
