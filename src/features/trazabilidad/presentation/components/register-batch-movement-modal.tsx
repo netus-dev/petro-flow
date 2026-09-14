@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/src/core/presentation/components/ui/select";
 import { Asset, AssetMovementPayload, TransactionType } from "../../domain/entities";
-import { catalogsRepository } from "@/src/features/catalogs/infrastructure/repository";
+import { readCatalogItems } from "@/src/features/catalogs/infrastructure/server/catalog-actions";
 import { Checkbox } from "@/src/core/presentation/components/ui/checkbox";
 import { FileUp, Shuffle, Info, Search, Upload, FileText, Image as ImageIcon, X, AlertCircle } from "lucide-react";
 
@@ -61,14 +61,17 @@ export function RegisterBatchMovementModal({ assets, onRegister }: Props) {
   useEffect(() => {
     if (open) {
       Promise.all([
-        catalogsRepository.getItems("locations"),
-        catalogsRepository.getItems("ubications"),
-        catalogsRepository.getItems("functional_principles"),
+        readCatalogItems("locations"),
+        readCatalogItems("ubications"),
+        readCatalogItems("functional_principles"),
       ])
         .then(([locs, ubis, fps]) => {
-          setLocations(locs);
-          setUbications(ubis);
-          setFunctionalPrinciples(fps);
+          if (!locs.ok || !ubis.ok || !fps.ok) {
+            throw new Error("Unable to load movement catalogs");
+          }
+          setLocations(locs.data);
+          setUbications(ubis.data);
+          setFunctionalPrinciples(fps.data);
         })
         .catch(console.error);
     } else {
