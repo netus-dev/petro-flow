@@ -19,7 +19,7 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
   async getFunctionalPrinciples(): Promise<FunctionalPrincipleCatalog[]> {
     const { data, error } = await this.supabase
       .from("functional_principles")
-      .select("id, name, scopes:functional_principle_scopes(code), assets!inner(id)")
+      .select("id, name, scopes:functional_principle_scopes(code), assets:assets!assets_function_principle_same_company_fkey!inner(id)")
       .eq("is_active", true)
       .eq("assets.is_active", true)
       .order("name");
