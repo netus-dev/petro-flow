@@ -6,6 +6,7 @@ import { SupabaseCatalogsRepository } from "../supabase-repository";
 import { CATALOG_TYPES, isCatalog } from "./catalog-constants";
 
 type MutationResult = { ok: true; data?: BaseCatalogItem } | { ok: false; error: string };
+type ReadResult = { ok: true; data: BaseCatalogItem[] } | { ok: false; error: string };
 
 function validatePayload(item: Partial<BaseCatalogItem>) {
   if (!item.name || typeof item.name !== "string" || item.name.trim().length === 0) {
@@ -17,6 +18,18 @@ function validatePayload(item: Partial<BaseCatalogItem>) {
 async function repository() {
   const client = await createTenantClient();
   return client ? new SupabaseCatalogsRepository(client) : null;
+}
+
+/** Reads catalog items through the authenticated tenant context. */
+export async function readCatalogItems(catalog: unknown): Promise<ReadResult> {
+  if (!isCatalog(catalog)) return { ok: false, error: "Invalid catalog" };
+  const repo = await repository();
+  if (!repo) return { ok: false, error: "Tenant context is unavailable" };
+  try {
+    return { ok: true, data: await repo.getItems(catalog) };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : "Read failed" };
+  }
 }
 
 /** Creates a catalog item using tenant authority from the server context. */

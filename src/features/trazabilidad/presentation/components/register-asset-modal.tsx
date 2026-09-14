@@ -37,6 +37,7 @@ import { Plus, Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/src/core/utils/utils";
 import { Asset } from "../../domain/entities";
 import { catalogsRepository } from "@/src/features/catalogs/infrastructure/repository";
+import { readCatalogItems } from "@/src/features/catalogs/infrastructure/server/catalog-actions";
 import { useEffect } from "react";
 import { useAuthStore } from "@/src/features/auth/presentation/store/auth-store";
 
@@ -97,18 +98,21 @@ export function RegisterAssetModal({ mode = "create", assetToEdit, onRegister, o
     if (open) {
       console.log("company_id:", company_id);
       Promise.all([
-        catalogsRepository.getItems("functional_principles", company_id),
-        catalogsRepository.getItems("locations", company_id),
-        catalogsRepository.getItems("ubications", company_id),
-        catalogsRepository.getItems("brands", company_id),
-        catalogsRepository.getItems("models", company_id),
+        readCatalogItems("functional_principles"),
+        readCatalogItems("locations"),
+        readCatalogItems("ubications"),
+        readCatalogItems("brands"),
+        readCatalogItems("models"),
       ])
         .then(([fps, locs, ubis, brs, mods]) => {
-          setFunctionalPrinciples(fps);
-          setLocations(locs);
-          setUbications(ubis);
-          setBrands(brs);
-          setModels(mods);
+          if (!fps.ok || !locs.ok || !ubis.ok || !brs.ok || !mods.ok) {
+            throw new Error("Unable to load catalog items");
+          }
+          setFunctionalPrinciples(fps.data);
+          setLocations(locs.data);
+          setUbications(ubis.data);
+          setBrands(brs.data);
+          setModels(mods.data);
         })
         .catch(console.error);
     } else {
