@@ -66,7 +66,7 @@ export function useMaintenancePanel(): UseMaintenancePanelReturn {
     if (activeLoadingId.current === record.id) {
       setIsLoading(false);
       if (result.ok && next !== null) {
-        setResolvedPlan({ equipmentId: record.assetId, equipmentName: record.equipment, currentReading: record.currentReading ?? 0, nextThresholdHours: next.nextThresholdHours, activities: [], planType: "cyclic" });
+        setResolvedPlan({ equipmentId: record.assetId, equipmentName: record.equipment, functionalPrincipleId: record.functionalPrincipleId!, currentReading: record.currentReading ?? 0, nextThresholdHours: next.nextThresholdHours, activities: [], planType: "cyclic" });
       } else {
         setResolvedPlan(null);
         if (!result.ok) console.error("Falla al resolver plan de mantenimiento:", result.error);

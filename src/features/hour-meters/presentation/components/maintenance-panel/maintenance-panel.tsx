@@ -6,8 +6,9 @@ import { ActivityList } from "./activity-list";
 import { useEquipmentKpi } from "../../hooks/use-equipment-kpi";
 import { KpiMetricGrid } from "./kpi-metric-grid";
 import { useDailyOperationsKpi } from "../../hooks/use-daily-operations-kpi";
-import { useAssetInventory } from "../../hooks/use-asset-inventory";
+import { useFunctionalPrincipleInventory } from "../../hooks/use-asset-inventory";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/core/presentation/components/ui/tabs";
+import { getMaintenanceInventoryPrincipleId } from "../maintenance-inventory";
 
 
 /**
@@ -31,7 +32,7 @@ export function MaintenancePanel({ resolvedPlan, isLoading, onClose }: Maintenan
     resolvedPlan?.equipmentId ?? null
   );
   const { dailyKpi, isLoading: isDailyKpiLoading } = useDailyOperationsKpi(resolvedPlan?.equipmentId ?? null);
-  const { items: inventory, isLoading: isInventoryLoading, error: inventoryError } = useAssetInventory(resolvedPlan?.equipmentId ?? null);
+  const { items: inventory, isLoading: isInventoryLoading, error: inventoryError } = useFunctionalPrincipleInventory(getMaintenanceInventoryPrincipleId(resolvedPlan));
 
   // 1. Estado de carga (Skeleton Screen)
   if (isLoading) {
@@ -211,7 +212,6 @@ export function MaintenancePanel({ resolvedPlan, isLoading, onClose }: Maintenan
           <ActivityList activities={resolvedPlan.activities} />
         </TabsContent>
           <TabsContent value="inventory" className="mt-3">
-            {inventory[0]?.scope === "shared_equipment_type" && <div className="mb-3 rounded-lg border border-primary/20 bg-primary/5 p-2 text-[11px] text-muted-foreground">Inventario compartido para <strong className="text-foreground">{inventory[0].equipmentType}</strong>. Las cantidades corresponden al stock común de este tipo de equipo.</div>}
           {isInventoryLoading ? <div className="space-y-3 animate-pulse"><div className="h-12 rounded-lg bg-muted" /><div className="h-12 rounded-lg bg-muted" /></div> : inventoryError ? <p className="text-xs text-red-500">{inventoryError}</p> : inventory.length === 0 ? <p className="text-xs text-muted-foreground text-center py-8">No hay inventario asignado a este activo.</p> : <div className="space-y-2">
             {inventory.map((item) => {
               const availability = getInventoryAvailability(item);

@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MaintenanceThresholdModal } from "./maintenance-threshold-modal";
 import { readMaintenanceThresholds } from "../../infrastructure/server/hour-meter-actions";
+import { deriveVisibleInventoryPrinciples } from "./inventory-principles";
 
 /**
  * Componente principal de presentación (Page/Organism) que representa la vista
@@ -30,6 +31,7 @@ export function HourMeterContent({ initialRecords = [], authorization = { capabi
   // Hook de estado para el panel lateral de mantenimiento
   const { selectedEquipmentId, resolvedPlan, isLoading, selectEquipment, closePanel } = useMaintenancePanel();
   const [thresholdsByPrinciple, setThresholdsByPrinciple] = useState<Record<string, number[]>>({});
+  const inventoryPrinciples = deriveVisibleInventoryPrinciples(records, principles);
 
   useEffect(() => {
     const principleIds = [...new Set(records.map((record) => record.functionalPrincipleId).filter((id): id is string => Boolean(id)))];
@@ -78,15 +80,6 @@ export function HourMeterContent({ initialRecords = [], authorization = { capabi
     };
   });
 
-  const stats = {
-    total: enhancedRecords.length,
-    criticalCount: enhancedRecords.filter(r => r.isCritical).length,
-    warningCount: enhancedRecords.filter(r => r.isWarning).length,
-    avgUsage: Math.round(
-      enhancedRecords.reduce((acc, r) => acc + r.progressValue, 0) / (enhancedRecords.length || 1)
-    ),
-  };
-
   return (
     <div className="flex flex-col h-[calc(100vh-7rem)] w-full bg-background overflow-hidden p-4 md:p-6 lg:p-8">
       {/* Top Header Panel (Fixed Height) */}
@@ -107,9 +100,9 @@ export function HourMeterContent({ initialRecords = [], authorization = { capabi
         <div className="flex items-center gap-4">
           {canManageInventory && <Dialog>
             <DialogTrigger asChild><Button size="sm" variant="outline">Gestionar inventario</Button></DialogTrigger>
-            <DialogContent className="w-[min(96vw,1400px)] max-w-none max-h-[90vh] overflow-hidden p-6" aria-describedby="inventory-management-description">
-              <DialogHeader><DialogTitle>Gestionar inventario</DialogTitle><p id="inventory-management-description" className="text-sm text-muted-foreground">Registra y actualiza materiales por activo o de forma compartida por tipo de equipo.</p></DialogHeader>
-              <InventoryManagementModal assets={records.map(record => ({ id: record.id, equipment: record.equipment }))} />
+            <DialogContent className="w-[min(96vw,1400px)] max-w-none sm:max-w-[min(96vw,1400px)] max-h-[90vh] overflow-hidden p-6" aria-describedby="inventory-management-description">
+              <DialogHeader><DialogTitle>Gestionar inventario</DialogTitle><p id="inventory-management-description" className="text-sm text-muted-foreground">Registra y actualiza materiales compartidos por principio funcional.</p></DialogHeader>
+              <InventoryManagementModal key={inventoryPrinciples.map((principle) => principle.id).join(":")} principles={inventoryPrinciples} />
             </DialogContent>
           </Dialog>}
           {canRegister && <Dialog>
