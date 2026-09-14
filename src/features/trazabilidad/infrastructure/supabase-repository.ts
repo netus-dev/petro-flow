@@ -101,7 +101,7 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
         models:model_id ( name ),
         functional_principles:function_principle_id ( name ),
         locations:current_location_id ( name ),
-        ubications:current_ubication_id ( name )
+        ubications:ubications!assets_company_id_current_ubication_id_fkey ( name )
       `)
       .eq("status", "under_inspection")
       .eq("is_active", true);
