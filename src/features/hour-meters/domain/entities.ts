@@ -66,23 +66,26 @@ export interface ClientBranding {
   logoUrl?: string;
 }
 
-/** Inventory assigned to one physical asset. Availability is derived in domain. */
-export interface AssetInventoryItem {
+/** Company inventory shared by every visible asset with the same principle. */
+export interface FunctionalPrincipleInventoryItem {
   id: string;
-  assetId: string;
+  companyId: string;
+  functionalPrincipleId: string;
   material: string;
   specification: string;
   quantityInStock: number;
   minimumStock: number;
-  scope: "asset" | "shared_equipment_type";
-  equipmentType: string;
+  isActive: boolean;
 }
 
 export type InventoryAvailability = "sufficient" | "critical" | "out_of_stock";
 
 /** Calculates stock availability without coupling consumers to threshold rules. */
 export function getInventoryAvailability(
-  item: Pick<AssetInventoryItem, "quantityInStock" | "minimumStock">,
+  item: Pick<
+    FunctionalPrincipleInventoryItem,
+    "quantityInStock" | "minimumStock"
+  >,
 ): InventoryAvailability {
   if (item.quantityInStock <= 0) return "out_of_stock";
   return item.quantityInStock <= item.minimumStock ? "critical" : "sufficient";
@@ -181,6 +184,7 @@ export function calculateRemainingMaintenanceHours(frequencies: readonly number[
 export interface ResolvedMaintenancePlan {
   equipmentId: string;
   equipmentName: string;
+  functionalPrincipleId: string;
   currentReading: number;
   nextThresholdHours: number;
   activities: MaintenanceActivity[];

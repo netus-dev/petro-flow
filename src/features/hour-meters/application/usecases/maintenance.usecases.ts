@@ -94,6 +94,7 @@ export class GetNextMaintenancePlanUseCase {
       const resolvedPlan: ResolvedMaintenancePlan = {
         equipmentId,
         equipmentName,
+        functionalPrincipleId: "",
         currentReading,
         nextThresholdHours: minThreshold,
         activities,
@@ -101,8 +102,8 @@ export class GetNextMaintenancePlanUseCase {
       };
 
       return right(resolvedPlan);
-    } catch (error: any) {
-      return left(new RepositoryFailure(error?.message || "Error desconocido al procesar planes de mantenimiento."));
+    } catch (error: unknown) {
+      return left(new RepositoryFailure(error instanceof Error ? error.message : "Error desconocido al procesar planes de mantenimiento."));
     }
   }
 
@@ -111,7 +112,7 @@ export class GetNextMaintenancePlanUseCase {
       if (!this.repository.getThresholds) return right(null);
       const thresholds = await this.repository.getThresholds(companyId, principleId);
       const next = calculateNextCyclicMaintenance(thresholds.map((item) => item.thresholdHours), currentReading);
-      return right(next === null ? null : { equipmentId, equipmentName, currentReading, nextThresholdHours: next.nextThresholdHours, activities: [], planType: "cyclic" });
+      return right(next === null ? null : { equipmentId, equipmentName, functionalPrincipleId: principleId, currentReading, nextThresholdHours: next.nextThresholdHours, activities: [], planType: "cyclic" });
     } catch (error) { return left(new RepositoryFailure(error instanceof Error ? error.message : "Unable to resolve maintenance.")); }
   }
 }
