@@ -68,7 +68,7 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
         models:model_id ( * ),
         functional_principles:function_principle_id ( *, scopes:functional_principle_scopes(code) ),
         locations:current_location_id ( * ),
-        ubications:current_ubication_id ( * ),
+        ubications:ubications!assets_company_id_current_ubication_id_fkey ( * ),
         assets_certificates (
           certificates ( id, storage_path, file_name, uploaded_at )
         ),
@@ -76,11 +76,10 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
           comments,
           transactions (
             id, type, date, justification, origin_location_id, destination_location_id,
-            origin:locations!fk_origin_location(name),
-            destination:locations!fk_destination_location(name),
-            origin_ubication:ubications!transactions_origin_ubication_id_fkey(name),
-            destination_ubication:ubications!transactions_destination_ubication_id_fkey(name),
-            users:created_by(name)
+            origin:locations!transactions_company_id_origin_location_id_fkey(name),
+            destination:locations!transactions_company_id_destination_location_id_fkey(name),
+            origin_ubication:ubications!transactions_company_id_origin_ubication_id_fkey(name),
+            destination_ubication:ubications!transactions_company_id_destination_ubication_id_fkey(name)
           )
         )
       `);

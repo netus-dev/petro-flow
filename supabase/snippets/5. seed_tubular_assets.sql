@@ -327,7 +327,7 @@ begin
       property_11, property_12, property_13, property_14, property_15, property_16, property_17, property_18, property_19, property_20, status, is_active)
     select v_company_id, v_location_id, v_ubication_id, v_principle_id, v_asset.serial_number, v_asset.last_inspection_code,
       v_asset.property_1, v_asset.property_2, v_asset.property_3, v_asset.property_4, v_asset.property_5, v_asset.property_6, v_asset.property_7, v_asset.property_8, v_asset.property_9, v_asset.property_10,
-      nullif(v_asset.property_11, '')::integer, nullif(v_asset.property_12, '')::integer, nullif(v_asset.property_13, '')::integer, nullif(v_asset.property_14, '')::integer, nullif(v_asset.property_15, '')::integer, nullif(v_asset.property_16, '')::double precision, nullif(v_asset.property_17, '')::double precision, nullif(v_asset.property_18, '')::double precision, nullif(v_asset.property_19, '')::double precision, nullif(v_asset.property_20, '')::double precision, 'active', true
+       null::integer, nullif(v_asset.property_12, '')::integer, nullif(v_asset.property_13, '')::integer, nullif(v_asset.property_14, '')::integer, nullif(v_asset.property_15, '')::integer, nullif(v_asset.property_16, '')::double precision, nullif(v_asset.property_17, '')::double precision, coalesce(nullif(v_asset.property_18, ''), nullif(v_asset.property_11, ''))::double precision, nullif(v_asset.property_19, '')::double precision, nullif(v_asset.property_20, '')::double precision, 'active', true
     where not exists (select 1 from public.assets existing where existing.company_id = v_company_id and (existing.serial_number = v_asset.serial_number or (existing.serial_number is null and v_asset.serial_number is null)));
     v_row_no := v_row_no + 1;
   end loop;

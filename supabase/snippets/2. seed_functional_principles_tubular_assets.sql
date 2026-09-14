@@ -31,8 +31,8 @@ begin
     ('VALVULA CONTRA PRESION', null::text, null::text, null::text, null::text, null::text, 'CAJA', 'PIÑON', 'OD', 'ID', 'CONDICION', null::text, null::text, null::text, null::text, null::text, 'LONGITUD (M)', null::text, null::text, null::text, null::text),
     ('SIDE ENTRY CON LATERAL 1502', null::text, null::text, null::text, null::text, null::text, 'CAJA', 'PIÑON', 'OD', 'ID', 'CONDICION', null::text, null::text, null::text, null::text, null::text, 'LONGITUD (M)', null::text, null::text, null::text, null::text),
     ('BOTELLA DE CIRCULACION', null::text, null::text, null::text, null::text, null::text, 'CAJA', 'PIÑON', 'OD', 'ID', 'CONDICION', null::text, null::text, null::text, null::text, null::text, 'LONGITUD (M)', null::text, null::text, null::text, null::text);
-  insert into public.functional_principles(name,company_id,scope_id,is_active,property_1,property_2,property_3,property_4,property_5,property_6,property_7,property_8,property_9,property_10,property_11,property_12,property_13,property_14,property_15,property_16,property_17,property_18,property_19,property_20)
+  for v_principle in select * from _tubular_principles loop
+    insert into public.functional_principles(name,company_id,scope_id,is_active,property_1,property_2,property_3,property_4,property_5,property_6,property_7,property_8,property_9,property_10,property_11,property_12,property_13,property_14,property_15,property_16,property_17,property_18,property_19,property_20)
       values(v_principle.name,v_company_id,v_scope_id,true,v_principle.property_1,v_principle.property_2,v_principle.property_3,v_principle.property_4,v_principle.property_5,v_principle.property_6,v_principle.property_7,v_principle.property_8,v_principle.property_9,v_principle.property_10,v_principle.property_11,v_principle.property_12,v_principle.property_13,v_principle.property_14,v_principle.property_15,v_principle.property_16,v_principle.property_17,v_principle.property_18,v_principle.property_19,v_principle.property_20);
-    end if;
   end loop;
 end $$;

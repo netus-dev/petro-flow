@@ -6,7 +6,7 @@ export function useTrazabilidadDashboard() {
 
   useEffect(() => {
     // Only fetch initial data if principles haven't been loaded yet
-    if (store.principles.length === 0 && !store.isInitialLoading) {
+    if (!store.hasInitialLoadCompleted && !store.isInitialLoading) {
       store.fetchInitialData();
     }
   }, [store]);
