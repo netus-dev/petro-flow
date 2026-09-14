@@ -13,6 +13,10 @@ import {
 import { ITrazabilidadRepository } from "../domain/repository";
 import { uploadCertificateAction } from "./server/certificate-actions";
 
+function nullableValue(value: unknown) {
+  return value === "" || value === undefined ? null : value;
+}
+
 export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
   constructor(private readonly supabase: SupabaseClient) {}
 
@@ -236,19 +240,19 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
   async registerAsset(asset: Partial<Asset>): Promise<void> {
     const rawAsset = asset as any;
     const payload = {
-      brand_id: rawAsset.brand_id,
-      model_id: rawAsset.model_id,
+      brand_id: nullableValue(rawAsset.brand_id),
+      model_id: nullableValue(rawAsset.model_id),
       company_id: rawAsset.company_id,
       serial_number: rawAsset.serial_number || rawAsset.serialNumber,
       status: rawAsset.status, // formData passes "active", "under_inspection", "rejected"
       function_principle_id: rawAsset.function_principle_id,
       current_location_id: rawAsset.current_location_id,
-      current_ubication_id: rawAsset.current_ubication_id,
-      capacity: rawAsset.capacity,
-      last_inspection_code: rawAsset.last_inspection_code,
+      current_ubication_id: nullableValue(rawAsset.current_ubication_id),
+      capacity: nullableValue(rawAsset.capacity),
+      last_inspection_code: nullableValue(rawAsset.last_inspection_code),
       ...Array.from({ length: 20 }, (_, i) => `property_${i + 1}`).reduce((acc: any, key) => {
         if (rawAsset[key] !== undefined && rawAsset[key] !== "") {
-          acc[key] = rawAsset[key];
+          acc[key] = nullableValue(rawAsset[key]);
         }
         return acc;
       }, {})
@@ -264,19 +268,19 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
   async updateAsset(id: string, asset: Partial<Asset>): Promise<void> {
     const rawAsset = asset as any;
     const payload = {
-      brand_id: rawAsset.brand_id,
-      model_id: rawAsset.model_id,
+      brand_id: nullableValue(rawAsset.brand_id),
+      model_id: nullableValue(rawAsset.model_id),
       serial_number: rawAsset.serial_number || rawAsset.serialNumber,
       status: rawAsset.status,
       // intentionally omit function_principle_id since it shouldn't be altered
       current_location_id: rawAsset.current_location_id,
-      current_ubication_id: rawAsset.current_ubication_id,
-      capacity: rawAsset.capacity,
-      last_inspection_code: rawAsset.last_inspection_code,
+      current_ubication_id: nullableValue(rawAsset.current_ubication_id),
+      capacity: nullableValue(rawAsset.capacity),
+      last_inspection_code: nullableValue(rawAsset.last_inspection_code),
       ...Array.from({ length: 20 }, (_, i) => `property_${i + 1}`).reduce((acc: any, key) => {
         // Here we can save empty strings to reset properties if needed, but we'll stick to updating provided keys
         if (rawAsset[key] !== undefined) {
-          acc[key] = rawAsset[key];
+          acc[key] = nullableValue(rawAsset[key]);
         }
         return acc;
       }, {})
