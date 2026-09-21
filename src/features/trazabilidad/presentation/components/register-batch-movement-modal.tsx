@@ -32,7 +32,6 @@ interface Props {
 export function RegisterBatchMovementModal({ assets, onRegister }: Props) {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [step, setStep] = useState<1 | 2>(1);
 
   // Form State
   const [type, setType] = useState<TransactionType | "">("");
@@ -151,22 +150,14 @@ export function RegisterBatchMovementModal({ assets, onRegister }: Props) {
   };
 
 
-  const handleNextStep = () => {
-    if (!type || !originLocation || !justification) return;
-    if (type === "transfer" && !destinationLocation) return;
-    if (type === "transfer") {
-       if (certificates.some(c => !c.name.trim())) {
-           setCertError("Todos los certificados adjuntos deben tener un nombre.");
-           return;
-       }
-    }
-    if (type === "reubication" && (!originUbication || !destinationUbication)) return;
-    
-    setStep(2);
-  };
-
   const handleConfirm = async () => {
-    if (selectedAssetIds.size === 0) return;
+    if (!type || !originLocation || !justification || selectedAssetIds.size === 0) return;
+    if (type === "transfer" && (!destinationLocation || !patioUbication)) return;
+    if (type === "reubication" && (!originUbication || !destinationUbication)) return;
+    if (type === "transfer" && certificates.some(c => !c.name.trim())) {
+      setCertError("Todos los certificados adjuntos deben tener un nombre.");
+      return;
+    }
     
     setIsLoading(true);
     try {
@@ -184,6 +175,7 @@ export function RegisterBatchMovementModal({ assets, onRegister }: Props) {
 
       if (type === "transfer") {
         payload.destination_location_id = destinationLocation;
+        payload.destination_ubication_id = patioUbication.id;
         if (certificates.length > 0) {
            payload.certificates = certificates.map(c => ({ file: c.file, name: c.name.trim() }));
         }
@@ -203,7 +195,6 @@ export function RegisterBatchMovementModal({ assets, onRegister }: Props) {
   };
 
   const resetForm = () => {
-    setStep(1);
     setType("");
     setOriginLocation("");
     setOriginUbication("");
@@ -224,8 +215,6 @@ export function RegisterBatchMovementModal({ assets, onRegister }: Props) {
   }, [ubications]);
 
   const availableAssets = useMemo(() => {
-    if (step !== 2) return [];
-
     let filtered = assets.filter((a) => {
       // Must be active to be moved
       if (a.is_active === false) return false;
@@ -263,7 +252,7 @@ export function RegisterBatchMovementModal({ assets, onRegister }: Props) {
     });
 
     return filtered;
-  }, [assets, step, originLocation, originUbication, type, filterPrinciple, search, patioUbication]);
+  }, [assets, originLocation, originUbication, type, filterPrinciple, search, patioUbication]);
 
 
   return (
@@ -278,7 +267,7 @@ export function RegisterBatchMovementModal({ assets, onRegister }: Props) {
         </Button>
       </DialogTrigger>
       
-      <DialogContent className="max-w-[800px] bg-card border-border p-0 overflow-hidden flex flex-col max-h-[90vh]">
+      <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-[95vw] bg-card border-border p-0 overflow-hidden flex flex-col max-h-[90vh]">
         <DialogHeader className="p-6 border-b border-border bg-secondary/10 shrink-0">
           <DialogTitle className="font-mono text-xl">Registrar Movimiento</DialogTitle>
           <p className="text-sm text-muted-foreground mt-1">
@@ -286,9 +275,11 @@ export function RegisterBatchMovementModal({ assets, onRegister }: Props) {
           </p>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
-          {step === 1 ? (
-            <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-right-4">
+        <div
+          className="flex-1 overflow-y-auto p-6 grid grid-cols-2 gap-6"
+          style={{ gridTemplateColumns: "minmax(0, 1fr) minmax(0, 2fr)" }}
+        >
+            <div className="flex flex-col gap-6">
               <div className="flex flex-col gap-3">
                 <Label>Tipo de Movimiento</Label>
                 <Select value={type} onValueChange={(val: "transfer" | "reubication") => {
@@ -492,8 +483,15 @@ export function RegisterBatchMovementModal({ assets, onRegister }: Props) {
                 </div>
               )}
             </div>
-          ) : (
-            <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-right-4 h-full">
+
+            <div className="flex flex-col gap-4 min-h-0">
+              {!originLocation ? (
+                <div className="flex flex-1 min-h-[280px] flex-col items-center justify-center gap-4 rounded-md border border-dashed border-border bg-secondary/10 text-center text-muted-foreground">
+                  <Shuffle className="size-10 opacity-40" />
+                  <p className="font-mono text-sm">{type === "transfer" ? "Seleccione una locación de origen" : "Seleccione una locación"}</p>
+                </div>
+              ) : (
+                <>
               <div className="flex items-center gap-3 bg-secondary/20 p-3 rounded-lg border border-border">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
@@ -586,31 +584,24 @@ export function RegisterBatchMovementModal({ assets, onRegister }: Props) {
                   </tbody>
                 </table>
               </div>
+                </>
+              )}
             </div>
-          )}
         </div>
 
         <DialogFooter className="p-6 border-t border-border bg-secondary/10 shrink-0">
           <Button variant="ghost" className="border border-border" onClick={() => {
-            if (step === 2) setStep(1);
-            else setOpen(false);
+            setOpen(false);
           }}>
-            {step === 2 ? "Atrás" : "Cancelar"}
+            Cancelar
           </Button>
-          
-          {step === 1 ? (
-             <Button onClick={handleNextStep} disabled={!type || !originLocation || !justification || (type === "transfer" && !destinationLocation) || (type === "reubication" && (!originUbication || !destinationUbication))}>
-               Siguiente <Shuffle className="size-4 ml-2" />
-             </Button>
-          ) : (
-            <Button 
-               disabled={selectedAssetIds.size === 0 || isLoading} 
-               onClick={handleConfirm}
-               className="gap-2 font-semibold"
-            >
-              {isLoading ? "Guardando..." : "Confirmar Selección"}
-            </Button>
-          )}
+          <Button
+             disabled={selectedAssetIds.size === 0 || isLoading}
+             onClick={handleConfirm}
+             className="gap-2 font-semibold"
+          >
+            {isLoading ? "Guardando..." : "Confirmar Selección"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -326,10 +326,10 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
       .from("transactions")
       .select(`
         id, type, date, justification, created_at,
-        origin:locations!fk_origin_location(name),
-        destination:locations!fk_destination_location(name),
-        origin_ubication:ubications!transactions_origin_ubication_id_fkey(name),
-        destination_ubication:ubications!transactions_destination_ubication_id_fkey(name),
+        origin:locations!transactions_company_id_origin_location_id_fkey(name),
+        destination:locations!transactions_company_id_destination_location_id_fkey(name),
+        origin_ubication:ubications!transactions_company_id_origin_ubication_id_fkey(name),
+        destination_ubication:ubications!transactions_company_id_destination_ubication_id_fkey(name),
         users:created_by(name),
         transaction_details (
           comments,
