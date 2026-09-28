@@ -25,12 +25,12 @@ describe("enforceCapability", () => {
     });
   });
 
-  it("redirects to the dashboard when company context is required", async () => {
+  it("redirects to login when company context is required", async () => {
     const { enforceCapability } = await import("./authorization-session");
 
-    await expect(enforceCapability({ action: "read", resource: "documents" })).rejects.toThrow("redirect:/dashboard");
+    await expect(enforceCapability({ action: "read", resource: "documents" })).rejects.toThrow("redirect:/auth/login");
 
-    expect(redirectMock).toHaveBeenCalledWith("/dashboard");
+    expect(redirectMock).toHaveBeenCalledWith("/auth/login");
     expect(redirectMock).not.toHaveBeenCalledWith("/select-company");
   });
 });

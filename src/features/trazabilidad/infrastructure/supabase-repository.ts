@@ -225,11 +225,23 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
     return this.registerBulkMovement({ ...movement, assets: [{ asset_id: assetId, comments: movement.comments }] });
   }
 
-  /** Movement writes are atomic RPC calls; certificate files are intentionally not part of this contract. */
+  /** Registers the movement first, then creates tenant-scoped certificate links for each asset. */
   async registerBulkMovement(payload: any): Promise<void> {
-    const { certificates: _certificates, ...movementPayload } = payload;
+    const { certificates, ...movementPayload } = payload;
     const { error } = await this.supabase.rpc("register_bulk_movement", { p_payload: { ...movementPayload, date: new Date().toISOString() } });
     if (error) throw error;
+
+    if (!certificates?.length) return;
+
+    try {
+      await Promise.all(
+        movementPayload.assets.map((asset: { asset_id: string }) =>
+          this.uploadCertificates(asset.asset_id, certificates),
+        ),
+      );
+    } catch (error) {
+      throw new Error("Movement registered, but certificate upload failed", { cause: error });
+    }
   }
 
   async registerReplacementMovement(payload: ReplacementMovementPayload): Promise<void> {
@@ -237,7 +249,7 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
     if (error) throw error;
   }
 
-  /** Uploads certificate metadata separately from movement confirmation; confirmation RPC is not implemented here. */
+  /** Uploads certificates and links them to the specified asset through the tenant server action. */
   private async uploadCertificates(assetId: string, certificates: { file: File; name: string }[]): Promise<string[]> {
     return Promise.all(certificates.map((certificate) => uploadCertificateAction(certificate.file, certificate.name, assetId)));
   }

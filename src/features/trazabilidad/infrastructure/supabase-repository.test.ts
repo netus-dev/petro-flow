@@ -15,8 +15,9 @@ describe("SupabaseTrazabilidadRepository movement writes", () => {
     expect(uploadCertificateAction).toHaveBeenCalledWith(expect.any(File), "certificate.pdf", "asset");
   });
 
-  it("uses the atomic bulk RPC and does not send certificate files", async () => {
+  it("registers the movement and links certificates to every selected asset", async () => {
     rpc.mockResolvedValue({ data: "transaction-id", error: null });
+    uploadCertificateAction.mockResolvedValue("certificate-id");
     const repository = new SupabaseTrazabilidadRepository(client);
     const certificates = [{ file: new File(["x"], "certificate.pdf"), name: "certificate.pdf" }];
 
@@ -26,14 +27,34 @@ describe("SupabaseTrazabilidadRepository movement writes", () => {
       destination_location_id: "destination",
       destination_ubication_id: "ubication",
       justification: "Move",
-      assets: [{ asset_id: "asset" }],
+      assets: [{ asset_id: "asset-a" }, { asset_id: "asset-b" }],
       certificates,
     });
 
     expect(rpc).toHaveBeenCalledWith("register_bulk_movement", {
-      p_payload: expect.objectContaining({ assets: [{ asset_id: "asset" }] }),
+      p_payload: expect.objectContaining({ assets: [{ asset_id: "asset-a" }, { asset_id: "asset-b" }] }),
     });
     expect(rpc.mock.calls[0][1].p_payload).not.toHaveProperty("certificates");
+    expect(uploadCertificateAction).toHaveBeenCalledTimes(2);
+    expect(uploadCertificateAction).toHaveBeenNthCalledWith(1, expect.any(File), "certificate.pdf", "asset-a");
+    expect(uploadCertificateAction).toHaveBeenNthCalledWith(2, expect.any(File), "certificate.pdf", "asset-b");
+  });
+
+  it("reports certificate upload failures after the movement succeeds", async () => {
+    rpc.mockResolvedValue({ data: "transaction-id", error: null });
+    uploadCertificateAction.mockRejectedValue(new Error("storage unavailable"));
+    const repository = new SupabaseTrazabilidadRepository(client);
+
+    await expect(repository.registerBulkMovement({
+      type: "transfer",
+      origin_location_id: "origin",
+      destination_location_id: "destination",
+      destination_ubication_id: "ubication",
+      justification: "Move",
+      assets: [{ asset_id: "asset" }],
+      certificates: [{ file: new File(["x"], "certificate.pdf"), name: "certificate.pdf" }],
+    })).rejects.toThrow("Movement registered, but certificate upload failed");
+    expect(rpc).toHaveBeenCalledTimes(1);
   });
 
   it("propagates atomic RPC failures without attempting fallback writes", async () => {
