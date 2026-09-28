@@ -32,6 +32,24 @@ function relationRecord(relation: unknown): Record<string, any> {
   return relation && typeof relation === "object" ? relation as Record<string, any> : {};
 }
 
+async function mapCertificate(supabase: SupabaseClient, certificate: any): Promise<AssetCertificate> {
+  let fileUrl = "";
+  if (certificate.storage_path) {
+    const { data } = await supabase.storage.from("certificates").createSignedUrl(certificate.storage_path, 3600);
+    fileUrl = data?.signedUrl || "";
+  }
+  return {
+    id: certificate.id,
+    name: certificate.file_name || "Certificado",
+    uploadDate: certificate.uploaded_at?.split("T")[0] || "",
+    fileUrl,
+  };
+}
+
+async function mapTransactionCertificates(supabase: SupabaseClient, links: any[] = []): Promise<AssetCertificate[]> {
+  return Promise.all(links.map((link) => link.certificates).filter(Boolean).map((certificate) => mapCertificate(supabase, certificate)));
+}
+
 export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
   constructor(private readonly supabase: SupabaseClient) {}
 
@@ -93,12 +111,13 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
         ),
         transaction_details (
           comments,
-          transactions (
+           transactions (
             id, type, date, justification, origin_location_id, destination_location_id,
             origin:locations!transactions_company_id_origin_location_id_fkey(name),
             destination:locations!transactions_company_id_destination_location_id_fkey(name),
             origin_ubication:ubications!transactions_company_id_origin_ubication_id_fkey(name),
-            destination_ubication:ubications!transactions_company_id_destination_ubication_id_fkey(name)
+             destination_ubication:ubications!transactions_company_id_destination_ubication_id_fkey(name)
+             ,transactions_certificates ( certificates ( id, storage_path, file_name, uploaded_at ) )
           )
         )
       `);
@@ -148,12 +167,13 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
         ),
         transaction_details (
           comments,
-          transactions (
+           transactions (
             id, type, date, justification, origin_location_id, destination_location_id,
             origin:locations!transactions_company_id_origin_location_id_fkey(name),
             destination:locations!transactions_company_id_destination_location_id_fkey(name),
             origin_ubication:ubications!transactions_company_id_origin_ubication_id_fkey(name),
-            destination_ubication:ubications!transactions_company_id_destination_ubication_id_fkey(name)
+             destination_ubication:ubications!transactions_company_id_destination_ubication_id_fkey(name)
+             ,transactions_certificates ( certificates ( id, storage_path, file_name, uploaded_at ) )
           )
         )
       `)
@@ -225,20 +245,16 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
     return this.registerBulkMovement({ ...movement, assets: [{ asset_id: assetId, comments: movement.comments }] });
   }
 
-  /** Registers the movement first, then creates tenant-scoped certificate links for each asset. */
+  /** Registers the movement first, then creates one tenant-scoped link per certificate. */
   async registerBulkMovement(payload: any): Promise<void> {
     const { certificates, ...movementPayload } = payload;
-    const { error } = await this.supabase.rpc("register_bulk_movement", { p_payload: { ...movementPayload, date: new Date().toISOString() } });
+    const { data: transactionId, error } = await this.supabase.rpc("register_bulk_movement", { p_payload: { ...movementPayload, date: new Date().toISOString() } });
     if (error) throw error;
 
     if (!certificates?.length) return;
 
     try {
-      await Promise.all(
-        movementPayload.assets.map((asset: { asset_id: string }) =>
-          this.uploadCertificates(asset.asset_id, certificates),
-        ),
-      );
+      await this.uploadCertificates(undefined, certificates, transactionId);
     } catch (error) {
       throw new Error("Movement registered, but certificate upload failed", { cause: error });
     }
@@ -249,9 +265,9 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
     if (error) throw error;
   }
 
-  /** Uploads certificates and links them to the specified asset through the tenant server action. */
-  private async uploadCertificates(assetId: string, certificates: { file: File; name: string }[]): Promise<string[]> {
-    return Promise.all(certificates.map((certificate) => uploadCertificateAction(certificate.file, certificate.name, assetId)));
+  /** Uploads certificates and links them to an asset or movement through the tenant server action. */
+  private async uploadCertificates(assetId: string | undefined, certificates: { file: File; name: string }[], transactionId?: string): Promise<string[]> {
+    return Promise.all(certificates.map((certificate) => uploadCertificateAction(certificate.file, certificate.name, assetId, transactionId)));
   }
 
   async addCertificate(assetId: string, certificates: { file: File; name: string }[]): Promise<void> {
@@ -343,10 +359,11 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
         origin_ubication:ubications!transactions_company_id_origin_ubication_id_fkey(name),
         destination_ubication:ubications!transactions_company_id_destination_ubication_id_fkey(name),
         users:created_by(name),
-        transaction_details (
+         transaction_details (
           comments,
           assets ( id, serial_number, brands:brand_id(name), models:model_id(name) )
-        )
+        ),
+        transactions_certificates ( certificates ( id, storage_path, file_name, uploaded_at ) )
       `)
       .order("created_at", { ascending: false });
 
@@ -355,7 +372,7 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
       return [];
     }
 
-    return (data || []).map((row: any) => {
+    return Promise.all((data || []).map(async (row: any) => {
       const details = row.transaction_details || [];
       const assetsInvolved = details.map((d: any) => ({
         asset_id: d.assets?.id || "",
@@ -376,9 +393,9 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
         assetsInvolvedCount: assetsInvolved.length,
         assetsInvolved,
         createdBy: row.users?.name || "Sistema",
-        certificates: [] // We skip certificates at the list view if there's no transactions_certificates yet
+        certificates: await mapTransactionCertificates(this.supabase, row.transactions_certificates)
       };
-    });
+    }));
   }
 
   private async mapRowToAsset(row: any): Promise<Asset> {
@@ -412,29 +429,17 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
     }
     
     // Extract certificates from the M2M nested relationship
-    const rawCerts = (row.assets_certificates || [])
+    const directCerts = (row.assets_certificates || [])
       .map((ac: any) => ac.certificates)
       .filter((c: any) => c != null);
+    const movementCerts = (row.transaction_details || [])
+      .flatMap((detail: any) => detail.transactions?.transactions_certificates || [])
+      .map((link: any) => link.certificates)
+      .filter((c: any) => c != null);
+    const rawCerts = Array.from(new Map([...directCerts, ...movementCerts].map((certificate: any) => [certificate.id, certificate])).values());
 
     const certificates: AssetCertificate[] = await Promise.all(
-      rawCerts.map(async (c: any) => {
-        let fileUrl = "";
-        if (c.storage_path) {
-          const { data } = await this.supabase.storage
-            .from('certificates')
-            .createSignedUrl(c.storage_path, 3600); // 1 hour expiry
-          if (data?.signedUrl) {
-            fileUrl = data.signedUrl;
-          }
-        }
-
-        return {
-          id: c.id,
-          name: c.file_name || "Certificado",
-          uploadDate: c.uploaded_at?.split("T")[0] || "",
-          fileUrl,
-        };
-      })
+      rawCerts.map((certificate: any) => mapCertificate(this.supabase, certificate))
     );
 
     // Map journey stops from transaction_details
