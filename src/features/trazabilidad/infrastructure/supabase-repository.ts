@@ -202,28 +202,25 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
     if (error || !assets) {
       return {
         totalAssets: 0,
-        assetsInRigs: 0,
+        assetsOperational: 0,
         assetsUnderInspection: 0,
-        assetsInProviderBase: 0,
+        assetsRejected: 0,
         distributionByLocation: [],
         movementsLast30Days: [],
         alerts: []
       };
     }
 
-    let rigsCount = 0;
-    let baseProveedorCount = 0;
+    let operationalCount = 0;
     let underInspectionCount = 0;
+    let rejectedCount = 0;
     const distributionMap: Record<string, number> = {};
 
     assets.forEach((a: any) => {
       const locName = a.locations?.name || "Sin Location";
-      const locType = a.locations?.type;
-      
-      if (locType === "rig") rigsCount++;
-      if (locType === "operating_base") baseProveedorCount++;
-      
+      if (a.status === "active") operationalCount++;
       if (a.status === "under_inspection") underInspectionCount++;
+      if (a.status === "rejected") rejectedCount++;
 
       distributionMap[locName] = (distributionMap[locName] || 0) + 1;
     });
@@ -232,9 +229,9 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
 
     return {
       totalAssets: assets.length,
-      assetsInRigs: rigsCount,
+      assetsOperational: operationalCount,
       assetsUnderInspection: underInspectionCount,
-      assetsInProviderBase: baseProveedorCount,
+      assetsRejected: rejectedCount,
       distributionByLocation,
       movementsLast30Days: [], // Can be calculated from transactions
       alerts: [] // Compute alerts

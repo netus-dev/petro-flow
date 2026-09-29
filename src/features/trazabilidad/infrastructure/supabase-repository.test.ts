@@ -2,15 +2,44 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SupabaseTrazabilidadRepository } from "./supabase-repository";
 
 const { rpc, uploadCertificateAction } = vi.hoisted(() => ({ rpc: vi.fn(), uploadCertificateAction: vi.fn() }));
+const from = vi.fn();
 const client = {
   rpc,
+  from,
   auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: "user" } } }) },
   storage: { from: vi.fn(() => ({ createSignedUrl: vi.fn().mockResolvedValue({ data: { signedUrl: "signed-url" } }) })) },
 } as never;
 vi.mock("./server/certificate-actions", () => ({ uploadCertificateAction }));
 
-describe("SupabaseTrazabilidadRepository movement writes", () => {
-  beforeEach(() => { rpc.mockReset(); uploadCertificateAction.mockReset(); });
+describe("SupabaseTrazabilidadRepository", () => {
+  beforeEach(() => { rpc.mockReset(); from.mockReset(); uploadCertificateAction.mockReset(); });
+
+  it("counts active assets by status while preserving global location distribution", async () => {
+    const assets = [
+      { status: "active", locations: { name: "Rig 1", type: "rig" } },
+      { status: "active", locations: { name: "Base 1", type: "operating_base" } },
+      { status: "under_inspection", locations: { name: "Rig 1", type: "rig" } },
+      { status: "rejected", locations: { name: "Base 1", type: "operating_base" } },
+    ];
+    const query = {
+      select: vi.fn(() => query),
+      eq: vi.fn(() => Promise.resolve({ data: assets, error: null })),
+    };
+    from.mockReturnValue(query);
+    const repository = new SupabaseTrazabilidadRepository(client);
+
+    await expect(repository.getDashboardStats()).resolves.toMatchObject({
+      totalAssets: 4,
+      assetsOperational: 2,
+      assetsUnderInspection: 1,
+      assetsRejected: 1,
+      distributionByLocation: [
+        { name: "Rig 1", value: 2 },
+        { name: "Base 1", value: 2 },
+      ],
+    });
+    expect(query.eq).toHaveBeenCalledWith("is_active", true);
+  });
 
   it("delegates certificate upload and tenant metadata to the server boundary", async () => {
     uploadCertificateAction.mockResolvedValue("certificate-id");
