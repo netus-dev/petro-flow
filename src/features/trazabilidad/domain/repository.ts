@@ -27,4 +27,5 @@ export interface ITrazabilidadRepository {
   updateAsset(id: string, asset: Partial<Asset>): Promise<void>;
   disableAsset(id: string): Promise<void>;
   getMovementList(): Promise<Movement[]>;
+  getMovementById(id: string): Promise<Movement | undefined>;
 }

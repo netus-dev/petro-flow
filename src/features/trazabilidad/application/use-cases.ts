@@ -112,3 +112,11 @@ export class GetMovementListUseCase {
     return this.repository.getMovementList();
   }
 }
+
+export class GetMovementByIdUseCase {
+  constructor(private repository: ITrazabilidadRepository) {}
+
+  async execute(id: string): Promise<Movement | undefined> {
+    return this.repository.getMovementById(id);
+  }
+}

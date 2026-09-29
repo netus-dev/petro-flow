@@ -18,7 +18,7 @@ vi.mock("../supabase-repository", () => ({
   },
 }));
 
-import { readTrazabilidadData } from "./trazabilidad-actions";
+import { getTrazabilidadAssets, getTrazabilidadDashboardStats, getTrazabilidadMovements } from "./trazabilidad-actions";
 
 describe("trazabilidad server actions", () => {
   beforeEach(() => {
@@ -29,18 +29,16 @@ describe("trazabilidad server actions", () => {
     repository.getMovementList.mockResolvedValue(["movement"]);
   });
 
-  it("composes reads with a validated tenant client", async () => {
-    await expect(readTrazabilidadData()).resolves.toEqual([
-      ["asset"],
-      { total: 1 },
-      ["movement"],
-    ]);
-    expect(createTenantClient).toHaveBeenCalledOnce();
+  it("loads each view through its specific repository read", async () => {
+    await expect(getTrazabilidadAssets()).resolves.toEqual(["asset"]);
+    await expect(getTrazabilidadDashboardStats()).resolves.toEqual({ total: 1 });
+    await expect(getTrazabilidadMovements()).resolves.toEqual(["movement"]);
+    expect(createTenantClient).toHaveBeenCalledTimes(3);
   });
 
   it("fails before repository composition when tenant validation is unavailable", async () => {
     createTenantClient.mockResolvedValue(null);
 
-    await expect(readTrazabilidadData()).rejects.toThrow("Tenant context is unavailable");
+    await expect(getTrazabilidadAssets()).rejects.toThrow("Tenant context is unavailable");
   });
 });

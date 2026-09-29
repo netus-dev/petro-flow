@@ -14,6 +14,8 @@ import {
   RegisterBulkMovementUseCase,
   RegisterMovementUseCase,
   RegisterReplacementUseCase,
+  GetMovementListUseCase,
+  GetMovementByIdUseCase,
 } from "../../application/use-cases";
 import { Asset, AssetMovementPayload } from "../../domain/entities";
 
@@ -23,10 +25,20 @@ async function getRepository() {
   return new SupabaseTrazabilidadRepository(client);
 }
 
-/** Reads Trazabilidad business data through the validated tenant client. */
-export async function readTrazabilidadData() {
-  const repository = await getRepository();
-  return Promise.all([repository.getAssetList(), repository.getDashboardStats(), repository.getMovementList()]);
+export async function getTrazabilidadDashboardStats() {
+  return (await getRepository()).getDashboardStats();
+}
+
+export async function getTrazabilidadAssets() {
+  return (await getRepository()).getAssetList();
+}
+
+export async function getTrazabilidadMovements() {
+  return new GetMovementListUseCase(await getRepository()).execute();
+}
+
+export async function getTrazabilidadMovement(id: string) {
+  return new GetMovementByIdUseCase(await getRepository()).execute(id);
 }
 
 export async function getTrazabilidadAsset(id: string) {

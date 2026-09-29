@@ -50,6 +50,7 @@ export function TrazabilidadContent() {
     setFilterDisabled,
     stats,
     loading,
+    error,
     handleRegisterAsset,
     handleEditAsset,
     handleDisableAsset,
@@ -67,6 +68,10 @@ export function TrazabilidadContent() {
         <Loader2 className="size-8 text-primary animate-spin" />
       </div>
     );
+  }
+
+  if (error) {
+    return <div className="p-6 text-sm text-destructive">{error}</div>;
   }
 
   return (
