@@ -37,7 +37,7 @@ export function ModuleHeader({ title, icon: Icon, navigation = [], actions }: Mo
         <h1 className="truncate text-lg font-bold tracking-tight text-foreground font-mono md:text-xl">{title}</h1>
       </div>
 
-      {navigation.length > 0 && <nav aria-label={`${title} navigation`} className="flex w-fit max-w-full min-w-0 items-center gap-1 self-center overflow-x-auto rounded-lg border border-border bg-secondary/20 p-1 md:justify-self-center">
+      {navigation.length > 0 && <nav aria-label={`${title} navigation`} className="flex w-fit max-w-full min-w-0 items-center gap-1 self-center overflow-x-auto rounded-lg border border-border bg-secondary/20 p-1 md:col-start-2 md:justify-self-center">
         {navigation.map(({ href, label, icon: NavigationIcon, exact }) => {
           const active = isNavigationItemActive(pathname, href, exact);
           return (
@@ -57,7 +57,7 @@ export function ModuleHeader({ title, icon: Icon, navigation = [], actions }: Mo
         })}
       </nav>}
 
-      <div className="flex min-w-0 justify-end gap-2 md:justify-self-end">{actions}</div>
+      <div className="flex min-w-0 justify-end gap-2 md:col-start-3 md:justify-self-end">{actions}</div>
     </header>
   );
 }
