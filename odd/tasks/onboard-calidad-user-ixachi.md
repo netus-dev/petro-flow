@@ -57,7 +57,7 @@ Provision the existing Auth user `c14c5b2b-09c4-4b38-b29a-41f19c162fac` in Ixach
 
 ## Delivery status
 - Shared onboarding snippet code is recorded in commit `ceb5da5f8dbf39790a905bc13bca91debeca631a` (`feat(rbac): support all-rigs user onboarding scope`).
-- This task document is being saved in the related documentation work-unit commit; no push. Unrelated pre-existing worktree modifications remain untouched.
+- Documentation work-unit commit: `dd238b73da9c0234f55ab4f6face9c7a47ef8d26` (`docs(odd): record Ixachi user onboarding evidence`). No push; unrelated pre-existing worktree modifications remain untouched.
 
 ## Relevant files
 - `supabase/snippets/8. provision_user_company_role.sql`

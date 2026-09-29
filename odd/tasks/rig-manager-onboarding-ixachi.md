@@ -25,7 +25,7 @@ Create the Ixachi company-scoped `Rig Manager` role with the reviewed `Tool Push
 1. [x] Extend snippet 8 with a fail-closed explicit `all_rigs` scope mode while preserving the existing `copy_source` mode; read-only verifier found no blockers.
 2. [x] Apply `Rig Manager` onboarding to the approved target in Ixachi production; linked Supabase SQL returned successfully.
 3. [x] Verify exact permission equivalence, RBAC relationships, `all_rigs = true`, and authenticated projection across active Ixachi rigs.
-4. [ ] Save only this related work in scoped local commits; do not push. (in progress)
+4. [x] Save only this related work in scoped local commits; do not push.
 
 ## Implementation progress
 - The snippet configuration now targets this user and `Rig Manager`, with `v_scope_mode = 'all_rigs'` and no source-scope user.
@@ -48,7 +48,7 @@ Create the Ixachi company-scoped `Rig Manager` role with the reviewed `Tool Push
 
 ## Commit evidence
 - Code work-unit commit: `ceb5da5f8dbf39790a905bc13bca91debeca631a` — `feat(rbac): support all-rigs user onboarding scope`.
-- Documentation work-unit commit is being prepared separately; no push.
+- Documentation work-unit commit: `dd238b73da9c0234f55ab4f6face9c7a47ef8d26` — `docs(odd): record Ixachi user onboarding evidence`.
 
 ## Runtime and rollback
 - No separate unit-test harness exists for this SQL snippet; the linked production `DO` transaction and both read-only verification queries are the integration evidence.
