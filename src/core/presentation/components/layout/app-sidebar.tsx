@@ -32,6 +32,7 @@ import {
   SidebarMenuItem,
   SidebarSeparator,
 } from "@/src/core/presentation/components/ui/sidebar";
+import { GlobalControls } from "./global-controls";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -274,6 +275,7 @@ export function AppSidebar({ initialUser, initialAuthorization }: AppSidebarProp
 
       {/* Footer */}
       <SidebarFooter className="p-3">
+        <GlobalControls />
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
