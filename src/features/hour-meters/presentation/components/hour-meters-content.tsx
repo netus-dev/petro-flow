@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation";
 import { MaintenanceThresholdModal } from "./maintenance-threshold-modal";
 import { readMaintenanceThresholds } from "../../infrastructure/server/hour-meter-actions";
 import { deriveVisibleInventoryPrinciples } from "./inventory-principles";
+import { ModuleHeader } from "@/src/core/presentation/components/layout/module-header";
 
 /**
  * Componente principal de presentación (Page/Organism) que representa la vista
@@ -82,22 +83,8 @@ export function HourMeterContent({ initialRecords = [], authorization = { capabi
 
   return (
     <div className="flex flex-col h-[calc(100vh-7rem)] w-full bg-background overflow-hidden p-4 md:p-6 lg:p-8">
-      {/* Top Header Panel (Fixed Height) */}
-      <header className="shrink-0 mb-4 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/40 pb-4">
-        <div className="flex items-center gap-4">
-
-          <div className="flex size-12 items-center justify-center rounded-xl bg-primary/10 border border-primary/20 shadow-inner">
-            <Clock className="size-6 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-2xl md:text-3xl font-black tracking-tight text-foreground font-mono uppercase">
-              Dashboard de Horómetros
-            </h1>
-            {rigs.length > 1 ? <select aria-label="Rig" className="h-8 rounded border bg-background px-2 text-xs" value={rigId ?? ""} onChange={(event) => setRigId(event.target.value)}>{rigs.map((rig) => <option key={rig.id} value={rig.id}>{rig.name}</option>)}</select> : <p className="text-xs md:text-sm font-medium tracking-widest text-muted-foreground uppercase mt-1">{rigs[0]?.name ?? "SIN RIG AUTORIZADO"}</p>}
-          </div>
-        </div>
-
-        <div className="flex items-center gap-4">
+      <ModuleHeader title="Dashboard de Horómetros" icon={Clock} actions={<>
+          {rigs.length > 1 ? <select aria-label="Rig" className="h-8 rounded border bg-background px-2 text-xs" value={rigId ?? ""} onChange={(event) => setRigId(event.target.value)}>{rigs.map((rig) => <option key={rig.id} value={rig.id}>{rig.name}</option>)}</select> : <span className="hidden text-xs font-medium tracking-widest text-muted-foreground uppercase md:inline">{rigs[0]?.name ?? "SIN RIG AUTORIZADO"}</span>}
           {canManageInventory && <Dialog>
             <DialogTrigger asChild><Button size="sm" variant="outline">Gestionar inventario</Button></DialogTrigger>
             <DialogContent className="w-[min(96vw,1400px)] max-w-none sm:max-w-[min(96vw,1400px)] max-h-[90vh] overflow-hidden p-6" aria-describedby="inventory-management-description">
@@ -127,8 +114,7 @@ export function HourMeterContent({ initialRecords = [], authorization = { capabi
               />
             </DialogContent>
           </Dialog>}
-        </div>
-      </header>
+        </>} />
 
       {/* Main Container - Fills remaining space dynamically */}
       <div className="flex-1 min-h-0 flex flex-row gap-4 overflow-hidden relative">

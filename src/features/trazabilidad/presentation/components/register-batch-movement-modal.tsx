@@ -23,13 +23,15 @@ import { Asset, AssetMovementPayload, TransactionType } from "../../domain/entit
 import { readCatalogItems } from "@/src/features/catalogs/infrastructure/server/catalog-actions";
 import { getMovableTrazabilidadAssets } from "../../infrastructure/server/trazabilidad-actions";
 import { Checkbox } from "@/src/core/presentation/components/ui/checkbox";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/src/core/presentation/components/ui/tooltip";
 import { FileUp, Shuffle, Info, Search, Upload, FileText, Image as ImageIcon, X, AlertCircle } from "lucide-react";
 
 interface Props {
   onRegister: (payload: AssetMovementPayload) => Promise<void>;
+  trigger?: React.ReactNode;
 }
 
-export function RegisterBatchMovementModal({ onRegister }: Props) {
+export function RegisterBatchMovementModal({ onRegister, trigger }: Props) {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -282,12 +284,14 @@ export function RegisterBatchMovementModal({ onRegister }: Props) {
       setOpen(val);
       if (!val) resetForm();
     }}>
-      <DialogTrigger asChild>
-        <Button variant="secondary" className="gap-2 h-9">
-          <Shuffle className="size-4" />
-          Registrar Movimiento
-        </Button>
-      </DialogTrigger>
+      <Tooltip>
+        <DialogTrigger asChild>
+          <TooltipTrigger asChild>
+            {trigger || <Button variant="secondary" className="gap-2 h-9"><Shuffle className="size-4" />Registrar Movimiento</Button>}
+          </TooltipTrigger>
+        </DialogTrigger>
+        <TooltipContent>Registrar movimiento</TooltipContent>
+      </Tooltip>
       
       <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-[95vw] bg-card border-border p-0 overflow-hidden flex flex-col max-h-[90vh]">
         <DialogHeader className="p-6 border-b border-border bg-secondary/10 shrink-0">
