@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock } from "lucide-react";
+import { Clock, Gauge, Package, Settings2 } from "lucide-react";
 import { useHourMeters } from "../hooks/use-hour-meters";
 import { HourMeterCard, EnhancedHourMeterRecord } from "./hour-meter-card";
 import { MaintenancePanel } from "./maintenance-panel/maintenance-panel";
@@ -17,6 +17,7 @@ import { MaintenanceThresholdModal } from "./maintenance-threshold-modal";
 import { readMaintenanceThresholds } from "../../infrastructure/server/hour-meter-actions";
 import { deriveVisibleInventoryPrinciples } from "./inventory-principles";
 import { ModuleHeader } from "@/src/core/presentation/components/layout/module-header";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/src/core/presentation/components/ui/tooltip";
 
 /**
  * Componente principal de presentación (Page/Organism) que representa la vista
@@ -86,23 +87,24 @@ export function HourMeterContent({ initialRecords = [], authorization = { capabi
       <ModuleHeader title="Dashboard de Horómetros" icon={Clock} actions={<>
           {rigs.length > 1 ? <select aria-label="Rig" className="h-8 rounded border bg-background px-2 text-xs" value={rigId ?? ""} onChange={(event) => setRigId(event.target.value)}>{rigs.map((rig) => <option key={rig.id} value={rig.id}>{rig.name}</option>)}</select> : <span className="hidden text-xs font-medium tracking-widest text-muted-foreground uppercase md:inline">{rigs[0]?.name ?? "SIN RIG AUTORIZADO"}</span>}
           {canManageInventory && <Dialog>
-            <DialogTrigger asChild><Button size="sm" variant="outline">Gestionar inventario</Button></DialogTrigger>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DialogTrigger asChild><Button size="icon" variant="outline" aria-label="Gestionar inventario"><Package className="size-4" aria-hidden="true" /></Button></DialogTrigger>
+              </TooltipTrigger>
+              <TooltipContent>Gestionar inventario</TooltipContent>
+            </Tooltip>
             <DialogContent className="w-[min(96vw,1400px)] max-w-none sm:max-w-[min(96vw,1400px)] max-h-[90vh] overflow-hidden p-6" aria-describedby="inventory-management-description">
               <DialogHeader><DialogTitle>Gestionar inventario</DialogTitle><p id="inventory-management-description" className="text-sm text-muted-foreground">Registra y actualiza materiales compartidos por principio funcional.</p></DialogHeader>
               <InventoryManagementModal key={inventoryPrinciples.map((principle) => principle.id).join(":")} principles={inventoryPrinciples} />
             </DialogContent>
           </Dialog>}
-          {canRegister && <Dialog>
-            <DialogTrigger asChild><Button size="sm">Registrar lectura</Button></DialogTrigger>
-            <DialogContent>
-              <DialogHeader><DialogTitle>Registrar lectura de horómetro</DialogTitle></DialogHeader>
-              <RegisterHourMeterForm onRegistered={() => void refresh()} />
-            </DialogContent>
-          </Dialog>}
           {principles.length > 0 && <Dialog>
-            <DialogTrigger asChild>
-              <Button size="sm" variant="outline">Configurar mantenimientos</Button>
-            </DialogTrigger>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DialogTrigger asChild><Button size="icon" variant="outline" aria-label="Configurar mantenimientos"><Settings2 className="size-4" aria-hidden="true" /></Button></DialogTrigger>
+              </TooltipTrigger>
+              <TooltipContent>Configurar mantenimientos</TooltipContent>
+            </Tooltip>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Configurar mantenimientos</DialogTitle>
@@ -112,6 +114,18 @@ export function HourMeterContent({ initialRecords = [], authorization = { capabi
                 canEdit={canManageMaintenance}
                 onSaved={() => router.refresh()}
               />
+            </DialogContent>
+          </Dialog>}
+          {canRegister && <Dialog>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DialogTrigger asChild><Button size="icon" aria-label="Registrar lectura"><Gauge className="size-4" aria-hidden="true" /></Button></DialogTrigger>
+              </TooltipTrigger>
+              <TooltipContent>Registrar lectura</TooltipContent>
+            </Tooltip>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Registrar lectura de horómetro</DialogTitle></DialogHeader>
+              <RegisterHourMeterForm onRegistered={() => void refresh()} />
             </DialogContent>
           </Dialog>}
         </>} />
