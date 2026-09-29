@@ -41,6 +41,19 @@ describe("SupabaseTrazabilidadRepository", () => {
     expect(query.eq).toHaveBeenCalledWith("is_active", true);
   });
 
+  it("queries only active assets at the selected origin location", async () => {
+    const query = { select: vi.fn(), eq: vi.fn() };
+    query.select.mockReturnValue(query);
+    query.eq.mockReturnValueOnce(query).mockResolvedValueOnce({ data: [], error: null });
+    from.mockReturnValue(query);
+    const repository = new SupabaseTrazabilidadRepository(client);
+
+    await repository.getMovableAssetsByOriginLocation("location-1");
+
+    expect(query.eq).toHaveBeenNthCalledWith(1, "is_active", true);
+    expect(query.eq).toHaveBeenNthCalledWith(2, "current_location_id", "location-1");
+  });
+
   it("delegates certificate upload and tenant metadata to the server boundary", async () => {
     uploadCertificateAction.mockResolvedValue("certificate-id");
     const repository = new SupabaseTrazabilidadRepository(client);

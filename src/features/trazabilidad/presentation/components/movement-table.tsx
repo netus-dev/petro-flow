@@ -13,29 +13,18 @@ import { Button } from "@/src/core/presentation/components/ui/button";
 import { Eye, Search, Filter } from "lucide-react";
 import { Input } from "@/src/core/presentation/components/ui/input";
 import { Movement } from "../../domain/entities";
-import { useState, useMemo } from "react";
 
 interface Props {
   movements: Movement[];
+  search: string;
+  typeFilter: string;
+  onSearchChange: (value: string) => void;
+  onTypeChange: (value: string) => void;
   onViewDetail: (movement: Movement) => void;
 }
 
-export function MovementTable({ movements, onViewDetail }: Props) {
-  const [search, setSearch] = useState("");
-
-  const filteredMovements = useMemo(() => {
-    return movements.filter((m) => {
-      const s = search.toLowerCase();
-      return (
-        m.originLocationName.toLowerCase().includes(s) ||
-        m.originUbicationName.toLowerCase().includes(s) ||
-        m.destinationLocationName.toLowerCase().includes(s) ||
-        m.destinationUbicationName.toLowerCase().includes(s) ||
-        m.justification.toLowerCase().includes(s) ||
-        m.type.toLowerCase().includes(s)
-      );
-    });
-  }, [movements, search]);
+export function MovementTable({ movements, search, typeFilter, onSearchChange, onTypeChange, onViewDetail }: Props) {
+  const filteredMovements = movements;
 
   const getMovementTypeLabel = (type: string) => {
     switch (type) {
@@ -68,10 +57,13 @@ export function MovementTable({ movements, onViewDetail }: Props) {
                 placeholder="Buscar por locación, ubicación, justificación..."
                 className="pl-10 h-10 text-sm w-full"
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => onSearchChange(e.target.value)}
               />
             </div>
           </div>
+          <select value={typeFilter} onChange={(e) => onTypeChange(e.target.value)} className="h-10 rounded-md border border-border bg-background px-3 text-sm">
+            <option value="all">Todos los tipos</option><option value="transfer">Transferencia</option><option value="reubication">Reubicación</option><option value="replacement">Reemplazo</option>
+          </select>
         </div>
       </div>
 

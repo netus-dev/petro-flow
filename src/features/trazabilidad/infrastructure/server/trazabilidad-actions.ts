@@ -1,6 +1,7 @@
 "use server";
 
 import { createTenantClient } from "@/src/core/lib/supabase/server";
+import { revalidatePath } from "next/cache";
 import { SupabaseTrazabilidadRepository } from "../supabase-repository";
 import {
   AddCertificateUseCase,
@@ -16,6 +17,7 @@ import {
   RegisterReplacementUseCase,
   GetMovementListUseCase,
   GetMovementByIdUseCase,
+  GetMovableAssetsByOriginLocationUseCase,
 } from "../../application/use-cases";
 import { Asset, AssetMovementPayload } from "../../domain/entities";
 
@@ -31,6 +33,10 @@ export async function getTrazabilidadDashboardStats() {
 
 export async function getTrazabilidadAssets() {
   return (await getRepository()).getAssetList();
+}
+
+export async function getMovableTrazabilidadAssets(locationId: string) {
+  return new GetMovableAssetsByOriginLocationUseCase(await getRepository()).execute(locationId);
 }
 
 export async function getTrazabilidadMovements() {
@@ -50,7 +56,9 @@ export async function registerTrazabilidadMovement(assetId: string, movement: un
 }
 
 export async function registerTrazabilidadBulkMovement(payload: AssetMovementPayload) {
-  return new RegisterBulkMovementUseCase(await getRepository()).execute(payload);
+  const result = await new RegisterBulkMovementUseCase(await getRepository()).execute(payload);
+  revalidatePath("/trazabilidad", "layout");
+  return result;
 }
 
 export async function registerTrazabilidadReplacement(payload: unknown) {

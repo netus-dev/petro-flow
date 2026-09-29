@@ -53,6 +53,32 @@ async function mapTransactionCertificates(supabase: SupabaseClient, links: any[]
 export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
   constructor(private readonly supabase: SupabaseClient) { }
 
+  private async getTransactionCertificateLinks(transactionIds: string[]): Promise<Record<string, any[]>> {
+    if (transactionIds.length === 0) return {};
+
+    const { data: links, error: linksError } = await this.supabase
+      .from("transactions_certificates")
+      .select("transaction_id, certificate_id")
+      .in("transaction_id", transactionIds);
+    if (linksError) throw linksError;
+
+    const certificateIds = Array.from(new Set((links ?? []).map((link: any) => link.certificate_id)));
+    if (certificateIds.length === 0) return {};
+
+    const { data: certificates, error: certificatesError } = await this.supabase
+      .from("certificates")
+      .select("id, storage_path, file_name, uploaded_at")
+      .in("id", certificateIds);
+    if (certificatesError) throw certificatesError;
+
+    const certificatesById = new Map((certificates ?? []).map((certificate: any) => [certificate.id, certificate]));
+    return (links ?? []).reduce((result: Record<string, any[]>, link: any) => {
+      const certificate = certificatesById.get(link.certificate_id);
+      if (certificate) (result[link.transaction_id] ??= []).push({ certificates: certificate });
+      return result;
+    }, {});
+  }
+
   async getFunctionalPrinciples(): Promise<FunctionalPrincipleCatalog[]> {
     const { data, error } = await this.supabase
       .from("functional_principles")
@@ -116,6 +142,24 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
     return Promise.all((data || []).map((row: any) => this.mapRowToAsset(row)));
   }
 
+  async getMovableAssetsByOriginLocation(locationId: string): Promise<Asset[]> {
+    const { data, error } = await this.supabase
+      .from("assets")
+      .select(`
+        *,
+        brands:brand_id ( name ),
+        models:model_id ( name ),
+        functional_principles:function_principle_id ( name ),
+        locations:current_location_id ( name ),
+        ubications:ubications!assets_company_id_current_ubication_id_fkey ( name )
+      `)
+      .eq("is_active", true)
+      .eq("current_location_id", locationId);
+
+    if (error) throw error;
+    return Promise.all((data || []).map((row: any) => this.mapRowToAsset(row)));
+  }
+
   async getAssetsUnderInspection(): Promise<Asset[]> {
     const { data, error } = await this.supabase
       .from("assets")
@@ -161,12 +205,7 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
             origin:locations!transactions_company_id_origin_location_id_fkey(name),
             destination:locations!transactions_company_id_destination_location_id_fkey(name),
             origin_ubication:ubications!transactions_company_id_origin_ubication_id_fkey(name),
-            destination_ubication:ubications!transactions_company_id_destination_ubication_id_fkey(name),
-            transactions_certificates (
-              certificates (
-                id, storage_path, file_name, uploaded_at
-              )
-            )
+            destination_ubication:ubications!transactions_company_id_destination_ubication_id_fkey(name)
           )
         )
       `)
@@ -179,6 +218,15 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
     }
     if (!data) {
       return undefined;
+    }
+
+    const transactionIds = (data.transaction_details ?? [])
+      .map((detail: any) => detail.transactions?.id)
+      .filter(Boolean);
+    const certificatesByTransaction = await this.getTransactionCertificateLinks(transactionIds);
+    for (const detail of data.transaction_details ?? []) {
+      const transaction = detail.transactions;
+      if (transaction) transaction.transactions_certificates = certificatesByTransaction[transaction.id] ?? [];
     }
 
     return await this.mapRowToAsset(data);
@@ -400,8 +448,7 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
         origin_ubication:ubications!transactions_company_id_origin_ubication_id_fkey(name),
         destination_ubication:ubications!transactions_company_id_destination_ubication_id_fkey(name),
         users:created_by(name),
-        transaction_details ( comments, assets ( id, serial_number, brands:brand_id(name), models:model_id(name) ) ),
-        transactions_certificates ( certificates ( id, storage_path, file_name, uploaded_at ) )
+        transaction_details ( comments, assets ( id, serial_number, brands:brand_id(name), models:model_id(name) ) )
       `)
       .eq("id", id)
       .single();
@@ -410,6 +457,7 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
       return undefined;
     }
     const row: any = data;
+    const certificatesByTransaction = await this.getTransactionCertificateLinks([row.id]);
     const details = row.transaction_details || [];
     return {
       id: row.id, type: row.type, date: row.date || row.created_at, justification: row.justification || "",
@@ -418,7 +466,7 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
       assetsInvolvedCount: details.length,
       assetsInvolved: details.map((d: any) => ({ asset_id: d.assets?.id || "", asset_code: d.assets?.serial_number || "Sin SN", asset_name: `${d.assets?.brands?.name || ""} ${d.assets?.models?.name || ""}`.trim() || "Activo", comments: d.comments })),
       createdBy: row.users?.name || "Sistema",
-      certificates: await mapTransactionCertificates(this.supabase, row.transactions_certificates),
+      certificates: await mapTransactionCertificates(this.supabase, certificatesByTransaction[row.id] ?? []),
     };
   }
 

@@ -21,15 +21,15 @@ import {
 } from "@/src/core/presentation/components/ui/select";
 import { Asset, AssetMovementPayload, TransactionType } from "../../domain/entities";
 import { readCatalogItems } from "@/src/features/catalogs/infrastructure/server/catalog-actions";
+import { getMovableTrazabilidadAssets } from "../../infrastructure/server/trazabilidad-actions";
 import { Checkbox } from "@/src/core/presentation/components/ui/checkbox";
 import { FileUp, Shuffle, Info, Search, Upload, FileText, Image as ImageIcon, X, AlertCircle } from "lucide-react";
 
 interface Props {
-  assets: Asset[];
   onRegister: (payload: AssetMovementPayload) => Promise<void>;
 }
 
-export function RegisterBatchMovementModal({ assets, onRegister }: Props) {
+export function RegisterBatchMovementModal({ onRegister }: Props) {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -56,6 +56,8 @@ export function RegisterBatchMovementModal({ assets, onRegister }: Props) {
   const [locations, setLocations] = useState<any[]>([]);
   const [ubications, setUbications] = useState<any[]>([]);
   const [functionalPrinciples, setFunctionalPrinciples] = useState<any[]>([]);
+  const [assets, setAssets] = useState<Asset[]>([]);
+  const [assetsLoading, setAssetsLoading] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -77,6 +79,26 @@ export function RegisterBatchMovementModal({ assets, onRegister }: Props) {
       resetForm();
     }
   }, [open]);
+
+  useEffect(() => {
+    if (!originLocation) {
+      setAssets([]);
+      return;
+    }
+
+    let cancelled = false;
+    setAssetsLoading(true);
+    getMovableTrazabilidadAssets(originLocation)
+      .then((nextAssets) => {
+        if (!cancelled) setAssets(nextAssets);
+      })
+      .catch(console.error)
+      .finally(() => {
+        if (!cancelled) setAssetsLoading(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [originLocation]);
 
   // Certificates Handlers
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -324,7 +346,14 @@ export function RegisterBatchMovementModal({ assets, onRegister }: Props) {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex flex-col gap-2">
                     <Label className="text-xs uppercase tracking-widest text-muted-foreground">Locación Origen</Label>
-                    <Select value={originLocation} onValueChange={setOriginLocation}>
+                    <Select value={originLocation} onValueChange={(value) => {
+                      setOriginLocation(value);
+                      setOriginUbication("");
+                      setSelectedAssetIds(new Set());
+                      setCommentsMap({});
+                      setSearch("");
+                      setAssets([]);
+                    }}>
                       <SelectTrigger className="bg-secondary/20 h-10 border-border">
                         <SelectValue placeholder="Seleccionar" />
                       </SelectTrigger>
@@ -539,7 +568,9 @@ export function RegisterBatchMovementModal({ assets, onRegister }: Props) {
                     </tr>
                   </thead>
                   <tbody>
-                    {availableAssets.length === 0 ? (
+                     {assetsLoading ? (
+                       <tr><td colSpan={6} className="py-12 text-center text-muted-foreground font-mono text-xs">Cargando activos...</td></tr>
+                     ) : availableAssets.length === 0 ? (
                       <tr>
                         <td colSpan={6} className="py-12  text-center text-muted-foreground font-mono text-xs">
                           {type === "transfer" 

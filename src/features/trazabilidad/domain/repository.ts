@@ -11,6 +11,7 @@ import {
 
 export interface ITrazabilidadRepository {
   getAssetList(): Promise<Asset[]>;
+  getMovableAssetsByOriginLocation(locationId: string): Promise<Asset[]>;
   getAssetById(id: string): Promise<Asset | undefined>;
   getAssetsUnderInspection(): Promise<Asset[]>;
   getDashboardStats(): Promise<TrazabilidadStats>;

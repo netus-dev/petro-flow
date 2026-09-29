@@ -9,6 +9,14 @@ export class GetAssetListUseCase {
   }
 }
 
+export class GetMovableAssetsByOriginLocationUseCase {
+  constructor(private repository: ITrazabilidadRepository) {}
+
+  async execute(locationId: string): Promise<Asset[]> {
+    return this.repository.getMovableAssetsByOriginLocation(locationId);
+  }
+}
+
 export class GetAssetByIdUseCase {
   constructor(private repository: ITrazabilidadRepository) {}
 
