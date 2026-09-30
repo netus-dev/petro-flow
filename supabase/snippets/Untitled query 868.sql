@@ -1,0 +1,1 @@
+select fp.name, fp.is_active, count(a.id) filter (where a.is_active=true)::int as active_assets from public.functional_principles fp left join public.assets a on a.function_principle_id=fp.id and a.company_id=fp.company_id group by fp.name,fp.is_active order by fp.name;
