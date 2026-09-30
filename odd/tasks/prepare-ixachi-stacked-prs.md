@@ -35,7 +35,11 @@ Create a privacy-safe tracking issue and prepare the published Ixachi branch for
 - Built isolated PR1 candidate branch `fix/ixachi-catalog-operations-gate` at commit `0062fbb609f2061fc7ee596f881a93994a5f1e0d` in the user-authorized worktree `/Users/oalonso/Documents/GitHub/Personal/petro-flow-pr-slices`.
 - Native review lineage `review-caf2e951f5ab49f8` reviewed one committed path (`supabase/snippets/7. assign_role_to_user.sql`, 46 lines) against `integrate-develop` commit `32661f2f5b626c39e71368ed928190004f7b3a05`.
 - After the user configured reviewer routing, `review-reliability` completed; the candidate was approved and its exact acknowledgement burned the authority. Advisory finding `R3-AmbiguousLookup` is WARNING/informational, non-blocking, with no correction offered.
-- No PR or push has occurred. PR2 is not yet prepared.
+## PR2 candidate and review-start blocker
+- Built `feat/ixachi-rbac-provisioning-scopes` at commit `a496cf8bdf28858c200bb689c6e6744fd0995886` in the same authorized worktree, stacked on `fix/ixachi-catalog-operations-gate`.
+- Static Git verification confirmed a clean worktree and exactly one changed path relative to PR1: `supabase/snippets/8. provision_user_company_role.sql`, 399 additions/0 deletions; `git diff --check` passed. No live SQL or direct snippet test was run.
+- PR2 native review could not start: two START attempts after inspect returned `consent-binding-expired` with `native_invocation_attempted=false`, `lineage_created=false`, and `mutation_performed=false`. No PR2 review lineage exists; do not use the failed proposed lineage for STATUS/advance. The candidate remains unchanged.
+- No PR or push has occurred. A fresh valid START/consent flow is needed before reviewing PR2.
 
 ## Implementation evidence
 - Parameterized snippet 7: required company UUID, role, and target email default to NULL and are validated before database access.
@@ -56,9 +60,10 @@ The original 696-line diff is 36 additions in snippet 7, 390 in snippet 8, and 2
 2. [x] Create privacy-safe issue #31 and verify its target-host read-back.
 3. [x] Parameterize production values in snippets 7 and 8; leave public history unchanged. Commit IDs recorded above.
 4. [x] Create/apply approved/type labels to issue #31 and resolve the issue approval gate.
-5. [ ] Create clean stacked PR slices under 400 changed lines, excluding ODD process docs. (PR1 reviewed and approved; PR2 remains.) (in progress)
+5. [x] Create clean stacked PR slices under 400 changed lines, excluding ODD process docs. (PR1: 46 lines; PR2: 399 lines.)
 6. [ ] Create and verify PRs after the approval/label gates; do not merge.
 7. [x] Configure reviewer routing and complete PR1 native review; approval acknowledged.
+8. [ ] Obtain a fresh valid PR2 START consent and complete native review. (Current START attempts failed before invocation because consent bindings were expired.)
 
 ## Relevant files
 - `supabase/snippets/7. assign_role_to_user.sql`
