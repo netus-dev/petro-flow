@@ -1,10 +1,36 @@
-import { AssetInventoryItem } from "../entities";
+import { FunctionalPrincipleInventoryItem } from "../entities";
 
-/** Repository contract for inventory whose scope is explicit in every item. */
+export type InventoryWriteInput = Pick<
+  FunctionalPrincipleInventoryItem,
+  | "functionalPrincipleId"
+  | "material"
+  | "specification"
+  | "quantityInStock"
+  | "minimumStock"
+>;
+
+/** Company-scoped persistence contract for shared functional-principle stock. */
 export interface IInventoryRepository {
-  getByAssetId(assetId: string): Promise<AssetInventoryItem[]>;
-  getAll(): Promise<AssetInventoryItem[]>;
-  create(item: Omit<AssetInventoryItem, "id">): Promise<AssetInventoryItem>;
-  update(id: string, item: Omit<AssetInventoryItem, "id">): Promise<AssetInventoryItem>;
-  delete(id: string): Promise<void>;
+  listActive(
+    companyId: string,
+    visiblePrincipleIds: readonly string[],
+  ): Promise<FunctionalPrincipleInventoryItem[]>;
+  getActiveByPrinciple(
+    companyId: string,
+    functionalPrincipleId: string,
+  ): Promise<FunctionalPrincipleInventoryItem[]>;
+  create(
+    companyId: string,
+    item: InventoryWriteInput,
+  ): Promise<FunctionalPrincipleInventoryItem>;
+  update(
+    companyId: string,
+    id: string,
+    item: InventoryWriteInput,
+  ): Promise<FunctionalPrincipleInventoryItem>;
+  deactivate(companyId: string, id: string): Promise<void>;
+  reactivate(
+    companyId: string,
+    id: string,
+  ): Promise<FunctionalPrincipleInventoryItem>;
 }

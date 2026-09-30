@@ -88,7 +88,7 @@ export function HourMeterCard({ record, isSelected, onClick }: HourMeterCardProp
   return (
     <Card
       onClick={() => onClick(record.id)}
-      className={`transition-all duration-300 cursor-pointer hover:scale-[1.01] ${cardBg} ${severityBorder} ${accent.rail} h-full overflow-hidden flex flex-col border-l-4 p-0 ${isSelected ? "ring-2 ring-primary ring-offset-2 ring-offset-background scale-[1.01]" : ""
+      className={`transition-all duration-300 cursor-pointer hover:scale-[1.01] ${cardBg} ${severityBorder} ${accent.rail} h-full overflow-hidden flex flex-col border-l-4 p-0 ${isSelected ? "scale-[1.01]" : ""
         }`}
     >
 
@@ -96,7 +96,7 @@ export function HourMeterCard({ record, isSelected, onClick }: HourMeterCardProp
         {/* Nivel 1: Encabezado compacto (Título + ID a la izquierda, Badge a la derecha) */}
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <h3 className="text-sm md:text-base font-bold tracking-tight text-foreground truncate">
+            <h3 className={`text-sm md:text-base font-bold tracking-tight text-foreground truncate ${isSelected ? "text-primary" : "text-foreground"}`}>
               {record.equipment}
             </h3>
           </div>
@@ -120,7 +120,7 @@ export function HourMeterCard({ record, isSelected, onClick }: HourMeterCardProp
             </span>
             <div className="flex items-baseline justify-center gap-1 mt-0.5">
               <span className="text-3xl md:text-4xl font-black font-mono tabular-nums tracking-tight text-foreground">
-                {record.currentReading === null ? "Sin lecturas" : record.currentReading.toLocaleString()}
+                {record.currentReading === null ? "0" : record.currentReading.toLocaleString()}
               </span>
               <span className="text-xs font-mono font-bold text-muted-foreground">hrs</span>
             </div>

@@ -20,19 +20,20 @@ import {
   SelectValue,
 } from "@/src/core/presentation/components/ui/select";
 import { Asset, AssetMovementPayload, TransactionType } from "../../domain/entities";
-import { catalogsRepository } from "@/src/features/catalogs/infrastructure/repository";
+import { readCatalogItems } from "@/src/features/catalogs/infrastructure/server/catalog-actions";
+import { getMovableTrazabilidadAssets } from "../../infrastructure/server/trazabilidad-actions";
 import { Checkbox } from "@/src/core/presentation/components/ui/checkbox";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/src/core/presentation/components/ui/tooltip";
 import { FileUp, Shuffle, Info, Search, Upload, FileText, Image as ImageIcon, X, AlertCircle } from "lucide-react";
 
 interface Props {
-  assets: Asset[];
   onRegister: (payload: AssetMovementPayload) => Promise<void>;
+  trigger?: React.ReactNode;
 }
 
-export function RegisterBatchMovementModal({ assets, onRegister }: Props) {
+export function RegisterBatchMovementModal({ onRegister, trigger }: Props) {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [step, setStep] = useState<1 | 2>(1);
 
   // Form State
   const [type, setType] = useState<TransactionType | "">("");
@@ -57,24 +58,49 @@ export function RegisterBatchMovementModal({ assets, onRegister }: Props) {
   const [locations, setLocations] = useState<any[]>([]);
   const [ubications, setUbications] = useState<any[]>([]);
   const [functionalPrinciples, setFunctionalPrinciples] = useState<any[]>([]);
+  const [assets, setAssets] = useState<Asset[]>([]);
+  const [assetsLoading, setAssetsLoading] = useState(false);
 
   useEffect(() => {
     if (open) {
       Promise.all([
-        catalogsRepository.getItems("locations"),
-        catalogsRepository.getItems("ubications"),
-        catalogsRepository.getItems("functional_principles"),
+        readCatalogItems("locations"),
+        readCatalogItems("ubications"),
+        readCatalogItems("functional_principles"),
       ])
         .then(([locs, ubis, fps]) => {
-          setLocations(locs);
-          setUbications(ubis);
-          setFunctionalPrinciples(fps);
+          if (!locs.ok || !ubis.ok || !fps.ok) {
+            throw new Error("Unable to load movement catalogs");
+          }
+          setLocations(locs.data);
+          setUbications(ubis.data);
+          setFunctionalPrinciples(fps.data);
         })
         .catch(console.error);
     } else {
       resetForm();
     }
   }, [open]);
+
+  useEffect(() => {
+    if (!originLocation) {
+      setAssets([]);
+      return;
+    }
+
+    let cancelled = false;
+    setAssetsLoading(true);
+    getMovableTrazabilidadAssets(originLocation)
+      .then((nextAssets) => {
+        if (!cancelled) setAssets(nextAssets);
+      })
+      .catch(console.error)
+      .finally(() => {
+        if (!cancelled) setAssetsLoading(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [originLocation]);
 
   // Certificates Handlers
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -148,22 +174,14 @@ export function RegisterBatchMovementModal({ assets, onRegister }: Props) {
   };
 
 
-  const handleNextStep = () => {
-    if (!type || !originLocation || !justification) return;
-    if (type === "transfer" && !destinationLocation) return;
-    if (type === "transfer") {
-       if (certificates.some(c => !c.name.trim())) {
-           setCertError("Todos los certificados adjuntos deben tener un nombre.");
-           return;
-       }
-    }
-    if (type === "reubication" && (!originUbication || !destinationUbication)) return;
-    
-    setStep(2);
-  };
-
   const handleConfirm = async () => {
-    if (selectedAssetIds.size === 0) return;
+    if (!type || !originLocation || !justification || selectedAssetIds.size === 0) return;
+    if (type === "transfer" && (!destinationLocation || !patioUbication)) return;
+    if (type === "reubication" && (!originUbication || !destinationUbication)) return;
+    if (type === "transfer" && certificates.some(c => !c.name.trim())) {
+      setCertError("Todos los certificados adjuntos deben tener un nombre.");
+      return;
+    }
     
     setIsLoading(true);
     try {
@@ -181,6 +199,7 @@ export function RegisterBatchMovementModal({ assets, onRegister }: Props) {
 
       if (type === "transfer") {
         payload.destination_location_id = destinationLocation;
+        payload.destination_ubication_id = patioUbication.id;
         if (certificates.length > 0) {
            payload.certificates = certificates.map(c => ({ file: c.file, name: c.name.trim() }));
         }
@@ -200,7 +219,6 @@ export function RegisterBatchMovementModal({ assets, onRegister }: Props) {
   };
 
   const resetForm = () => {
-    setStep(1);
     setType("");
     setOriginLocation("");
     setOriginUbication("");
@@ -221,8 +239,6 @@ export function RegisterBatchMovementModal({ assets, onRegister }: Props) {
   }, [ubications]);
 
   const availableAssets = useMemo(() => {
-    if (step !== 2) return [];
-
     let filtered = assets.filter((a) => {
       // Must be active to be moved
       if (a.is_active === false) return false;
@@ -260,7 +276,7 @@ export function RegisterBatchMovementModal({ assets, onRegister }: Props) {
     });
 
     return filtered;
-  }, [assets, step, originLocation, originUbication, type, filterPrinciple, search, patioUbication]);
+  }, [assets, originLocation, originUbication, type, filterPrinciple, search, patioUbication]);
 
 
   return (
@@ -268,14 +284,16 @@ export function RegisterBatchMovementModal({ assets, onRegister }: Props) {
       setOpen(val);
       if (!val) resetForm();
     }}>
-      <DialogTrigger asChild>
-        <Button variant="secondary" className="gap-2 h-9">
-          <Shuffle className="size-4" />
-          Registrar Movimiento
-        </Button>
-      </DialogTrigger>
+      <Tooltip>
+        <DialogTrigger asChild>
+          <TooltipTrigger asChild>
+            {trigger || <Button variant="secondary" className="gap-2 h-9"><Shuffle className="size-4" />Registrar Movimiento</Button>}
+          </TooltipTrigger>
+        </DialogTrigger>
+        <TooltipContent>Registrar movimiento</TooltipContent>
+      </Tooltip>
       
-      <DialogContent className="max-w-[800px] bg-card border-border p-0 overflow-hidden flex flex-col max-h-[90vh]">
+      <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-[95vw] bg-card border-border p-0 overflow-hidden flex flex-col max-h-[90vh]">
         <DialogHeader className="p-6 border-b border-border bg-secondary/10 shrink-0">
           <DialogTitle className="font-mono text-xl">Registrar Movimiento</DialogTitle>
           <p className="text-sm text-muted-foreground mt-1">
@@ -283,9 +301,11 @@ export function RegisterBatchMovementModal({ assets, onRegister }: Props) {
           </p>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
-          {step === 1 ? (
-            <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-right-4">
+        <div
+          className="flex-1 overflow-y-auto p-6 grid grid-cols-2 gap-6"
+          style={{ gridTemplateColumns: "minmax(0, 1fr) minmax(0, 2fr)" }}
+        >
+            <div className="flex flex-col gap-6">
               <div className="flex flex-col gap-3">
                 <Label>Tipo de Movimiento</Label>
                 <Select value={type} onValueChange={(val: "transfer" | "reubication") => {
@@ -330,7 +350,14 @@ export function RegisterBatchMovementModal({ assets, onRegister }: Props) {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex flex-col gap-2">
                     <Label className="text-xs uppercase tracking-widest text-muted-foreground">Locación Origen</Label>
-                    <Select value={originLocation} onValueChange={setOriginLocation}>
+                    <Select value={originLocation} onValueChange={(value) => {
+                      setOriginLocation(value);
+                      setOriginUbication("");
+                      setSelectedAssetIds(new Set());
+                      setCommentsMap({});
+                      setSearch("");
+                      setAssets([]);
+                    }}>
                       <SelectTrigger className="bg-secondary/20 h-10 border-border">
                         <SelectValue placeholder="Seleccionar" />
                       </SelectTrigger>
@@ -489,8 +516,15 @@ export function RegisterBatchMovementModal({ assets, onRegister }: Props) {
                 </div>
               )}
             </div>
-          ) : (
-            <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-right-4 h-full">
+
+            <div className="flex flex-col gap-4 min-h-0">
+              {!originLocation ? (
+                <div className="flex flex-1 min-h-[280px] flex-col items-center justify-center gap-4 rounded-md border border-dashed border-border bg-secondary/10 text-center text-muted-foreground">
+                  <Shuffle className="size-10 opacity-40" />
+                  <p className="font-mono text-sm">{type === "transfer" ? "Seleccione una locación de origen" : "Seleccione una locación"}</p>
+                </div>
+              ) : (
+                <>
               <div className="flex items-center gap-3 bg-secondary/20 p-3 rounded-lg border border-border">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
@@ -538,7 +572,9 @@ export function RegisterBatchMovementModal({ assets, onRegister }: Props) {
                     </tr>
                   </thead>
                   <tbody>
-                    {availableAssets.length === 0 ? (
+                     {assetsLoading ? (
+                       <tr><td colSpan={6} className="py-12 text-center text-muted-foreground font-mono text-xs">Cargando activos...</td></tr>
+                     ) : availableAssets.length === 0 ? (
                       <tr>
                         <td colSpan={6} className="py-12  text-center text-muted-foreground font-mono text-xs">
                           {type === "transfer" 
@@ -583,31 +619,24 @@ export function RegisterBatchMovementModal({ assets, onRegister }: Props) {
                   </tbody>
                 </table>
               </div>
+                </>
+              )}
             </div>
-          )}
         </div>
 
         <DialogFooter className="p-6 border-t border-border bg-secondary/10 shrink-0">
           <Button variant="ghost" className="border border-border" onClick={() => {
-            if (step === 2) setStep(1);
-            else setOpen(false);
+            setOpen(false);
           }}>
-            {step === 2 ? "Atrás" : "Cancelar"}
+            Cancelar
           </Button>
-          
-          {step === 1 ? (
-             <Button onClick={handleNextStep} disabled={!type || !originLocation || !justification || (type === "transfer" && !destinationLocation) || (type === "reubication" && (!originUbication || !destinationUbication))}>
-               Siguiente <Shuffle className="size-4 ml-2" />
-             </Button>
-          ) : (
-            <Button 
-               disabled={selectedAssetIds.size === 0 || isLoading} 
-               onClick={handleConfirm}
-               className="gap-2 font-semibold"
-            >
-              {isLoading ? "Guardando..." : "Confirmar Selección"}
-            </Button>
-          )}
+          <Button
+             disabled={selectedAssetIds.size === 0 || isLoading}
+             onClick={handleConfirm}
+             className="gap-2 font-semibold"
+          >
+            {isLoading ? "Guardando..." : "Confirmar Selección"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

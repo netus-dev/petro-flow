@@ -6,7 +6,6 @@ import {
   SidebarInset,
 } from "@/src/core/presentation/components/ui/sidebar";
 import { AppSidebar } from "@/src/core/presentation/components/layout/app-sidebar";
-import { DashboardNavbar } from "@/src/features/dashboard/presentation/components/dashboard-navbar";
 import { DashboardFooter } from "@/src/features/dashboard/presentation/components/dashboard-footer";
 import { AppProvider } from "@/src/core/presentation/providers/providers";
 import { AppLoader } from "@/src/core/presentation/components/ui/app-loader";
@@ -27,7 +26,7 @@ export default async function AuthenticatedLayout({
   }
 
   const authorization = await loadAuthorization();
-  if (authorization.status === "context_required") redirect("/dashboard");
+  if (authorization.status === "context_required") redirect("/auth/login");
 
   // 3. Consultar el perfil extendido en la base de datos
   const { data: profile } = await supabase
@@ -49,7 +48,6 @@ export default async function AuthenticatedLayout({
       <SidebarProvider>
         <AppSidebar initialUser={userData} initialAuthorization={authorization.projection} />
         <SidebarInset>
-          <DashboardNavbar />
           <div className="flex-1 overflow-auto min-w-0">
             <Suspense fallback={<AppLoader />}>{children}</Suspense>
           </div>

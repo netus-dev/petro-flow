@@ -1,0 +1,40 @@
+# Review, commit, and publish local work branches
+
+## Goal
+Review current local work, commit Ixachi onboarding records in separate work units, then publish the local feature branches for later PR preparation. Do not create PRs in this task.
+
+## Current branch and working-tree scope
+- Current branch: `fix/ixachi-operations-catalog-rbac`; the final verified local/live origin tip is `513aca633db5b401d9a8db958b7075f98e38191d`.
+- Ixachi work-unit and status-record commits were fast-forward published; local and remote are synchronized.
+- The Calidad assignment and all-rigs task docs are committed separately.
+- Exclude ambient changes: modified seed snippets 1–6, untracked `supabase/migrations/20260929100000_restore_authenticated_asset_stats_rpc.sql`, and `supabase/snippets/Untitled query 868.sql`.
+
+## Local branch inventory
+- `fix/ixachi-operations-catalog-rbac`: published fast-forward; final local and live origin tip matched at `513aca633db5b401d9a8db958b7075f98e38191d`.
+- `feature/rbac-multitenant-audit-admin`: 6 local commits ahead of its cached upstream; includes hour-meter/RBAC feature and tests.
+- `module/trazability`: 3 local commits ahead of its cached upstream; includes Speckit workflow and constitution documentation.
+- Other local branches are not ahead of their upstreams.
+- Live `git ls-remote` returned no refs for `feature/rbac-multitenant-audit-admin` or `module/trazability`; user selected not to recreate either remote branch.
+- No PR was opened. No force-push.
+
+## Tasks
+1. [x] Inventory worktree paths, branch refs, and local-only commit contents; identify unrelated files to exclude.
+2. [x] Commit the Calidad assignment evidence as its own documentation work unit.
+3. [x] Commit the all-rigs scope evidence as its own documentation work unit.
+4. [x] Publish `fix/ixachi-operations-catalog-rbac` as a fast-forward update to its existing remote ref.
+5. [x] Verify the Ixachi ref and honor the user's choice not to create remote refs for the other local-ahead branches.
+
+## Verification and delivery constraints
+- Stage exact paths only and inspect the staged path list before each commit.
+- The two task-document commits have no runtime test command; they document already-verified production state.
+- The existing unrelated worktree changes must remain untouched and absent from commits.
+- Check live remote heads before push; if any branch moved or a push is non-fast-forward, stop without force-pushing.
+- No PR creation, merge, release, or production DML in this task.
+
+## Commit evidence
+- Existing current-branch commits: `ceb5da5f8dbf39790a905bc13bca91debeca631a`, `dd238b73da9c0234f55ab4f6face9c7a47ef8d26`, `bd5b8e1ed4c19a872c11ae522f68819a355a6dfc`.
+- Calidad assignment docs: `2720cfd6a7731e24db9375c2cda3760baf8d2538` — `docs(odd): record Calidad assignment evidence`.
+- All-rigs scope docs: `c4abcfad8bb69cc9600b134309a4d41445585e1d` — `docs(odd): record Calidad all-rigs scope`.
+- Branch-publication tracking commit: `5c179a416e2ef1d14d2c92cb5069c0692ef8705d` — `docs(odd): track local branch publication`.
+- Pushes: `git push origin fix/ixachi-operations-catalog-rbac` succeeded as fast-forward updates; final `git ls-remote` and local `HEAD` matched at `513aca633db5b401d9a8db958b7075f98e38191d` (ahead/behind 0/0).
+- `feature/rbac-multitenant-audit-admin` and `module/trazability` were not published per user's selection; their live origin refs remain absent.

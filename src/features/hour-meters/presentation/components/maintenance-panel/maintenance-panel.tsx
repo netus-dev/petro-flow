@@ -1,13 +1,14 @@
 "use client";
 
-import { X, Clock, AlertTriangle, Settings, Package } from "lucide-react";
+import { X, Clock, AlertTriangle, Settings, Package, Settings2 } from "lucide-react";
 import { getInventoryAvailability, ResolvedMaintenancePlan } from "../../../domain/entities";
 import { ActivityList } from "./activity-list";
 import { useEquipmentKpi } from "../../hooks/use-equipment-kpi";
 import { KpiMetricGrid } from "./kpi-metric-grid";
 import { useDailyOperationsKpi } from "../../hooks/use-daily-operations-kpi";
-import { useAssetInventory } from "../../hooks/use-asset-inventory";
+import { useFunctionalPrincipleInventory } from "../../hooks/use-asset-inventory";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/core/presentation/components/ui/tabs";
+import { getMaintenanceInventoryPrincipleId } from "../maintenance-inventory";
 
 
 /**
@@ -31,7 +32,7 @@ export function MaintenancePanel({ resolvedPlan, isLoading, onClose }: Maintenan
     resolvedPlan?.equipmentId ?? null
   );
   const { dailyKpi, isLoading: isDailyKpiLoading } = useDailyOperationsKpi(resolvedPlan?.equipmentId ?? null);
-  const { items: inventory, isLoading: isInventoryLoading, error: inventoryError } = useAssetInventory(resolvedPlan?.equipmentId ?? null);
+  const { items: inventory, isLoading: isInventoryLoading, error: inventoryError } = useFunctionalPrincipleInventory(getMaintenanceInventoryPrincipleId(resolvedPlan));
 
   // 1. Estado de carga (Skeleton Screen)
   if (isLoading) {
@@ -85,10 +86,10 @@ export function MaintenancePanel({ resolvedPlan, isLoading, onClose }: Maintenan
     );
   }
 
-  // 2. Estado vacío (Sin activo seleccionado o sin datos)
+  // 2. Estado de activo seleccionado sin configuración
   if (!resolvedPlan) {
     return (
-      <aside className="w-full lg:w-[440px] shrink-0 border border-border/50 bg-card/25 backdrop-blur-md rounded-xl p-6 flex flex-col items-center justify-center text-center h-full">
+      <aside className="relative w-full lg:w-[440px] shrink-0 border border-border/50 bg-card/25 backdrop-blur-md rounded-xl p-6 flex flex-col items-center justify-center text-center h-full">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-muted/80 text-muted-foreground transition-colors"
@@ -97,13 +98,13 @@ export function MaintenancePanel({ resolvedPlan, isLoading, onClose }: Maintenan
           <X className="size-5" />
         </button>
         <div className="flex size-14 items-center justify-center rounded-2xl bg-muted/30 border border-border/50 text-muted-foreground/60 mb-4">
-          <Clock className="size-7" />
+          <Settings2 className="size-7" />
         </div>
         <h3 className="font-mono text-sm tracking-widest text-muted-foreground uppercase font-bold">
-          Sin Selección
+          Activo sin configuración
         </h3>
         <p className="text-xs text-muted-foreground max-w-[240px] mt-2">
-          Seleccione un activo del panel izquierdo para visualizar su plan de mantenimiento estimado.
+          Por favor, configure los umbrales del equipo para su uso.
         </p>
       </aside>
     );
@@ -211,7 +212,6 @@ export function MaintenancePanel({ resolvedPlan, isLoading, onClose }: Maintenan
           <ActivityList activities={resolvedPlan.activities} />
         </TabsContent>
           <TabsContent value="inventory" className="mt-3">
-            {inventory[0]?.scope === "shared_equipment_type" && <div className="mb-3 rounded-lg border border-primary/20 bg-primary/5 p-2 text-[11px] text-muted-foreground">Inventario compartido para <strong className="text-foreground">{inventory[0].equipmentType}</strong>. Las cantidades corresponden al stock común de este tipo de equipo.</div>}
           {isInventoryLoading ? <div className="space-y-3 animate-pulse"><div className="h-12 rounded-lg bg-muted" /><div className="h-12 rounded-lg bg-muted" /></div> : inventoryError ? <p className="text-xs text-red-500">{inventoryError}</p> : inventory.length === 0 ? <p className="text-xs text-muted-foreground text-center py-8">No hay inventario asignado a este activo.</p> : <div className="space-y-2">
             {inventory.map((item) => {
               const availability = getInventoryAvailability(item);

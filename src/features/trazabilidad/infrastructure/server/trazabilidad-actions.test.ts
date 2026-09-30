@@ -4,6 +4,7 @@ const { createTenantClient, repository } = vi.hoisted(() => ({
   createTenantClient: vi.fn(),
   repository: {
     getAssetList: vi.fn(),
+    getMovableAssetsByOriginLocation: vi.fn(),
     getDashboardStats: vi.fn(),
     getMovementList: vi.fn(),
   },
@@ -18,29 +19,33 @@ vi.mock("../supabase-repository", () => ({
   },
 }));
 
-import { readTrazabilidadData } from "./trazabilidad-actions";
+import { getMovableTrazabilidadAssets, getTrazabilidadAssets, getTrazabilidadDashboardStats, getTrazabilidadMovements } from "./trazabilidad-actions";
 
 describe("trazabilidad server actions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     createTenantClient.mockResolvedValue({});
     repository.getAssetList.mockResolvedValue(["asset"]);
+    repository.getMovableAssetsByOriginLocation.mockResolvedValue(["movable"]);
     repository.getDashboardStats.mockResolvedValue({ total: 1 });
     repository.getMovementList.mockResolvedValue(["movement"]);
   });
 
-  it("composes reads with a validated tenant client", async () => {
-    await expect(readTrazabilidadData()).resolves.toEqual([
-      ["asset"],
-      { total: 1 },
-      ["movement"],
-    ]);
-    expect(createTenantClient).toHaveBeenCalledOnce();
+  it("loads each view through its specific repository read", async () => {
+    await expect(getTrazabilidadAssets()).resolves.toEqual(["asset"]);
+    await expect(getTrazabilidadDashboardStats()).resolves.toEqual({ total: 1 });
+    await expect(getTrazabilidadMovements()).resolves.toEqual(["movement"]);
+    expect(createTenantClient).toHaveBeenCalledTimes(3);
+  });
+
+  it("loads movable assets through the tenant-scoped repository", async () => {
+    await expect(getMovableTrazabilidadAssets("location-1")).resolves.toEqual(["movable"]);
+    expect(repository.getMovableAssetsByOriginLocation).toHaveBeenCalledWith("location-1");
   });
 
   it("fails before repository composition when tenant validation is unavailable", async () => {
     createTenantClient.mockResolvedValue(null);
 
-    await expect(readTrazabilidadData()).rejects.toThrow("Tenant context is unavailable");
+    await expect(getTrazabilidadAssets()).rejects.toThrow("Tenant context is unavailable");
   });
 });

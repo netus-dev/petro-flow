@@ -17,6 +17,7 @@ interface TrazabilidadDashboardState {
   assetsUnderInspection: Asset[];
   isLoading: boolean;
   isInitialLoading: boolean;
+  hasInitialLoadCompleted: boolean;
   isInspectionLoading: boolean;
   error: string | null;
 
@@ -34,6 +35,7 @@ export const useTrazabilidadDashboardStore = create<TrazabilidadDashboardState>(
   assetsUnderInspection: [],
   isLoading: false,
   isInitialLoading: false,
+  hasInitialLoadCompleted: false,
   isInspectionLoading: false,
   error: null,
 
@@ -45,12 +47,12 @@ export const useTrazabilidadDashboardStore = create<TrazabilidadDashboardState>(
       if (principles.length > 0) {
         const firstId = principles[0].id;
         set({ principles, selectedPrincipleId: firstId });
-        set({ stats, isInitialLoading: false });
+        set({ stats, isInitialLoading: false, hasInitialLoadCompleted: true });
       } else {
-        set({ principles: [], selectedPrincipleId: null, stats: [], isInitialLoading: false });
+        set({ principles: [], selectedPrincipleId: null, stats: [], isInitialLoading: false, hasInitialLoadCompleted: true });
       }
     } catch (err: any) {
-      set({ error: err.message || "Error al cargar datos iniciales", isInitialLoading: false });
+      set({ error: err.message || "Error al cargar datos iniciales", isInitialLoading: false, hasInitialLoadCompleted: true });
     }
   },
 

@@ -7,6 +7,11 @@ vi.mock("@/src/core/lib/supabase/middleware", () => ({
   updateSession: vi.fn(),
 }));
 
+vi.mock("@/src/features/authorization/infrastructure/server/company-context", () => ({
+  COMPANY_CONTEXT_COOKIE: "petro_company_context",
+  readCompanyContext: vi.fn(() => null),
+}));
+
 describe("Middleware Authentication", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -27,9 +32,31 @@ describe("Middleware Authentication", () => {
     );
   });
 
-  it("should redirect authenticated user away from public /auth/login to /dashboard", async () => {
+  it("should allow authenticated user to open /auth/login", async () => {
+    const mockResponse = { headers: new Headers() } as any;
     vi.mocked(supabaseMiddleware.updateSession).mockResolvedValueOnce({
-      supabaseResponse: {} as any,
+      supabaseResponse: mockResponse,
+      user: { id: "user-123", email: "test@example.com" } as any,
+    });
+
+    const request = new NextRequest("http://localhost:3000/auth/login");
+    const response = await proxy(request);
+
+    expect(response).toBe(mockResponse);
+  });
+
+  it("should redirect authenticated user with a valid company context away from auth routes", async () => {
+    const mockResponse = { headers: new Headers() } as any;
+    const { readCompanyContext } = await import(
+      "@/src/features/authorization/infrastructure/server/company-context"
+    );
+    vi.mocked(readCompanyContext).mockReturnValue({
+      companyId: "company-123",
+      contextId: "context-123",
+      issuedAt: Date.now(),
+    });
+    vi.mocked(supabaseMiddleware.updateSession).mockResolvedValueOnce({
+      supabaseResponse: mockResponse,
       user: { id: "user-123", email: "test@example.com" } as any,
     });
 

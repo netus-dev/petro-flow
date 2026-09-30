@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { 
+import {
   Asset,
   AssetStatus,
   TrazabilidadStats,
@@ -13,13 +13,76 @@ import {
 import { ITrazabilidadRepository } from "../domain/repository";
 import { uploadCertificateAction } from "./server/certificate-actions";
 
+function nullableValue(value: unknown) {
+  return value === "" || value === undefined ? null : value;
+}
+
+function assetPropertyValue(key: string, value: unknown) {
+  const normalized = nullableValue(value);
+  if (normalized === null) return null;
+  if (/^property_(1[1-9]|20)$/.test(key)) {
+    const numeric = Number(normalized);
+    return Number.isNaN(numeric) ? null : numeric;
+  }
+  return normalized;
+}
+
+function relationRecord(relation: unknown): Record<string, any> {
+  if (Array.isArray(relation)) return relation[0] ?? {};
+  return relation && typeof relation === "object" ? relation as Record<string, any> : {};
+}
+
+async function mapCertificate(supabase: SupabaseClient, certificate: any): Promise<AssetCertificate> {
+  let fileUrl = "";
+  if (certificate.storage_path) {
+    const { data } = await supabase.storage.from("certificates").createSignedUrl(certificate.storage_path, 3600);
+    fileUrl = data?.signedUrl || "";
+  }
+  return {
+    id: certificate.id,
+    name: certificate.file_name || "Certificado",
+    uploadDate: certificate.uploaded_at?.split("T")[0] || "",
+    fileUrl,
+  };
+}
+
+async function mapTransactionCertificates(supabase: SupabaseClient, links: any[] = []): Promise<AssetCertificate[]> {
+  return Promise.all(links.map((link) => link.certificates).filter(Boolean).map((certificate) => mapCertificate(supabase, certificate)));
+}
+
 export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
-  constructor(private readonly supabase: SupabaseClient) {}
+  constructor(private readonly supabase: SupabaseClient) { }
+
+  private async getTransactionCertificateLinks(transactionIds: string[]): Promise<Record<string, any[]>> {
+    if (transactionIds.length === 0) return {};
+
+    const { data: links, error: linksError } = await this.supabase
+      .from("transactions_certificates")
+      .select("transaction_id, certificate_id")
+      .in("transaction_id", transactionIds);
+    if (linksError) throw linksError;
+
+    const certificateIds = Array.from(new Set((links ?? []).map((link: any) => link.certificate_id)));
+    if (certificateIds.length === 0) return {};
+
+    const { data: certificates, error: certificatesError } = await this.supabase
+      .from("certificates")
+      .select("id, storage_path, file_name, uploaded_at")
+      .in("id", certificateIds);
+    if (certificatesError) throw certificatesError;
+
+    const certificatesById = new Map((certificates ?? []).map((certificate: any) => [certificate.id, certificate]));
+    return (links ?? []).reduce((result: Record<string, any[]>, link: any) => {
+      const certificate = certificatesById.get(link.certificate_id);
+      if (certificate) (result[link.transaction_id] ??= []).push({ certificates: certificate });
+      return result;
+    }, {});
+  }
 
   async getFunctionalPrinciples(): Promise<FunctionalPrincipleCatalog[]> {
     const { data, error } = await this.supabase
       .from("functional_principles")
-      .select("id, name, scopes:functional_principle_scopes(code), assets!inner(id)")
+      .select("id, name, scopes:functional_principle_scopes(code), assets:assets!assets_function_principle_same_company_fkey!inner(id)")
       .eq("is_active", true)
       .eq("assets.is_active", true)
       .order("name");
@@ -30,8 +93,8 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
     }
 
     // Deduplicate as !inner may return multiple rows per principle if many assets exist
-    const unique = Array.from(new Map((data || []).map((item: any) => [item.id, { 
-      id: item.id, 
+    const unique = Array.from(new Map((data || []).map((item: any) => [item.id, {
+      id: item.id,
       name: item.name,
       type_code: Array.isArray(item.scopes) ? item.scopes[0]?.code : item.scopes?.code
     }])).values());
@@ -68,28 +131,32 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
         models:model_id ( * ),
         functional_principles:function_principle_id ( *, scopes:functional_principle_scopes(code) ),
         locations:current_location_id ( * ),
-        ubications:current_ubication_id ( * ),
-        assets_certificates (
-          certificates ( id, storage_path, file_name, uploaded_at )
-        ),
-        transaction_details (
-          comments,
-          transactions (
-            id, type, date, justification, origin_location_id, destination_location_id,
-            origin:locations!fk_origin_location(name),
-            destination:locations!fk_destination_location(name),
-            origin_ubication:ubications!transactions_origin_ubication_id_fkey(name),
-            destination_ubication:ubications!transactions_destination_ubication_id_fkey(name),
-            users:created_by(name)
-          )
-        )
+        ubications:ubications!assets_company_id_current_ubication_id_fkey ( * )
       `);
 
     if (error) {
       console.error("Error fetching assets from Supabase", error);
-      return [];
+      throw error;
     }
 
+    return Promise.all((data || []).map((row: any) => this.mapRowToAsset(row)));
+  }
+
+  async getMovableAssetsByOriginLocation(locationId: string): Promise<Asset[]> {
+    const { data, error } = await this.supabase
+      .from("assets")
+      .select(`
+        *,
+        brands:brand_id ( name ),
+        models:model_id ( name ),
+        functional_principles:function_principle_id ( name ),
+        locations:current_location_id ( name ),
+        ubications:ubications!assets_company_id_current_ubication_id_fkey ( name )
+      `)
+      .eq("is_active", true)
+      .eq("current_location_id", locationId);
+
+    if (error) throw error;
     return Promise.all((data || []).map((row: any) => this.mapRowToAsset(row)));
   }
 
@@ -102,7 +169,7 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
         models:model_id ( name ),
         functional_principles:function_principle_id ( name ),
         locations:current_location_id ( name ),
-        ubications:current_ubication_id ( name )
+        ubications:ubications!assets_company_id_current_ubication_id_fkey ( name )
       `)
       .eq("status", "under_inspection")
       .eq("is_active", true);
@@ -122,9 +189,12 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
         *,
         brands:brand_id ( name ),
         models:model_id ( name ),
-        functional_principles:function_principle_id ( *, scopes:functional_principle_scopes(code) ),
+        functional_principles:function_principle_id (
+          *,
+          scopes:functional_principle_scopes (code)
+        ),
         locations:current_location_id ( name ),
-        ubications:current_ubication_id ( name ),
+        ubications:ubications!assets_company_id_current_ubication_id_fkey ( name ),
         assets_certificates (
           certificates ( id, storage_path, file_name, uploaded_at )
         ),
@@ -132,20 +202,31 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
           comments,
           transactions (
             id, type, date, justification, origin_location_id, destination_location_id,
-            origin:locations!fk_origin_location(name),
-            destination:locations!fk_destination_location(name),
-            origin_ubication:ubications!transactions_origin_ubication_id_fkey(name),
-            destination_ubication:ubications!transactions_destination_ubication_id_fkey(name),
-            users:created_by(name)
+            origin:locations!transactions_company_id_origin_location_id_fkey(name),
+            destination:locations!transactions_company_id_destination_location_id_fkey(name),
+            origin_ubication:ubications!transactions_company_id_origin_ubication_id_fkey(name),
+            destination_ubication:ubications!transactions_company_id_destination_ubication_id_fkey(name)
           )
         )
       `)
       .eq("id", id)
       .single();
 
-    if (error || !data) {
+    if (error) {
       console.error(`Error fetching asset ${id} from Supabase`, error);
+      throw error;
+    }
+    if (!data) {
       return undefined;
+    }
+
+    const transactionIds = (data.transaction_details ?? [])
+      .map((detail: any) => detail.transactions?.id)
+      .filter(Boolean);
+    const certificatesByTransaction = await this.getTransactionCertificateLinks(transactionIds);
+    for (const detail of data.transaction_details ?? []) {
+      const transaction = detail.transactions;
+      if (transaction) transaction.transactions_certificates = certificatesByTransaction[transaction.id] ?? [];
     }
 
     return await this.mapRowToAsset(data);
@@ -165,28 +246,25 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
     if (error || !assets) {
       return {
         totalAssets: 0,
-        assetsInRigs: 0,
+        assetsOperational: 0,
         assetsUnderInspection: 0,
-        assetsInProviderBase: 0,
+        assetsRejected: 0,
         distributionByLocation: [],
         movementsLast30Days: [],
         alerts: []
       };
     }
 
-    let rigsCount = 0;
-    let baseProveedorCount = 0;
+    let operationalCount = 0;
     let underInspectionCount = 0;
+    let rejectedCount = 0;
     const distributionMap: Record<string, number> = {};
 
     assets.forEach((a: any) => {
       const locName = a.locations?.name || "Sin Location";
-      const locType = a.locations?.type;
-      
-      if (locType === "rig") rigsCount++;
-      if (locType === "operating_base") baseProveedorCount++;
-      
+      if (a.status === "active") operationalCount++;
       if (a.status === "under_inspection") underInspectionCount++;
+      if (a.status === "rejected") rejectedCount++;
 
       distributionMap[locName] = (distributionMap[locName] || 0) + 1;
     });
@@ -195,9 +273,9 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
 
     return {
       totalAssets: assets.length,
-      assetsInRigs: rigsCount,
+      assetsOperational: operationalCount,
       assetsUnderInspection: underInspectionCount,
-      assetsInProviderBase: baseProveedorCount,
+      assetsRejected: rejectedCount,
       distributionByLocation,
       movementsLast30Days: [], // Can be calculated from transactions
       alerts: [] // Compute alerts
@@ -208,11 +286,19 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
     return this.registerBulkMovement({ ...movement, assets: [{ asset_id: assetId, comments: movement.comments }] });
   }
 
-  /** Movement writes are atomic RPC calls; certificate files are intentionally not part of this contract. */
+  /** Registers the movement first, then creates one tenant-scoped link per certificate. */
   async registerBulkMovement(payload: any): Promise<void> {
-    const { certificates: _certificates, ...movementPayload } = payload;
-    const { error } = await this.supabase.rpc("register_bulk_movement", { p_payload: { ...movementPayload, date: new Date().toISOString() } });
+    const { certificates, ...movementPayload } = payload;
+    const { data: transactionId, error } = await this.supabase.rpc("register_bulk_movement", { p_payload: { ...movementPayload, date: new Date().toISOString() } });
     if (error) throw error;
+
+    if (!certificates?.length) return;
+
+    try {
+      await this.uploadCertificates(undefined, certificates, transactionId);
+    } catch (error) {
+      throw new Error("Movement registered, but certificate upload failed", { cause: error });
+    }
   }
 
   async registerReplacementMovement(payload: ReplacementMovementPayload): Promise<void> {
@@ -220,36 +306,36 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
     if (error) throw error;
   }
 
-  /** Uploads certificate metadata separately from movement confirmation; confirmation RPC is not implemented here. */
-  private async uploadCertificates(assetId: string, certificates: { file: File; name: string }[]): Promise<string[]> {
-    return Promise.all(certificates.map((certificate) => uploadCertificateAction(certificate.file, certificate.name, assetId)));
+  /** Uploads certificates and links them to an asset or movement through the tenant server action. */
+  private async uploadCertificates(assetId: string | undefined, certificates: { file: File; name: string }[], transactionId?: string): Promise<string[]> {
+    return Promise.all(certificates.map((certificate) => uploadCertificateAction(certificate.file, certificate.name, assetId, transactionId)));
   }
 
   async addCertificate(assetId: string, certificates: { file: File; name: string }[]): Promise<void> {
     const { data: { user } } = await this.supabase.auth.getUser();
     if (!user) throw new Error("No user authenticated");
-    
+
     // Upload and get cert ids
-     await this.uploadCertificates(assetId, certificates);
-    
+    await this.uploadCertificates(assetId, certificates);
+
   }
 
   async registerAsset(asset: Partial<Asset>): Promise<void> {
     const rawAsset = asset as any;
     const payload = {
-      brand_id: rawAsset.brand_id,
-      model_id: rawAsset.model_id,
+      brand_id: nullableValue(rawAsset.brand_id),
+      model_id: nullableValue(rawAsset.model_id),
       company_id: rawAsset.company_id,
       serial_number: rawAsset.serial_number || rawAsset.serialNumber,
       status: rawAsset.status, // formData passes "active", "under_inspection", "rejected"
       function_principle_id: rawAsset.function_principle_id,
       current_location_id: rawAsset.current_location_id,
-      current_ubication_id: rawAsset.current_ubication_id,
-      capacity: rawAsset.capacity,
-      last_inspection_code: rawAsset.last_inspection_code,
+      current_ubication_id: nullableValue(rawAsset.current_ubication_id),
+      capacity: nullableValue(rawAsset.capacity),
+      last_inspection_code: nullableValue(rawAsset.last_inspection_code),
       ...Array.from({ length: 20 }, (_, i) => `property_${i + 1}`).reduce((acc: any, key) => {
         if (rawAsset[key] !== undefined && rawAsset[key] !== "") {
-          acc[key] = rawAsset[key];
+          acc[key] = assetPropertyValue(key, rawAsset[key]);
         }
         return acc;
       }, {})
@@ -265,19 +351,21 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
   async updateAsset(id: string, asset: Partial<Asset>): Promise<void> {
     const rawAsset = asset as any;
     const payload = {
-      brand_id: rawAsset.brand_id,
-      model_id: rawAsset.model_id,
+      brand_id: nullableValue(rawAsset.brand_id),
+      model_id: nullableValue(rawAsset.model_id),
       serial_number: rawAsset.serial_number || rawAsset.serialNumber,
       status: rawAsset.status,
       // intentionally omit function_principle_id since it shouldn't be altered
-      current_location_id: rawAsset.current_location_id,
-      current_ubication_id: rawAsset.current_ubication_id,
-      capacity: rawAsset.capacity,
-      last_inspection_code: rawAsset.last_inspection_code,
+      current_ubication_id: nullableValue(rawAsset.current_ubication_id),
+      capacity: nullableValue(rawAsset.capacity),
+      last_inspection_code: nullableValue(rawAsset.last_inspection_code),
+      ...(rawAsset.current_location_id
+        ? { current_location_id: rawAsset.current_location_id }
+        : {}),
       ...Array.from({ length: 20 }, (_, i) => `property_${i + 1}`).reduce((acc: any, key) => {
         // Here we can save empty strings to reset properties if needed, but we'll stick to updating provided keys
         if (rawAsset[key] !== undefined) {
-          acc[key] = rawAsset[key];
+          acc[key] = assetPropertyValue(key, rawAsset[key]);
         }
         return acc;
       }, {})
@@ -295,7 +383,7 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
       .from("assets")
       .update({ is_active: false })
       .eq("id", id);
-      
+
     if (error) {
       console.error("Error disabling asset:", error);
       throw error;
@@ -307,24 +395,24 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
       .from("transactions")
       .select(`
         id, type, date, justification, created_at,
-        origin:locations!fk_origin_location(name),
-        destination:locations!fk_destination_location(name),
-        origin_ubication:ubications!transactions_origin_ubication_id_fkey(name),
-        destination_ubication:ubications!transactions_destination_ubication_id_fkey(name),
+        origin:locations!transactions_company_id_origin_location_id_fkey(name),
+        destination:locations!transactions_company_id_destination_location_id_fkey(name),
+        origin_ubication:ubications!transactions_company_id_origin_ubication_id_fkey(name),
+        destination_ubication:ubications!transactions_company_id_destination_ubication_id_fkey(name),
         users:created_by(name),
-        transaction_details (
-          comments,
-          assets ( id, serial_number, brands:brand_id(name), models:model_id(name) )
-        )
-      `)
+         transaction_details (
+           comments,
+           assets ( id, serial_number, brands:brand_id(name), models:model_id(name) )
+         )
+       `)
       .order("created_at", { ascending: false });
 
     if (error) {
       console.error("Error fetching movements from Supabase", error);
-      return [];
+      throw error;
     }
 
-    return (data || []).map((row: any) => {
+    return Promise.all((data || []).map(async (row: any) => {
       const details = row.transaction_details || [];
       const assetsInvolved = details.map((d: any) => ({
         asset_id: d.assets?.id || "",
@@ -345,18 +433,55 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
         assetsInvolvedCount: assetsInvolved.length,
         assetsInvolved,
         createdBy: row.users?.name || "Sistema",
-        certificates: [] // We skip certificates at the list view if there's no transactions_certificates yet
+        certificates: []
       };
-    });
+    }));
+  }
+
+  async getMovementById(id: string): Promise<Movement | undefined> {
+    const { data, error } = await this.supabase
+      .from("transactions")
+      .select(`
+        id, type, date, justification, created_at,
+        origin:locations!transactions_company_id_origin_location_id_fkey(name),
+        destination:locations!transactions_company_id_destination_location_id_fkey(name),
+        origin_ubication:ubications!transactions_company_id_origin_ubication_id_fkey(name),
+        destination_ubication:ubications!transactions_company_id_destination_ubication_id_fkey(name),
+        users:created_by(name),
+        transaction_details ( comments, assets ( id, serial_number, brands:brand_id(name), models:model_id(name) ) )
+      `)
+      .eq("id", id)
+      .single();
+    if (error || !data) {
+      if (error) console.error(`Error fetching movement ${id} from Supabase`, error);
+      return undefined;
+    }
+    const row: any = data;
+    const certificatesByTransaction = await this.getTransactionCertificateLinks([row.id]);
+    const details = row.transaction_details || [];
+    return {
+      id: row.id, type: row.type, date: row.date || row.created_at, justification: row.justification || "",
+      originLocationName: row.origin?.name || "Sin origen", originUbicationName: row.origin_ubication?.name || "Sin base",
+      destinationLocationName: row.destination?.name || "Sin destino", destinationUbicationName: row.destination_ubication?.name || "Sin destino ub.",
+      assetsInvolvedCount: details.length,
+      assetsInvolved: details.map((d: any) => ({ asset_id: d.assets?.id || "", asset_code: d.assets?.serial_number || "Sin SN", asset_name: `${d.assets?.brands?.name || ""} ${d.assets?.models?.name || ""}`.trim() || "Activo", comments: d.comments })),
+      createdBy: row.users?.name || "Sistema",
+      certificates: await mapTransactionCertificates(this.supabase, certificatesByTransaction[row.id] ?? []),
+    };
   }
 
   private async mapRowToAsset(row: any): Promise<Asset> {
-    const brand = row.brands?.name || "Sin marca";
-    const model = row.models?.name || "Sin modelo";
+    const brandRelation = relationRecord(row.brands);
+    const modelRelation = relationRecord(row.models);
+    const locationRelation = relationRecord(row.locations);
+    const ubicationRelation = relationRecord(row.ubications);
+    const brand = brandRelation.name || "Sin marca";
+    const model = modelRelation.name || "Sin modelo";
     const serialNumber = row.serial_number || "Sin SN";
-    const functionalPrinciple = row.functional_principles?.name || "Componente";
-    const currentLocation = row.locations?.name || "Base";
-    
+    const functionalPrincipleRelation = relationRecord(row.functional_principles);
+    const functionalPrinciple = functionalPrincipleRelation.name || "Componente";
+    const currentLocation = locationRelation.name || "Base";
+
     // Map properties
     const properties: any[] = [];
     if (row.functional_principles) {
@@ -364,7 +489,7 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
         const propKey = `property_${i}`;
         const label = row.functional_principles[propKey];
         const value = row[propKey];
-        
+
         if (label && value !== null && value !== undefined && value !== "") {
           properties.push({
             key: propKey,
@@ -374,31 +499,19 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
         }
       }
     }
-    
+
     // Extract certificates from the M2M nested relationship
-    const rawCerts = (row.assets_certificates || [])
+    const directCerts = (row.assets_certificates || [])
       .map((ac: any) => ac.certificates)
       .filter((c: any) => c != null);
+    const movementCerts = (row.transaction_details || [])
+      .flatMap((detail: any) => detail.transactions?.transactions_certificates || [])
+      .map((link: any) => link.certificates)
+      .filter((c: any) => c != null);
+    const rawCerts = Array.from(new Map([...directCerts, ...movementCerts].map((certificate: any) => [certificate.id, certificate])).values());
 
     const certificates: AssetCertificate[] = await Promise.all(
-      rawCerts.map(async (c: any) => {
-        let fileUrl = "";
-        if (c.storage_path) {
-          const { data } = await this.supabase.storage
-            .from('certificates')
-            .createSignedUrl(c.storage_path, 3600); // 1 hour expiry
-          if (data?.signedUrl) {
-            fileUrl = data.signedUrl;
-          }
-        }
-
-        return {
-          id: c.id,
-          name: c.file_name || "Certificado",
-          uploadDate: c.uploaded_at?.split("T")[0] || "",
-          fileUrl,
-        };
-      })
+      rawCerts.map((certificate: any) => mapCertificate(this.supabase, certificate))
     );
 
     // Map journey stops from transaction_details
@@ -409,39 +522,39 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
         return dateB - dateA; // Descending order (newest first)
       })
       .map((td: any) => {
-      const tx = td.transactions || {};
-      const oName = tx.origin?.name || "Origen";
-      const dName = tx.destination?.name || "Destino";
-      const oUbication = tx.origin_ubication?.name;
-      const dUbication = tx.destination_ubication?.name;
+        const tx = td.transactions || {};
+        const oName = tx.origin?.name || "Origen";
+        const dName = tx.destination?.name || "Destino";
+        const oUbication = tx.origin_ubication?.name;
+        const dUbication = tx.destination_ubication?.name;
 
-      let locationDisplay = dName;
-      let originDisplay = oName !== dName ? oName : undefined;
+        let locationDisplay = dName;
+        let originDisplay = oName !== dName ? oName : undefined;
 
-      if (tx.type === 'reubication' || tx.type === 'replacement') {
-        locationDisplay = dUbication || "Destino";
-        originDisplay = `${oName} | ${oUbication || "Origen"}`;
-      }
+        if (tx.type === 'reubication' || tx.type === 'replacement') {
+          locationDisplay = dUbication || "Destino";
+          originDisplay = `${oName} | ${oUbication || "Origen"}`;
+        }
 
-      return {
-        id: tx.id || Date.now().toString(),
-        provider: dName,
-        location: locationDisplay,
-        originLocation: originDisplay,
-        service: tx.type === 'transfer' ? "Traslado" : tx.type === 'replacement' ? "Reemplazo" : "Reubicación",
-        dateIn: tx.date ? tx.date.split("T")[0] : "",
-        dateOut: null,
-        status: "completed",
-        notes: td.comments || tx.justification || "",
-        responsible: tx.users?.name || "Sistema"
-      };
-    });
+        return {
+          id: tx.id || Date.now().toString(),
+          provider: dName,
+          location: locationDisplay,
+          originLocation: originDisplay,
+          service: tx.type === 'transfer' ? "Traslado" : tx.type === 'replacement' ? "Reemplazo" : "Reubicación",
+          dateIn: tx.date ? tx.date.split("T")[0] : "",
+          dateOut: null,
+          status: "completed",
+          notes: td.comments || tx.justification || "",
+          responsible: tx.users?.name || "Sistema"
+        };
+      });
 
     return {
       id: row.id,
       code: serialNumber, // Fallback code
       functionalPrinciple: functionalPrinciple as any,
-      function_principle_id: row.functional_principles?.id,
+      function_principle_id: row.function_principle_id || functionalPrincipleRelation.id,
       brand: brand,
       model: model,
       brand_id: row.brands?.id,
@@ -450,17 +563,17 @@ export class SupabaseTrazabilidadRepository implements ITrazabilidadRepository {
       lastInspectionCode: row.last_inspection_code,
       serialNumber: serialNumber,
       currentLocation: currentLocation,
-      current_location_id: row.locations?.id,
-      position: row.ubications?.name || "N/A",
-      current_ubication_id: row.ubications?.id,
+      current_location_id: row.current_location_id || locationRelation.id,
+      position: ubicationRelation.name || "N/A",
+      current_ubication_id: row.current_ubication_id || ubicationRelation.id,
       status: this.mapAssetStatus(row.status),
       is_active: row.is_active,
       lastMovementDate: row.updated_at ? row.updated_at.split("T")[0] : "N/A",
       createdAt: row.created_at ? row.created_at.split("T")[0] : "N/A",
       name: `${brand} ${model}`,
       type: functionalPrinciple,
-      type_code: Array.isArray(row.functional_principles?.scopes) 
-        ? row.functional_principles?.scopes[0]?.code 
+      type_code: Array.isArray(row.functional_principles?.scopes)
+        ? row.functional_principles?.scopes[0]?.code
         : row.functional_principles?.scopes?.code,
       properties,
       journey,

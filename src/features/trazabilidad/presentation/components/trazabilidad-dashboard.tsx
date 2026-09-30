@@ -8,8 +8,8 @@ import {
 } from "@/src/core/presentation/components/ui/card";
 import {
   Package,
-  Truck,
-  HardHat,
+  CircleCheck,
+  CircleX,
   AlertTriangle,
   ArrowUpRight,
 } from "lucide-react";
@@ -68,28 +68,28 @@ export function TrazabilidadDashboard({ stats }: Props) {
 
   const kpis = [
     {
-      label: "Total de Activos",
+      label: "Activos totales",
       value: stats.totalAssets,
       icon: Package,
       color: "text-foreground",
     },
     {
-      label: "En Rigs",
-      value: stats.assetsInRigs,
-      icon: HardHat,
-      color: "text-[#0096C7]",
+      label: "Activos operativos",
+      value: stats.assetsOperational,
+      icon: CircleCheck,
+      color: "text-emerald-500",
     },
     {
-      label: "En Bases Operativas",
-      value: stats.assetsInProviderBase,
-      icon: Package,
-      color: "text-indigo-500",
-    },
-    {
-      label: "Para Inspección",
+      label: "Activos para inspección",
       value: stats.assetsUnderInspection,
       icon: AlertTriangle,
       color: "text-amber-500",
+    },
+    {
+      label: "Activos rechazados",
+      value: stats.assetsRejected,
+      icon: CircleX,
+      color: "text-red-500",
     },
   ];
 

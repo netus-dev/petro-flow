@@ -36,7 +36,7 @@ import {
 import { Plus, Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/src/core/utils/utils";
 import { Asset } from "../../domain/entities";
-import { catalogsRepository } from "@/src/features/catalogs/infrastructure/repository";
+import { createCatalogItem, readCatalogItems } from "@/src/features/catalogs/infrastructure/server/catalog-actions";
 import { useEffect } from "react";
 import { useAuthStore } from "@/src/features/auth/presentation/store/auth-store";
 
@@ -66,8 +66,8 @@ export function RegisterAssetModal({ mode = "create", assetToEdit, onRegister, o
   const [modelSearch, setModelSearch] = useState("");
 
   const initialFormState = mode === "edit" && assetToEdit ? {
-    brand_id: assetToEdit.brand_id || assetToEdit.brand,
-    model_id: assetToEdit.model_id || assetToEdit.model,
+    brand_id: assetToEdit.brand_id || "",
+    model_id: assetToEdit.model_id || "",
     capacity: assetToEdit.capacity || "",
     serial_number: assetToEdit.serialNumber || "",
     last_inspection_code: assetToEdit.lastInspectionCode || "",
@@ -92,27 +92,35 @@ export function RegisterAssetModal({ mode = "create", assetToEdit, onRegister, o
   };
 
   const [formData, setFormData] = useState<any>(initialFormState);
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (nextOpen) {
+      setFormData(initialFormState);
+    }
+    setOpen(nextOpen);
+  };
   
   useEffect(() => {
     if (open) {
       console.log("company_id:", company_id);
       Promise.all([
-        catalogsRepository.getItems("functional_principles", company_id),
-        catalogsRepository.getItems("locations", company_id),
-        catalogsRepository.getItems("ubications", company_id),
-        catalogsRepository.getItems("brands", company_id),
-        catalogsRepository.getItems("models", company_id),
+        readCatalogItems("functional_principles"),
+        readCatalogItems("locations"),
+        readCatalogItems("ubications"),
+        readCatalogItems("brands"),
+        readCatalogItems("models"),
       ])
         .then(([fps, locs, ubis, brs, mods]) => {
-          setFunctionalPrinciples(fps);
-          setLocations(locs);
-          setUbications(ubis);
-          setBrands(brs);
-          setModels(mods);
+          if (!fps.ok || !locs.ok || !ubis.ok || !brs.ok || !mods.ok) {
+            throw new Error("Unable to load catalog items");
+          }
+          setFunctionalPrinciples(fps.data);
+          setLocations(locs.data);
+          setUbications(ubis.data);
+          setBrands(brs.data);
+          setModels(mods.data);
         })
         .catch(console.error);
-    } else {
-      setFormData(initialFormState);
     }
   }, [open]);
 
@@ -131,19 +139,20 @@ export function RegisterAssetModal({ mode = "create", assetToEdit, onRegister, o
 
       let isNewBrand = false;
       if (finalBrandId && !brands.find(b => b.id === finalBrandId)) {
-        const newBrand = await catalogsRepository.createItem("brands", { name: finalBrandId, is_active: true, company_id: company_id });
-        finalBrandId = newBrand.id;
+        const newBrand = await createCatalogItem("brands", { name: finalBrandId, is_active: true });
+        if (!newBrand.ok || !newBrand.data) throw new Error(newBrand.ok ? "Brand creation returned no data" : newBrand.error);
+        finalBrandId = newBrand.data.id;
         isNewBrand = true;
       }
 
       if (finalModelId && !models.find(m => m.id === finalModelId)) {
-        const newModel = await catalogsRepository.createItem("models", { 
+        const newModel = await createCatalogItem("models", {
           name: finalModelId, 
           brand_id: finalBrandId, 
-          company_id: company_id,
           is_active: true 
         });
-        finalModelId = newModel.id;
+        if (!newModel.ok || !newModel.data) throw new Error(newModel.ok ? "Model creation returned no data" : newModel.error);
+        finalModelId = newModel.data.id;
       }
 
       const payloadToSave = { 
@@ -176,7 +185,7 @@ export function RegisterAssetModal({ mode = "create", assetToEdit, onRegister, o
     : [];
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         {trigger || (
           <Button
@@ -189,7 +198,7 @@ export function RegisterAssetModal({ mode = "create", assetToEdit, onRegister, o
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px] bg-card border-border">
+      <DialogContent className="max-h-[calc(100vh-2rem)] overflow-hidden bg-card border-border sm:max-w-[900px]">
         <DialogHeader>
           <DialogTitle className="font-mono text-xl">
             {mode === "create" ? "Registrar Nuevo Activo" : "Editar Activo"}
@@ -200,7 +209,9 @@ export function RegisterAssetModal({ mode = "create", assetToEdit, onRegister, o
               : "Modifique los detalles técnicos del activo. El principio funcional principal no puede ser alterado."}
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-6 py-4">
+        <form onSubmit={handleSubmit} className="min-h-0 overflow-y-auto py-4 pr-2">
+          <div className="grid gap-6 sm:grid-cols-2">
+            <div className="min-w-0 space-y-6">
           <div className="grid grid-cols-2 gap-4">
             {/* 1. Marca */}
             <div className="flex flex-col gap-2">
@@ -348,7 +359,6 @@ export function RegisterAssetModal({ mode = "create", assetToEdit, onRegister, o
                 className="bg-secondary/20 border-border h-11"
                 value={formData.serial_number}
                 onChange={(e) => setFormData({ ...formData, serial_number: e.target.value })}
-                required
               />
             </div>
           </div>
@@ -365,7 +375,6 @@ export function RegisterAssetModal({ mode = "create", assetToEdit, onRegister, o
                 className="bg-secondary/20 border-border h-11"
                 value={formData.last_inspection_code}
                 onChange={(e) => setFormData({ ...formData, last_inspection_code: e.target.value })}
-                required
               />
             </div>
             {/* 6. Estado operativo */}
@@ -373,7 +382,7 @@ export function RegisterAssetModal({ mode = "create", assetToEdit, onRegister, o
               <Label htmlFor="status" className="text-xs uppercase tracking-widest text-muted-foreground">
                 Estado Operativo
               </Label>
-              <Select value={formData.status} onValueChange={(v) => setFormData({ ...formData, status: v })} required>
+              <Select value={formData.status} onValueChange={(v) => setFormData({ ...formData, status: v })}>
                 <SelectTrigger id="status" className="bg-secondary/20 border-border h-11">
                   <SelectValue placeholder="Seleccione estado" />
                 </SelectTrigger>
@@ -408,7 +417,7 @@ export function RegisterAssetModal({ mode = "create", assetToEdit, onRegister, o
               <Label htmlFor="current_ubication" className="text-xs uppercase tracking-widest text-muted-foreground">
                 Posición Actual
               </Label>
-              <Select value={formData.current_ubication_id} onValueChange={(v) => setFormData({ ...formData, current_ubication_id: v })} required>
+              <Select value={formData.current_ubication_id} onValueChange={(v) => setFormData({ ...formData, current_ubication_id: v })}>
                 <SelectTrigger id="current_ubication" className="bg-secondary/20 border-border h-11">
                   <SelectValue placeholder="Seleccione ubicación" />
                 </SelectTrigger>
@@ -438,9 +447,11 @@ export function RegisterAssetModal({ mode = "create", assetToEdit, onRegister, o
             </Select>
           </div>
 
-          {/* 10. Propiedades Especiales (Dinámicas) */}
+            </div>
+
+            {/* 10. Propiedades Especiales (Dinámicas) */}
           {formData.function_principle_id && (
-            <div className="bg-secondary/10 p-4 rounded-md border border-border">
+            <div className="min-w-0 self-start overflow-y-auto rounded-md border border-border bg-secondary/10 p-4 sm:max-h-[calc(100vh-12rem)]">
               <h4 className="text-sm font-semibold mb-4 uppercase tracking-wider text-muted-foreground">
                 Especificaciones Adicionales
               </h4>
@@ -456,7 +467,6 @@ export function RegisterAssetModal({ mode = "create", assetToEdit, onRegister, o
                         className="bg-secondary/20 border-border h-11"
                         value={formData[key] || ""}
                         onChange={(e) => setFormData({ ...formData, [key]: e.target.value })}
-                        required
                       />
                     </div>
                   ))
@@ -468,6 +478,7 @@ export function RegisterAssetModal({ mode = "create", assetToEdit, onRegister, o
               </div>
             </div>
           )}
+          </div>
 
           <DialogFooter className="pt-2">
             <Button

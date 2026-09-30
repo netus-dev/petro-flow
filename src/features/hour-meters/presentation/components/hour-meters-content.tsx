@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock } from "lucide-react";
+import { Clock, Gauge, Package, Settings2 } from "lucide-react";
 import { useHourMeters } from "../hooks/use-hour-meters";
 import { HourMeterCard, EnhancedHourMeterRecord } from "./hour-meter-card";
 import { MaintenancePanel } from "./maintenance-panel/maintenance-panel";
@@ -15,6 +15,9 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MaintenanceThresholdModal } from "./maintenance-threshold-modal";
 import { readMaintenanceThresholds } from "../../infrastructure/server/hour-meter-actions";
+import { deriveVisibleInventoryPrinciples } from "./inventory-principles";
+import { ModuleHeader } from "@/src/core/presentation/components/layout/module-header";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/src/core/presentation/components/ui/tooltip";
 
 /**
  * Componente principal de presentación (Page/Organism) que representa la vista
@@ -30,6 +33,7 @@ export function HourMeterContent({ initialRecords = [], authorization = { capabi
   // Hook de estado para el panel lateral de mantenimiento
   const { selectedEquipmentId, resolvedPlan, isLoading, selectEquipment, closePanel } = useMaintenancePanel();
   const [thresholdsByPrinciple, setThresholdsByPrinciple] = useState<Record<string, number[]>>({});
+  const inventoryPrinciples = deriveVisibleInventoryPrinciples(records, principles);
 
   useEffect(() => {
     const principleIds = [...new Set(records.map((record) => record.functionalPrincipleId).filter((id): id is string => Boolean(id)))];
@@ -78,51 +82,29 @@ export function HourMeterContent({ initialRecords = [], authorization = { capabi
     };
   });
 
-  const stats = {
-    total: enhancedRecords.length,
-    criticalCount: enhancedRecords.filter(r => r.isCritical).length,
-    warningCount: enhancedRecords.filter(r => r.isWarning).length,
-    avgUsage: Math.round(
-      enhancedRecords.reduce((acc, r) => acc + r.progressValue, 0) / (enhancedRecords.length || 1)
-    ),
-  };
-
   return (
-    <div className="flex flex-col h-[calc(100vh-7rem)] w-full bg-background overflow-hidden p-4 md:p-6 lg:p-8">
-      {/* Top Header Panel (Fixed Height) */}
-      <header className="shrink-0 mb-4 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/40 pb-4">
-        <div className="flex items-center gap-4">
-
-          <div className="flex size-12 items-center justify-center rounded-xl bg-primary/10 border border-primary/20 shadow-inner">
-            <Clock className="size-6 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-2xl md:text-3xl font-black tracking-tight text-foreground font-mono uppercase">
-              Dashboard de Horómetros
-            </h1>
-            {rigs.length > 1 ? <select aria-label="Rig" className="h-8 rounded border bg-background px-2 text-xs" value={rigId ?? ""} onChange={(event) => setRigId(event.target.value)}>{rigs.map((rig) => <option key={rig.id} value={rig.id}>{rig.name}</option>)}</select> : <p className="text-xs md:text-sm font-medium tracking-widest text-muted-foreground uppercase mt-1">{rigs[0]?.name ?? "SIN RIG AUTORIZADO"}</p>}
-          </div>
-        </div>
-
-        <div className="flex items-center gap-4">
+    <div className="flex h-[calc(100vh-7rem)] w-full flex-col overflow-hidden bg-background">
+      <ModuleHeader title="Dashboard de Horómetros" icon={Clock} actions={<>
+          {rigs.length > 1 ? <select aria-label="Rig" className="h-8 rounded border bg-background px-2 text-xs" value={rigId ?? ""} onChange={(event) => setRigId(event.target.value)}>{rigs.map((rig) => <option key={rig.id} value={rig.id}>{rig.name}</option>)}</select> : <span className="hidden text-xs font-medium tracking-widest text-muted-foreground uppercase md:inline">{rigs[0]?.name ?? "SIN RIG AUTORIZADO"}</span>}
           {canManageInventory && <Dialog>
-            <DialogTrigger asChild><Button size="sm" variant="outline">Gestionar inventario</Button></DialogTrigger>
-            <DialogContent className="w-[min(96vw,1400px)] max-w-none max-h-[90vh] overflow-hidden p-6" aria-describedby="inventory-management-description">
-              <DialogHeader><DialogTitle>Gestionar inventario</DialogTitle><p id="inventory-management-description" className="text-sm text-muted-foreground">Registra y actualiza materiales por activo o de forma compartida por tipo de equipo.</p></DialogHeader>
-              <InventoryManagementModal assets={records.map(record => ({ id: record.id, equipment: record.equipment }))} />
-            </DialogContent>
-          </Dialog>}
-          {canRegister && <Dialog>
-            <DialogTrigger asChild><Button size="sm">Registrar lectura</Button></DialogTrigger>
-            <DialogContent>
-              <DialogHeader><DialogTitle>Registrar lectura de horómetro</DialogTitle></DialogHeader>
-              <RegisterHourMeterForm onRegistered={() => void refresh()} />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DialogTrigger asChild><Button size="icon" variant="outline" aria-label="Gestionar inventario"><Package className="size-4" aria-hidden="true" /></Button></DialogTrigger>
+              </TooltipTrigger>
+              <TooltipContent>Gestionar inventario</TooltipContent>
+            </Tooltip>
+            <DialogContent className="w-[min(96vw,1400px)] max-w-none sm:max-w-[min(96vw,1400px)] max-h-[90vh] overflow-hidden p-6" aria-describedby="inventory-management-description">
+              <DialogHeader><DialogTitle>Gestionar inventario</DialogTitle><p id="inventory-management-description" className="text-sm text-muted-foreground">Registra y actualiza materiales compartidos por principio funcional.</p></DialogHeader>
+              <InventoryManagementModal key={inventoryPrinciples.map((principle) => principle.id).join(":")} principles={inventoryPrinciples} />
             </DialogContent>
           </Dialog>}
           {principles.length > 0 && <Dialog>
-            <DialogTrigger asChild>
-              <Button size="sm" variant="outline">Configurar mantenimientos</Button>
-            </DialogTrigger>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DialogTrigger asChild><Button size="icon" variant="outline" aria-label="Configurar mantenimientos"><Settings2 className="size-4" aria-hidden="true" /></Button></DialogTrigger>
+              </TooltipTrigger>
+              <TooltipContent>Configurar mantenimientos</TooltipContent>
+            </Tooltip>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Configurar mantenimientos</DialogTitle>
@@ -134,36 +116,49 @@ export function HourMeterContent({ initialRecords = [], authorization = { capabi
               />
             </DialogContent>
           </Dialog>}
-        </div>
-      </header>
+          {canRegister && <Dialog>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DialogTrigger asChild><Button size="icon" aria-label="Registrar lectura"><Gauge className="size-4" aria-hidden="true" /></Button></DialogTrigger>
+              </TooltipTrigger>
+              <TooltipContent>Registrar lectura</TooltipContent>
+            </Tooltip>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Registrar lectura de horómetro</DialogTitle></DialogHeader>
+              <RegisterHourMeterForm onRegistered={() => void refresh()} />
+            </DialogContent>
+          </Dialog>}
+        </>} />
 
-      {/* Main Container - Fills remaining space dynamically */}
-      <div className="flex-1 min-h-0 flex flex-row gap-4 overflow-hidden relative">
-        {/* Grid de tarjetas — se ajusta automáticamente al espacio disponible */}
-        <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 overflow-hidden">
-          {enhancedRecords.length === 0 ? <p className="col-span-full p-8 text-center text-muted-foreground">No hay activos elegibles para horómetros.</p> : enhancedRecords.map((record) => (
-            <HourMeterCard
-              key={record.id}
-              record={record}
-              isSelected={selectedEquipmentId === record.id}
-              onClick={() => selectEquipment(record)}
-            />
-          ))}
-        </div>
+      <div className="flex min-h-0 flex-1 p-4 md:p-6 lg:p-8">
+        {/* Main Container - Fills remaining space dynamically */}
+        <div className="relative flex min-h-0 flex-1 flex-row gap-4 overflow-hidden">
+          {/* Grid de tarjetas — se ajusta automáticamente al espacio disponible */}
+          <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 overflow-visible p-2 md:grid-cols-2 md:gap-4 lg:grid-cols-3">
+            {enhancedRecords.length === 0 ? <p className="col-span-full p-8 text-center text-muted-foreground">No hay activos elegibles para horómetros.</p> : enhancedRecords.map((record) => (
+              <HourMeterCard
+                key={record.id}
+                record={record}
+                isSelected={selectedEquipmentId === record.id}
+                onClick={() => selectEquipment(record)}
+              />
+            ))}
+          </div>
 
-        {/* Panel lateral - animación suave de derecha a izquierda desplegando ancho (desktop) */}
-        <div
-          className={`hidden lg:block h-full shrink-0 transition-all duration-300 ease-in-out overflow-hidden ${selectedEquipmentId
-            ? "w-[440px] opacity-100"
-            : "w-0 opacity-0 pointer-events-none"
-            }`}
-        >
-          <div className="w-[440px] h-full">
-            <MaintenancePanel
-              resolvedPlan={resolvedPlan}
-              isLoading={isLoading}
-              onClose={closePanel}
-            />
+          {/* Panel lateral - animación suave de derecha a izquierda desplegando ancho (desktop) */}
+          <div
+            className={`hidden h-full shrink-0 overflow-hidden transition-all duration-300 ease-in-out lg:block ${selectedEquipmentId
+              ? "w-[440px] opacity-100"
+              : "pointer-events-none w-0 opacity-0"
+              }`}
+          >
+            <div className="h-full w-[440px]">
+              <MaintenancePanel
+                resolvedPlan={resolvedPlan}
+                isLoading={isLoading}
+                onClose={closePanel}
+              />
+            </div>
           </div>
         </div>
       </div>

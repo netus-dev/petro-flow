@@ -3,7 +3,7 @@
 import { createTenantClient } from "@/src/core/lib/supabase/server";
 
 /** Uploads a certificate and records its tenant-owned metadata atomically at the application boundary. */
-export async function uploadCertificateAction(file: File, name: string, assetId?: string): Promise<string> {
+export async function uploadCertificateAction(file: File, name: string, assetId?: string, transactionId?: string): Promise<string> {
   const client = await createTenantClient();
   if (!client) throw new Error("Tenant context is unavailable");
 
@@ -31,6 +31,10 @@ export async function uploadCertificateAction(file: File, name: string, assetId?
   if (metadataError) throw metadataError;
   if (assetId) {
     const { error: linkError } = await client.from("assets_certificates").insert({ asset_id: assetId, certificate_id: id, company_id: companyId });
+    if (linkError) throw linkError;
+  }
+  if (transactionId) {
+    const { error: linkError } = await client.from("transactions_certificates").insert({ transaction_id: transactionId, certificate_id: id, company_id: companyId });
     if (linkError) throw linkError;
   }
   return id;

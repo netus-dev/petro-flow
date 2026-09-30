@@ -72,9 +72,9 @@ export interface Asset {
 
 export interface TrazabilidadStats {
   totalAssets: number;
-  assetsInRigs: number;
+  assetsOperational: number;
   assetsUnderInspection: number;
-  assetsInProviderBase: number;
+  assetsRejected: number;
   distributionByLocation: { name: string; value: number }[];
   movementsLast30Days: { date: string; count: number }[];
   alerts: {

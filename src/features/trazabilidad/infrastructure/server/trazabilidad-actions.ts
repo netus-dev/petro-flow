@@ -1,6 +1,7 @@
 "use server";
 
 import { createTenantClient } from "@/src/core/lib/supabase/server";
+import { revalidatePath } from "next/cache";
 import { SupabaseTrazabilidadRepository } from "../supabase-repository";
 import {
   AddCertificateUseCase,
@@ -14,6 +15,9 @@ import {
   RegisterBulkMovementUseCase,
   RegisterMovementUseCase,
   RegisterReplacementUseCase,
+  GetMovementListUseCase,
+  GetMovementByIdUseCase,
+  GetMovableAssetsByOriginLocationUseCase,
 } from "../../application/use-cases";
 import { Asset, AssetMovementPayload } from "../../domain/entities";
 
@@ -23,10 +27,24 @@ async function getRepository() {
   return new SupabaseTrazabilidadRepository(client);
 }
 
-/** Reads Trazabilidad business data through the validated tenant client. */
-export async function readTrazabilidadData() {
-  const repository = await getRepository();
-  return Promise.all([repository.getAssetList(), repository.getDashboardStats(), repository.getMovementList()]);
+export async function getTrazabilidadDashboardStats() {
+  return (await getRepository()).getDashboardStats();
+}
+
+export async function getTrazabilidadAssets() {
+  return (await getRepository()).getAssetList();
+}
+
+export async function getMovableTrazabilidadAssets(locationId: string) {
+  return new GetMovableAssetsByOriginLocationUseCase(await getRepository()).execute(locationId);
+}
+
+export async function getTrazabilidadMovements() {
+  return new GetMovementListUseCase(await getRepository()).execute();
+}
+
+export async function getTrazabilidadMovement(id: string) {
+  return new GetMovementByIdUseCase(await getRepository()).execute(id);
 }
 
 export async function getTrazabilidadAsset(id: string) {
@@ -38,7 +56,9 @@ export async function registerTrazabilidadMovement(assetId: string, movement: un
 }
 
 export async function registerTrazabilidadBulkMovement(payload: AssetMovementPayload) {
-  return new RegisterBulkMovementUseCase(await getRepository()).execute(payload);
+  const result = await new RegisterBulkMovementUseCase(await getRepository()).execute(payload);
+  revalidatePath("/trazabilidad", "layout");
+  return result;
 }
 
 export async function registerTrazabilidadReplacement(payload: unknown) {

@@ -1,6 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { updateSession } from "@/src/core/lib/supabase/middleware";
-import { COMPANY_CONTEXT_COOKIE } from "@/src/features/authorization/infrastructure/server/company-context";
+import {
+  COMPANY_CONTEXT_COOKIE,
+  readCompanyContext,
+} from "@/src/features/authorization/infrastructure/server/company-context";
 
 export async function proxy(request: NextRequest) {
   const { supabaseResponse, user } = await updateSession(request);
@@ -8,6 +11,10 @@ export async function proxy(request: NextRequest) {
 
   const isAuthRoute = pathname.startsWith("/auth");
   const isServerAction = request.headers.has("next-action");
+  const context = readCompanyContext(
+    request.cookies.get(COMPANY_CONTEXT_COOKIE)?.value,
+    process.env.AUTHORIZATION_CONTEXT_SECRET ?? "",
+  );
 
   // Case 1: Unauthenticated or expired session attempting to access protected routes
   if (!user && !isAuthRoute) {
@@ -19,7 +26,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // Case 2: Authenticated user attempting to access public auth routes (/auth/*)
-  if (user && isAuthRoute && !isServerAction) {
+  if (user && isAuthRoute && context && !isServerAction) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     url.searchParams.delete("redirectTo");

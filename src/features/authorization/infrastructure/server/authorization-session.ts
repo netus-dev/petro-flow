@@ -23,7 +23,7 @@ export async function loadAuthorization() {
 /** Produces dashboard redirect or HTTP 403 before protected content renders. */
 export async function enforceCapability(requirement: Capability & { moduleKey?: string }) {
   const result = await loadAuthorization();
-  if (result.status === "context_required") redirect("/dashboard");
+  if (result.status === "context_required") redirect("/auth/login");
   if (!can(result.projection, requirement)) forbidden();
   return result.projection;
 }
