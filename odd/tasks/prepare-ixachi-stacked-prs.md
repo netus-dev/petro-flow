@@ -31,6 +31,12 @@ Create a privacy-safe tracking issue and prepare the published Ixachi branch for
 - Created `type:bug` and `type:feature` for the two proposed product slices.
 - Read-back confirmed all three labels and the issue approval label.
 
+## Native review blocker
+- Built isolated PR1 candidate branch `fix/ixachi-catalog-operations-gate` at commit `0062fbb609f2061fc7ee596f881a93994a5f1e0d` in the user-authorized worktree `/Users/oalonso/Documents/GitHub/Personal/petro-flow-pr-slices`.
+- Native review lineage `review-caf2e951f5ab49f8` is bound to one committed path (`supabase/snippets/7. assign_role_to_user.sql`, 46 lines) against `integrate-develop` commit `32661f2f5b626c39e71368ed928190004f7b3a05`.
+- User acknowledged one `review-reliability` run, but host relay failed before execution: no model is configured for that lens. A fresh bound STATUS reoffered the same collect slot; do not alter the candidate or replay without resolving model routing.
+- No PR or push has occurred. PR2 is not yet prepared.
+
 ## Implementation evidence
 - Parameterized snippet 7: required company UUID, role, and target email default to NULL and are validated before database access.
 - Parameterized snippet 8: required company/user/role inputs and scope mode default to NULL; the reviewed permissions remain pinned; the expected copy-source scope defaults empty and exact-snapshot checks remain fail-closed.
@@ -50,8 +56,9 @@ The original 696-line diff is 36 additions in snippet 7, 390 in snippet 8, and 2
 2. [x] Create privacy-safe issue #31 and verify its target-host read-back.
 3. [x] Parameterize production values in snippets 7 and 8; leave public history unchanged. Commit IDs recorded above.
 4. [x] Create/apply approved/type labels to issue #31 and resolve the issue approval gate.
-5. [ ] Create clean stacked PR slices under 400 changed lines, excluding ODD process docs. (in progress)
+5. [ ] Create clean stacked PR slices under 400 changed lines, excluding ODD process docs. (PR1 candidate built; blocked on native reviewer routing.)
 6. [ ] Create and verify PRs after the approval/label gates; do not merge.
+7. [ ] Resolve the missing `review-reliability` model routing for the active PR1 lineage, then continue only from fresh STATUS. (in progress)
 
 ## Relevant files
 - `supabase/snippets/7. assign_role_to_user.sql`
