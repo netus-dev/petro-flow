@@ -10,7 +10,7 @@ Create a privacy-safe tracking issue and prepare the published Ixachi branch for
 - Candidate diff against `origin/integrate-develop`: 8 changed paths, 696 additions.
 - No relevant duplicate issue found. Visible issues #11–#14 are unrelated and none has `status:approved`.
 - No repository issue form, PR template, or nomenclature guide was found.
-- Existing repo labels have `enhancement` but no `status:approved` and no `type:*` labels.
+- Initial repository label inventory had `enhancement` but no `status:approved` or `type:*`; this task created the required labels as recorded below.
 
 ## Privacy and review constraints
 - The repo is public. The issue body was sanitized; it does not include company names, user UUIDs, emails, or deployment details.
@@ -22,9 +22,14 @@ Create a privacy-safe tracking issue and prepare the published Ixachi branch for
 ## Created issue
 - Public issue `#31`: https://github.com/netus-dev/petro-flow/issues/31
 - Title: `Support company-scoped catalog access and explicit RBAC onboarding scopes`
-- State: OPEN; label `enhancement`.
+- State: OPEN; labels `enhancement` and `status:approved`.
 - Target-host read-back confirmed the title and body match after newline normalization. The issue body contains no company name, user UUID, email, hostname, home path, credentials, or private deployment detail.
-- The issue is not marked approved. The repository has no `status:approved` label and no `type:*` labels.
+- The user explicitly authorized issue approval and label creation. The `status:approved` label was created and applied to #31.
+
+## PR labels
+- Created `status:approved` (green) and applied it to issue #31.
+- Created `type:bug` and `type:feature` for the two proposed product slices.
+- Read-back confirmed all three labels and the issue approval label.
 
 ## Implementation evidence
 - Parameterized snippet 7: required company UUID, role, and target email default to NULL and are validated before database access.
@@ -44,8 +49,8 @@ The original 696-line diff is 36 additions in snippet 7, 390 in snippet 8, and 2
 1. [x] Verify repo, target branch, issue settings/forms/labels, duplicate search, PR state, diff size, and stacked strategy.
 2. [x] Create privacy-safe issue #31 and verify its target-host read-back.
 3. [x] Parameterize production values in snippets 7 and 8; leave public history unchanged. Commit IDs recorded above.
-4. [ ] Create/apply approved/type labels to issue #31 and resolve the issue approval gate. (in progress)
-5. [ ] Create clean stacked PR slices under 400 changed lines, excluding ODD process docs.
+4. [x] Create/apply approved/type labels to issue #31 and resolve the issue approval gate.
+5. [ ] Create clean stacked PR slices under 400 changed lines, excluding ODD process docs. (in progress)
 6. [ ] Create and verify PRs after the approval/label gates; do not merge.
 
 ## Relevant files
