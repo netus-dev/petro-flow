@@ -1,21 +1,23 @@
 -- Provision an existing Supabase Auth user in one active company.
 -- Copy a reviewed source-role permission set and apply an explicit per-user operational scope mode.
 -- Scope modes: copy_source, all_rigs (this company only), or none. This does not create an Auth account or change company modules.
+-- Configure all NULL inputs before running this snippet; it fails before any database read or write while unconfigured.
 -- Review the values and expected snapshots before each run; the DO block is atomic.
 -- Source rows are locked and copied from arrays captured in this transaction to prevent drift.
 -- This SQL-admin path does not fabricate an authenticated actor or write an actor-attributed app audit event.
 -- Use the authenticated access-control provisioning flow when an actor-attributed audit event is required.
 do $$
 declare
-  v_company_id uuid := 'f1000000-0000-0000-0000-000000000001';
-  v_target_user_id uuid := '3d595e9d-c30d-4790-bf53-4cbc93d2b100';
-  v_source_role_name text := 'Tool Pusher';
-  v_target_role_name text := 'Rig Manager';
-  -- Choose copy_source, all_rigs, or none. all_rigs applies only to this user in v_company_id.
-  v_scope_mode text := 'all_rigs';
+  -- Required inputs: active company UUID, existing Auth user UUID, source role, and target role.
+  v_company_id uuid := null;
+  v_target_user_id uuid := null;
+  v_source_role_name text := null;
+  v_target_role_name text := null;
+  -- Required input: choose copy_source, all_rigs, or none. NULL fails closed so access is never expanded by default.
+  v_scope_mode text := null;
   -- Required only for copy_source mode; leave NULL for all_rigs or none.
   v_scope_source_user_id uuid := null;
-  -- Reviewed live Tool Pusher snapshot; update only after an explicit permission review.
+  -- Reviewed live source-role snapshot; update only after an explicit permission review.
   v_expected_permissions text[] := ARRAY[
     'create:assets',
     'create:certificates',
@@ -34,8 +36,8 @@ declare
     'update:certificates',
     'update:hour-meters'
   ]::text[];
-  -- Reviewed source scope for copy_source mode; update only after explicit scope approval.
-  v_expected_scope_rig_ids uuid[] := ARRAY['f4000000-0000-0000-0000-000000000002']::uuid[];
+  -- Reviewed copy_source rig-ID snapshot; set to the exact approved IDs before selecting that mode.
+  v_expected_scope_rig_ids uuid[] := ARRAY[]::uuid[];
 
   v_locked_company_id uuid;
   v_locked_auth_user_id uuid;
@@ -54,9 +56,16 @@ declare
   v_target_scope_rig_ids uuid[];
   v_valid_rig_count integer;
 begin
+  if v_company_id is null
+     or v_target_user_id is null
+     or nullif(btrim(v_source_role_name), '') is null
+     or nullif(btrim(v_target_role_name), '') is null then
+    raise exception 'Configure v_company_id, v_target_user_id, v_source_role_name, and v_target_role_name before running this snippet';
+  end if;
   if v_source_role_name = v_target_role_name then
     raise exception 'Source and target role names must differ';
   end if;
+  -- Scope mode is deliberately unconfigured by default. Pick one of the supported modes explicitly before any DB access.
   if v_scope_mode is null or v_scope_mode not in ('copy_source', 'all_rigs', 'none') then
     raise exception 'Unsupported scope mode: %', v_scope_mode;
   end if;
@@ -147,7 +156,7 @@ begin
 
     if v_source_scope_all_rigs is distinct from false
        or v_source_scope_rig_ids is distinct from v_expected_scope_rig_ids then
-      raise exception 'Scope source changed; expected only the approved Rig 703 specific scope';
+      raise exception 'Scope source changed; expected only the approved rig-specific scope snapshot';
     end if;
 
     -- Hold each approved location row stable and verify it remains an active rig in this company.
@@ -351,7 +360,7 @@ begin
     where company_id = v_company_id and user_id = v_target_user_id;
     if v_target_scope_all_rigs is distinct from false
        or v_target_scope_rig_ids is distinct from v_expected_scope_rig_ids then
-      raise exception 'Target operational scope does not match the approved Rig 703 scope';
+      raise exception 'Target operational scope does not match the approved rig-specific scope snapshot';
     end if;
   end if;
 
