@@ -4,13 +4,13 @@
 Review current local work, commit Ixachi onboarding records in separate work units, then publish the local feature branches for later PR preparation. Do not create PRs in this task.
 
 ## Current branch and working-tree scope
-- Current branch: `fix/ixachi-operations-catalog-rbac`, local/remote tip `5c179a416e2ef1d14d2c92cb5069c0692ef8705d` after publication.
-- Its five work-unit commits before the tracking-note follow-up were fast-forward published; the follow-up tracking commit will also be published.
+- Current branch: `fix/ixachi-operations-catalog-rbac`; the latest verified local/live origin tip is `8e6bc52df32a369412667441094d8bcf706d6eda`.
+- The six Ixachi work-unit commits were fast-forward published; the latest status-record commit was pushed and verified as well.
 - The Calidad assignment and all-rigs task docs are committed separately.
 - Exclude ambient changes: modified seed snippets 1–6, untracked `supabase/migrations/20260929100000_restore_authenticated_asset_stats_rpc.sql`, and `supabase/snippets/Untitled query 868.sql`.
 
 ## Local branch inventory
-- `fix/ixachi-operations-catalog-rbac`: published fast-forward; local and live origin tip matched at `5c179a416e2ef1d14d2c92cb5069c0692ef8705d`.
+- `fix/ixachi-operations-catalog-rbac`: published fast-forward; latest local and live origin tip matched at `8e6bc52df32a369412667441094d8bcf706d6eda`.
 - `feature/rbac-multitenant-audit-admin`: 6 local commits ahead of its cached upstream; includes hour-meter/RBAC feature and tests.
 - `module/trazability`: 3 local commits ahead of its cached upstream; includes Speckit workflow and constitution documentation.
 - Other local branches are not ahead of their upstreams.
@@ -22,7 +22,7 @@ Review current local work, commit Ixachi onboarding records in separate work uni
 2. [x] Commit the Calidad assignment evidence as its own documentation work unit.
 3. [x] Commit the all-rigs scope evidence as its own documentation work unit.
 4. [x] Publish `fix/ixachi-operations-catalog-rbac` as a fast-forward update to its existing remote ref.
-5. [ ] Verify the pushed ref and get explicit direction before creating missing remote refs for the other two local-ahead branches; leave PR creation to the user. (in progress)
+5. [ ] Ask for explicit direction before creating missing remote refs for the other two local-ahead branches; the Ixachi ref has been verified. (in progress)
 
 ## Verification and delivery constraints
 - Stage exact paths only and inspect the staged path list before each commit.
@@ -36,5 +36,5 @@ Review current local work, commit Ixachi onboarding records in separate work uni
 - Calidad assignment docs: `2720cfd6a7731e24db9375c2cda3760baf8d2538` — `docs(odd): record Calidad assignment evidence`.
 - All-rigs scope docs: `c4abcfad8bb69cc9600b134309a4d41445585e1d` — `docs(odd): record Calidad all-rigs scope`.
 - Branch-publication tracking commit: `5c179a416e2ef1d14d2c92cb5069c0692ef8705d` — `docs(odd): track local branch publication`.
-- Push: `git push origin fix/ixachi-operations-catalog-rbac` succeeded; live remote ref matched local tip `5c179a416e2ef1d14d2c92cb5069c0692ef8705d`.
+- Pushes: `git push origin fix/ixachi-operations-catalog-rbac` succeeded twice, both fast-forward; latest live remote ref matched local tip `8e6bc52df32a369412667441094d8bcf706d6eda`.
 - Other branch pushes: pending explicit decision because live remote refs are absent.
