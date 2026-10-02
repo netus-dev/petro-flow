@@ -10,7 +10,7 @@ import {
 } from "@/src/core/presentation/components/ui/table";
 import { Badge } from "@/src/core/presentation/components/ui/badge";
 import { Button } from "@/src/core/presentation/components/ui/button";
-import { Eye, Download, MoreVertical, Search, Filter, Edit2 } from "lucide-react";
+import { Eye, Download, MoreVertical, Search, Edit2 } from "lucide-react";
 import { Input } from "@/src/core/presentation/components/ui/input";
 import {
   Select,
@@ -87,11 +87,7 @@ export function AssetTable({
         <div className="flex flex-wrap items-center gap-4 w-full">
           <div className="flex flex-col gap-1.5 w-40">
             <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground pl-1">Locación</span>
-            <Select value={locationFilter} onValueChange={(val) => {
-              setLocationFilter(val);
-              setTypeFilter("all");
-              setUbicationFilter("all");
-            }}>
+            <Select value={locationFilter} onValueChange={setLocationFilter}>
               <SelectTrigger className="h-10 text-sm">
                 <SelectValue placeholder="Locación" />
               </SelectTrigger>

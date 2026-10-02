@@ -1,6 +1,6 @@
 -- Seed tool assets from HERRAMIETA (44 records).
 do $$
-declare v_company_id uuid := null; v_location_id uuid; v_ubication_id uuid; v_principle_id uuid; v_row_no integer := 1; v_asset record; begin
+declare v_company_id uuid := 'f1000000-0000-0000-0000-000000000001'; v_location_id uuid; v_ubication_id uuid; v_principle_id uuid; v_row_no integer := 1; v_asset record; begin
   if v_company_id is null then raise exception 'Set v_company_id before executing this snippet'; end if;
   for v_asset in select * from (values
     ('RIG 703', 'CHANGERA', 'MADRINA DE CARGA', null::text, null::text, 'HDH-104095', null::text, null::text, null::text, null::text, null::text, null::text, 'DS 55', '6 5/8', null::text, null::text, null::text, null::text, null::text, null::text, null::text, null::text, '0.96', null::text, null::text, null::text, null::text),

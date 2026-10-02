@@ -2,7 +2,7 @@
 -- TODO: set the company_id before executing.
 do $$
 declare
-  v_company_id uuid := null;
+  v_company_id uuid := 'f1000000-0000-0000-0000-000000000001';
 begin
   if v_company_id is null then
     raise exception 'Set v_company_id before executing this snippet';

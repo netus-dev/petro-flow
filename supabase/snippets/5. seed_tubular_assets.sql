@@ -2,7 +2,7 @@
 -- TODO: set the company_id before executing.
 do $$
 declare
-  v_company_id uuid := null;
+  v_company_id uuid := 'f1000000-0000-0000-0000-000000000001';
   v_location_id uuid;
   v_ubication_id uuid;
   v_principle_id uuid;

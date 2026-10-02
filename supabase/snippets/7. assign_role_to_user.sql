@@ -1,14 +1,24 @@
--- Grant catalog reading to the Tool Pusher role and enable the company-level operations module.
+-- Grant catalog reading to a configured role and enable the company-level operations module.
 -- The module enablement is company-wide; it is not a role permission. Role capabilities still gate access.
+-- Configure all NULL inputs before running this snippet; it fails before any query or DML while unconfigured.
 do $$
 declare
-  v_company_id uuid := 'f1000000-0000-0000-0000-000000000001';
-  v_role_name text := 'Tool Pusher';
-  v_target_email text := 'tp.703@perforadoraixachi.mx';
+  -- Required input: target company UUID.
+  v_company_id uuid := null;
+  -- Required input: existing company role that should receive the catalogs permission.
+  v_role_name text := null;
+  -- Required input: existing Supabase Auth user email to assign to the role.
+  v_target_email text := null;
   v_role_id uuid;
   v_target_user_id uuid;
   v_permission_id uuid;
 begin
+  if v_company_id is null
+     or nullif(btrim(v_role_name), '') is null
+     or nullif(btrim(v_target_email), '') is null then
+    raise exception 'Configure v_company_id, v_role_name, and v_target_email before running this snippet';
+  end if;
+
   select id into v_role_id
   from public.rbac_roles
   where company_id = v_company_id and name = v_role_name;
