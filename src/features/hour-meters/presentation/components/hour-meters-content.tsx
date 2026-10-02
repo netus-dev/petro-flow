@@ -5,7 +5,6 @@ import { useHourMeters } from "../hooks/use-hour-meters";
 import { HourMeterCard, EnhancedHourMeterRecord } from "./hour-meter-card";
 import { MaintenancePanel } from "./maintenance-panel/maintenance-panel";
 import { useMaintenancePanel } from "../hooks/use-maintenance-panel";
-import { Button } from "@/src/core/presentation/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/src/core/presentation/components/ui/dialog";
 import { RegisterHourMeterForm } from "./register-hour-meter-form";
 import { InventoryManagementModal } from "./inventory-management-modal";
@@ -17,6 +16,7 @@ import { MaintenanceThresholdModal } from "./maintenance-threshold-modal";
 import { readMaintenanceThresholds } from "../../infrastructure/server/hour-meter-actions";
 import { deriveVisibleInventoryPrinciples } from "./inventory-principles";
 import { ModuleHeader } from "@/src/core/presentation/components/layout/module-header";
+import { ModuleHeaderActionButton } from "@/src/core/presentation/components/layout/module-header-action-button";
 import { ModuleShell } from "@/src/core/presentation/components/layout/module-shell";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/src/core/presentation/components/ui/tooltip";
 
@@ -92,7 +92,7 @@ export function HourMeterContent({ initialRecords = [], authorization = { capabi
           {canManageInventory && <Dialog>
             <Tooltip>
               <TooltipTrigger asChild>
-                <DialogTrigger asChild><Button size="icon" variant="outline" aria-label="Gestionar inventario"><Package className="size-4" aria-hidden="true" /></Button></DialogTrigger>
+                <DialogTrigger asChild><ModuleHeaderActionButton icon={Package} label="Gestionar inventario" level="secondary" /></DialogTrigger>
               </TooltipTrigger>
               <TooltipContent>Gestionar inventario</TooltipContent>
             </Tooltip>
@@ -104,7 +104,7 @@ export function HourMeterContent({ initialRecords = [], authorization = { capabi
           {principles.length > 0 && <Dialog>
             <Tooltip>
               <TooltipTrigger asChild>
-                <DialogTrigger asChild><Button size="icon" variant="outline" aria-label="Configurar mantenimientos"><Settings2 className="size-4" aria-hidden="true" /></Button></DialogTrigger>
+                <DialogTrigger asChild><ModuleHeaderActionButton icon={Settings2} label="Configurar mantenimientos" level="secondary" /></DialogTrigger>
               </TooltipTrigger>
               <TooltipContent>Configurar mantenimientos</TooltipContent>
             </Tooltip>
@@ -122,7 +122,7 @@ export function HourMeterContent({ initialRecords = [], authorization = { capabi
           {canRegister && <Dialog>
             <Tooltip>
               <TooltipTrigger asChild>
-                <DialogTrigger asChild><Button size="icon" aria-label="Registrar lectura"><Gauge className="size-4" aria-hidden="true" /></Button></DialogTrigger>
+                <DialogTrigger asChild><ModuleHeaderActionButton icon={Gauge} label="Registrar lectura" /></DialogTrigger>
               </TooltipTrigger>
               <TooltipContent>Registrar lectura</TooltipContent>
             </Tooltip>

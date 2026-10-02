@@ -1,6 +1,6 @@
 "use client";
 
-import { Database, LayoutDashboard, Route, Shuffle } from "lucide-react";
+import { Database, LayoutDashboard, Plus, Route, Shuffle } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { RegisterAssetModal } from "./register-asset-modal";
 import { RegisterBatchMovementModal } from "./register-batch-movement-modal";
@@ -9,8 +9,8 @@ import {
   registerTrazabilidadBulkMovement,
 } from "../../infrastructure/server/trazabilidad-actions";
 import { ModuleHeader } from "@/src/core/presentation/components/layout/module-header";
+import { ModuleHeaderActionButton } from "@/src/core/presentation/components/layout/module-header-action-button";
 import { ModuleShell } from "@/src/core/presentation/components/layout/module-shell";
-import { Button } from "@/src/core/presentation/components/ui/button";
 
 const navigation = [
   { href: "/trazabilidad", label: "Dashboard", icon: LayoutDashboard, exact: true },
@@ -42,18 +42,24 @@ export function TrazabilidadLayout({ children }: { children: React.ReactNode }) 
                     await registerTrazabilidadAsset(asset);
                     router.refresh();
                   }}
+                  trigger={
+                    <ModuleHeaderActionButton
+                      icon={Plus}
+                      label="Registrar activo"
+                      level="secondary"
+                    />
+                  }
+                  triggerTooltip="Registrar activo"
                 />
               ) : null}
               <RegisterBatchMovementModal
                 onRegister={registerTrazabilidadBulkMovement}
                 trigger={
-                  <Button
-                    variant="secondary"
-                    size="icon-sm"
-                    aria-label="Registrar movimiento"
-                  >
-                    <Shuffle className="size-4" />
-                  </Button>
+                  <ModuleHeaderActionButton
+                    icon={Shuffle}
+                    label="Registrar movimiento"
+                    level="accent"
+                  />
                 }
               />
             </>
