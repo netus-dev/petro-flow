@@ -48,7 +48,7 @@ export default async function AuthenticatedLayout({
       <SidebarProvider>
         <AppSidebar initialUser={userData} initialAuthorization={authorization.projection} />
         <SidebarInset>
-          <div className="min-h-0 flex-1 overflow-auto min-w-0">
+          <div className="min-h-0 flex-1 overflow-hidden min-w-0">
             <Suspense fallback={<AppLoader />}>{children}</Suspense>
           </div>
           <DashboardFooter />
