@@ -17,6 +17,7 @@ import { MaintenanceThresholdModal } from "./maintenance-threshold-modal";
 import { readMaintenanceThresholds } from "../../infrastructure/server/hour-meter-actions";
 import { deriveVisibleInventoryPrinciples } from "./inventory-principles";
 import { ModuleHeader } from "@/src/core/presentation/components/layout/module-header";
+import { ModuleShell } from "@/src/core/presentation/components/layout/module-shell";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/src/core/presentation/components/ui/tooltip";
 
 /**
@@ -83,8 +84,10 @@ export function HourMeterContent({ initialRecords = [], authorization = { capabi
   });
 
   return (
-    <div className="flex h-[calc(100vh-7rem)] w-full flex-col overflow-hidden bg-background">
-      <ModuleHeader title="Dashboard de Horómetros" icon={Clock} actions={<>
+    <ModuleShell
+      className="bg-background"
+      header={
+        <ModuleHeader title="Dashboard de Horómetros" icon={Clock} actions={<>
           {rigs.length > 1 ? <select aria-label="Rig" className="h-8 rounded border bg-background px-2 text-xs" value={rigId ?? ""} onChange={(event) => setRigId(event.target.value)}>{rigs.map((rig) => <option key={rig.id} value={rig.id}>{rig.name}</option>)}</select> : <span className="hidden text-xs font-medium tracking-widest text-muted-foreground uppercase md:inline">{rigs[0]?.name ?? "SIN RIG AUTORIZADO"}</span>}
           {canManageInventory && <Dialog>
             <Tooltip>
@@ -129,8 +132,9 @@ export function HourMeterContent({ initialRecords = [], authorization = { capabi
             </DialogContent>
           </Dialog>}
         </>} />
-
-      <div className="flex min-h-0 flex-1 p-4 md:p-6 lg:p-8">
+      }
+    >
+      <div className="flex min-h-full p-4 md:p-6 lg:p-8">
         {/* Main Container - Fills remaining space dynamically */}
         <div className="relative flex min-h-0 flex-1 flex-row gap-4 overflow-hidden">
           {/* Grid de tarjetas — se ajusta automáticamente al espacio disponible */}
@@ -175,6 +179,6 @@ export function HourMeterContent({ initialRecords = [], authorization = { capabi
           </div>
         </div>
       )}
-    </div>
+    </ModuleShell>
   );
 }
