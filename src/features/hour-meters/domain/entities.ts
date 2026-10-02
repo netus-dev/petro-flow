@@ -19,7 +19,22 @@ export interface HourMeterRecord {
   rigId?: string;
   rigName?: string;
   functionalPrincipleId?: string;
+  functionalPrincipleName?: string;
   companyId?: string;
+}
+
+
+const GENERATOR_ENGINE_FUNCTIONAL_PRINCIPLE = "Motor de Combustión Interna";
+const GENERATOR_ENGINE_EQUIPMENT_PATTERN = /motor\s+(de\s+|del\s+)?generador/i;
+
+/**
+ * Identifies generator-engine assets that collect operational accumulated values
+ * in addition to the hour-meter reading.
+ */
+export function requiresOperationalAccumulatedFields(
+  asset: Pick<HourMeterRecord, "equipment"> & Partial<Pick<HourMeterRecord, "functionalPrincipleName">>,
+): boolean {
+  return asset.functionalPrincipleName === GENERATOR_ENGINE_FUNCTIONAL_PRINCIPLE || GENERATOR_ENGINE_EQUIPMENT_PATTERN.test(asset.equipment);
 }
 
 export interface DailyOperationsKpi {

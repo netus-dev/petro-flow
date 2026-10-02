@@ -1,5 +1,5 @@
 import { Either, left, right } from "../../../../core/utils/either";
-import { DailyOperationsKpi, HourMeterRecord } from "../../domain/entities";
+import { DailyOperationsKpi, HourMeterRecord, requiresOperationalAccumulatedFields } from "../../domain/entities";
 import { IHourMeterRepository, RegisterHourMeterInput } from "../../domain/repositories/hour-meter.repository";
 
 export interface HourMeterFailure { message: string; fieldErrors?: Partial<Record<"assetId" | "capturedAt" | "currentReading" | "dieselAccumulatedGallons" | "dailyMwAccumulated" | "dailyMvarAccumulated", string>>; }
@@ -23,6 +23,16 @@ export class GetDailyOperationsKpiUseCase {
   }
 }
 
+/** Checks that an optional operational reading is a non-negative integer. */
+function isValidInteger(value: number | null | undefined): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0;
+}
+
+/** Checks that an optional operational reading is a non-negative finite number. */
+function isValidFinite(value: number | null | undefined): value is number {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0;
+}
+
 /** Validates and registers one manual hour-meter reading. */
 export class RegisterHourMeterUseCase {
   constructor(private readonly repository: IHourMeterRepository) {}
@@ -31,23 +41,37 @@ export class RegisterHourMeterUseCase {
     if (!input.assetId.trim()) fieldErrors.assetId = "Selecciona un equipo.";
     if (!input.capturedAt) fieldErrors.capturedAt = "Ingresa la fecha y hora.";
     if (!Number.isInteger(input.currentReading) || input.currentReading < 0) fieldErrors.currentReading = "Ingresa un número entero válido.";
-    if (!Number.isInteger(input.dieselAccumulatedGallons) || input.dieselAccumulatedGallons < 0) fieldErrors.dieselAccumulatedGallons = "Ingresa un número entero válido.";
-    if (!Number.isFinite(input.dailyMwAccumulated) || input.dailyMwAccumulated < 0) fieldErrors.dailyMwAccumulated = "Ingresa un valor válido.";
-    if (!Number.isFinite(input.dailyMvarAccumulated) || input.dailyMvarAccumulated < 0) fieldErrors.dailyMvarAccumulated = "Ingresa un valor válido.";
-    if (Object.keys(fieldErrors).length) {
-      return left(new HourMeterRepositoryFailure("Revisa los campos indicados.", fieldErrors));
-    }
+    if (Object.keys(fieldErrors).length) return left(new HourMeterRepositoryFailure("Revisa los campos indicados.", fieldErrors));
+
     try {
       const previous = (await this.repository.getAll()).find((record) => record.assetId === input.assetId);
-      if (previous && previous.currentReading !== null && (input.currentReading < previous.currentReading || input.dieselAccumulatedGallons < (previous.dieselAccumulatedGallons ?? 0) || input.dailyMwAccumulated < (previous.dailyMwAccumulated ?? 0) || input.dailyMvarAccumulated < (previous.dailyMvarAccumulated ?? 0))) {
-        const monotonicErrors: HourMeterFailure["fieldErrors"] = {};
-        if (input.currentReading < previous.currentReading) monotonicErrors.currentReading = "No puede ser menor que la última lectura.";
-        if (input.dieselAccumulatedGallons < (previous.dieselAccumulatedGallons ?? 0)) monotonicErrors.dieselAccumulatedGallons = "No puede ser menor que el último valor.";
-        if (input.dailyMwAccumulated < (previous.dailyMwAccumulated ?? 0)) monotonicErrors.dailyMwAccumulated = "No puede ser menor que el último valor.";
-        if (input.dailyMvarAccumulated < (previous.dailyMvarAccumulated ?? 0)) monotonicErrors.dailyMvarAccumulated = "No puede ser menor que el último valor.";
-        return left(new HourMeterRepositoryFailure("Las nuevas lecturas no pueden ser menores que los últimos valores registrados.", monotonicErrors));
+      const requiresOperationalFields = previous ? requiresOperationalAccumulatedFields(previous) : false;
+
+      if (requiresOperationalFields) {
+        if (!isValidInteger(input.dieselAccumulatedGallons)) fieldErrors.dieselAccumulatedGallons = "Ingresa un número entero válido.";
+        if (!isValidFinite(input.dailyMwAccumulated)) fieldErrors.dailyMwAccumulated = "Ingresa un valor válido.";
+        if (!isValidFinite(input.dailyMvarAccumulated)) fieldErrors.dailyMvarAccumulated = "Ingresa un valor válido.";
       }
-      return right(await this.repository.register(input));
+      if (Object.keys(fieldErrors).length) return left(new HourMeterRepositoryFailure("Revisa los campos indicados.", fieldErrors));
+
+      const normalizedInput: RegisterHourMeterInput = requiresOperationalFields ? input : {
+        ...input,
+        dieselAccumulatedGallons: null,
+        dailyMwAccumulated: null,
+        dailyMvarAccumulated: null,
+      };
+
+      if (previous && previous.currentReading !== null) {
+        const monotonicErrors: HourMeterFailure["fieldErrors"] = {};
+        if (normalizedInput.currentReading < previous.currentReading) monotonicErrors.currentReading = "No puede ser menor que la última lectura.";
+        if (requiresOperationalFields) {
+          if ((normalizedInput.dieselAccumulatedGallons as number) < (previous.dieselAccumulatedGallons ?? 0)) monotonicErrors.dieselAccumulatedGallons = "No puede ser menor que el último valor.";
+          if ((normalizedInput.dailyMwAccumulated as number) < (previous.dailyMwAccumulated ?? 0)) monotonicErrors.dailyMwAccumulated = "No puede ser menor que el último valor.";
+          if ((normalizedInput.dailyMvarAccumulated as number) < (previous.dailyMvarAccumulated ?? 0)) monotonicErrors.dailyMvarAccumulated = "No puede ser menor que el último valor.";
+        }
+        if (Object.keys(monotonicErrors).length) return left(new HourMeterRepositoryFailure("Las nuevas lecturas no pueden ser menores que los últimos valores registrados.", monotonicErrors));
+      }
+      return right(await this.repository.register(normalizedInput));
     }
     catch (error: any) { return left(new HourMeterRepositoryFailure(error?.message ?? "Unable to register the reading.")); }
   }

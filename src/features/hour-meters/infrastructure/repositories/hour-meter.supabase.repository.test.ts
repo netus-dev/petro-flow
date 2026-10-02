@@ -50,7 +50,7 @@ describe("Hourmeter infrastructure mapping", () => {
     const repository = new SupabaseHourMeterRepository({ from } as unknown as SupabaseClient);
 
     await expect(repository.getAll()).resolves.toMatchObject([
-       { assetId: "asset-1", equipment: "North Position", platform: "North Rig", rigName: "North Rig" },
+       { assetId: "asset-1", equipment: "North Position", platform: "North Rig", rigName: "North Rig", functionalPrincipleName: HOURMETER_ELIGIBLE_PRINCIPLES[0] },
     ]);
       expect(select).toHaveBeenCalledWith("id, company_id, function_principle_id, current_location_id, current_ubication_id, functional_principles!assets_function_principle_same_company_fkey(name), locations!assets_current_location_id_fkey(name), ubications!assets_company_id_current_ubication_id_fkey(name), asset_operational_parameters_history!asset_operational_parameters_history_asset_id_fkey(*)");
   });
@@ -98,7 +98,33 @@ describe("Hourmeter infrastructure mapping", () => {
      await expect(repository.register({ assetId: "asset-1", capturedAt: "2026-01-01T00:00:00Z", currentReading: 10, dieselAccumulatedGallons: 100, dailyMwAccumulated: 20, dailyMvarAccumulated: 5 })).resolves.toMatchObject({ equipment: "North Position", rigName: "North Rig" });
 
     expect(rpc).toHaveBeenCalledWith("rbac_request_company_id");
-    expect(insert).toHaveBeenCalledWith(expect.objectContaining({ company_id: "company-1", asset_id: "asset-1" }));
+    expect(insert).toHaveBeenCalledWith(expect.objectContaining({ company_id: "company-1", asset_id: "asset-1", diesel_accumulated_gallons: 100, mw_accumulated: 20, mvar_accumulated: 5 }));
       expect(historySelect).toHaveBeenCalledWith("*, assets!asset_operational_parameters_history_asset_id_fkey(functional_principles!assets_function_principle_same_company_fkey(name), locations!assets_current_location_id_fkey(name), ubications!assets_company_id_current_ubication_id_fkey(name))");
+  });
+
+  it("persists null operational values when they are omitted", async () => {
+    const single = vi.fn().mockResolvedValue({
+      data: {
+        ...row("reading-1", "2026-01-01T00:00:00Z", 10),
+        diesel_accumulated_gallons: null,
+        mw_accumulated: null,
+        mvar_accumulated: null,
+        assets: {
+          functional_principles: { name: "Bomba de Lodo" },
+          locations: { name: "North Rig" },
+          ubications: { name: "Mud Pump 01" },
+        },
+      },
+      error: null,
+    });
+    const historySelect = vi.fn(() => ({ single }));
+    const insert = vi.fn(() => ({ select: historySelect }));
+    const from = vi.fn(() => ({ insert }));
+    const rpc = vi.fn().mockResolvedValue({ data: "company-1", error: null });
+    const repository = new SupabaseHourMeterRepository({ from, rpc } as unknown as SupabaseClient);
+
+    await expect(repository.register({ assetId: "asset-1", capturedAt: "2026-01-01T00:00:00Z", currentReading: 10 })).resolves.toMatchObject({ dieselAccumulatedGallons: null, dailyMwAccumulated: null, dailyMvarAccumulated: null });
+
+    expect(insert).toHaveBeenCalledWith(expect.objectContaining({ diesel_accumulated_gallons: null, mw_accumulated: null, mvar_accumulated: null }));
   });
 });

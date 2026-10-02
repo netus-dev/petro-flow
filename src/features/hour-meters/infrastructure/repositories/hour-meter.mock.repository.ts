@@ -28,9 +28,10 @@ const seed: HourMeterRecord[] = seedData.map(([id, platform, equipment, reading,
     assetId: id,
     lastMaintenanceDate: "2026-02-15",
   lastMaintenanceReading: Math.round(reading * 0.9),
-  dieselAccumulatedGallons: 15000,
-  dailyMwAccumulated: 12.4,
-  dailyMvarAccumulated: 3.2,
+  functionalPrincipleName: equipment.startsWith("Motor de Generador") ? "Motor de Combustión Interna" : equipment,
+  dieselAccumulatedGallons: equipment.startsWith("Motor de Generador") ? 15000 : null,
+  dailyMwAccumulated: equipment.startsWith("Motor de Generador") ? 12.4 : null,
+  dailyMvarAccumulated: equipment.startsWith("Motor de Generador") ? 3.2 : null,
 }));
 
 /** Infrastructure-owned in-memory repository used by the V1 MVP. */
