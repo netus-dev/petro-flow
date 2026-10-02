@@ -1,8 +1,13 @@
 "use client";
 
 import { Database, LayoutDashboard, Route, Shuffle } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { RegisterAssetModal } from "./register-asset-modal";
 import { RegisterBatchMovementModal } from "./register-batch-movement-modal";
-import { registerTrazabilidadBulkMovement } from "../../infrastructure/server/trazabilidad-actions";
+import {
+  registerTrazabilidadAsset,
+  registerTrazabilidadBulkMovement,
+} from "../../infrastructure/server/trazabilidad-actions";
 import { ModuleHeader } from "@/src/core/presentation/components/layout/module-header";
 import { ModuleShell } from "@/src/core/presentation/components/layout/module-shell";
 import { Button } from "@/src/core/presentation/components/ui/button";
@@ -15,6 +20,12 @@ const navigation = [
 
 /** Shared module shell for the Trazabilidad route tree. */
 export function TrazabilidadLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const isAssetsRoute =
+    pathname === "/trazabilidad/assets" ||
+    pathname.startsWith("/trazabilidad/assets/");
+
   return (
     <ModuleShell
       contentClassName="px-6"
@@ -24,18 +35,28 @@ export function TrazabilidadLayout({ children }: { children: React.ReactNode }) 
           icon={Route}
           navigation={navigation}
           actions={
-            <RegisterBatchMovementModal
-              onRegister={registerTrazabilidadBulkMovement}
-              trigger={
-                <Button
-                  variant="secondary"
-                  size="icon-sm"
-                  aria-label="Registrar movimiento"
-                >
-                  <Shuffle className="size-4" />
-                </Button>
-              }
-            />
+            <>
+              {isAssetsRoute ? (
+                <RegisterAssetModal
+                  onRegister={async (asset) => {
+                    await registerTrazabilidadAsset(asset);
+                    router.refresh();
+                  }}
+                />
+              ) : null}
+              <RegisterBatchMovementModal
+                onRegister={registerTrazabilidadBulkMovement}
+                trigger={
+                  <Button
+                    variant="secondary"
+                    size="icon-sm"
+                    aria-label="Registrar movimiento"
+                  >
+                    <Shuffle className="size-4" />
+                  </Button>
+                }
+              />
+            </>
           }
         />
       }
