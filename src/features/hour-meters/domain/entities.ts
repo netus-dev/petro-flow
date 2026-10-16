@@ -114,9 +114,7 @@ export interface HourMeterStats {
   avgUsage: number;
 }
 
-/**
- * Categorías de actividades de mantenimiento.
- */
+/** Categorías de actividades de mantenimiento. */
 export type MaintenanceCategory =
   | "lubricacion"
   | "inspeccion"
@@ -275,4 +273,12 @@ export interface FailureEvent {
   repairEnd: string;
   /** Duración total de la reparación (MTTR contribution) en horas. */
   repairHours: number;
+}
+
+/**
+ * Referencia liviana a un principio funcional disponible para filtros y selección
+ */
+export interface FunctionalPrincipleReference {
+  id: string;
+  name: string;
 }

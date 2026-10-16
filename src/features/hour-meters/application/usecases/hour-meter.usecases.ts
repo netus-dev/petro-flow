@@ -3,20 +3,25 @@ import { DailyOperationsKpi, HourMeterRecord, requiresOperationalAccumulatedFiel
 import { IHourMeterRepository, RegisterHourMeterInput } from "../../domain/repositories/hour-meter.repository";
 
 export interface HourMeterFailure { message: string; fieldErrors?: Partial<Record<"assetId" | "capturedAt" | "currentReading" | "dieselAccumulatedGallons" | "dailyMwAccumulated" | "dailyMvarAccumulated", string>>; }
-export class HourMeterRepositoryFailure implements HourMeterFailure { constructor(public readonly message: string, public readonly fieldErrors?: HourMeterFailure["fieldErrors"]) {} }
+export class HourMeterRepositoryFailure implements HourMeterFailure { constructor(public readonly message: string, public readonly fieldErrors?: HourMeterFailure["fieldErrors"]) { } }
 
 /** Retrieves all hour meters without exposing infrastructure details. */
 export class GetHourMetersUseCase {
-  constructor(private readonly repository: IHourMeterRepository) {}
+  constructor(private readonly repository: IHourMeterRepository) { }
+
   async execute(rigId?: string): Promise<Either<HourMeterFailure, HourMeterRecord[]>> {
-    try { return right(await this.repository.getAll(rigId)); }
-    catch (error: any) { return left(new HourMeterRepositoryFailure(error?.message ?? "Unable to load hour meters.")); }
+    try {
+      return right(await this.repository.getAll(rigId));
+    }
+    catch (error: any) {
+      return left(new HourMeterRepositoryFailure(error?.message ?? "Unable to load hour meters."));
+    }
   }
 }
 
 /** Retrieves the operational aggregates displayed by the right sidebar. */
 export class GetDailyOperationsKpiUseCase {
-  constructor(private readonly repository: import("../../domain/repositories/hour-meter.repository").IDailyOperationsKpiRepository) {}
+  constructor(private readonly repository: import("../../domain/repositories/hour-meter.repository").IDailyOperationsKpiRepository) { }
   async execute(assetId: string): Promise<Either<HourMeterFailure, DailyOperationsKpi>> {
     try { return right(await this.repository.getLast24Hours(assetId)); }
     catch (error: any) { return left(new HourMeterRepositoryFailure(error?.message ?? "No fue posible cargar los indicadores.")); }
@@ -35,7 +40,7 @@ function isValidFinite(value: number | null | undefined): value is number {
 
 /** Validates and registers one manual hour-meter reading. */
 export class RegisterHourMeterUseCase {
-  constructor(private readonly repository: IHourMeterRepository) {}
+  constructor(private readonly repository: IHourMeterRepository) { }
   async execute(input: RegisterHourMeterInput): Promise<Either<HourMeterFailure, HourMeterRecord>> {
     const fieldErrors: HourMeterFailure["fieldErrors"] = {};
     if (!input.assetId.trim()) fieldErrors.assetId = "Selecciona un equipo.";
