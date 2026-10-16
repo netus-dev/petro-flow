@@ -1,7 +1,7 @@
 "use server";
 
 import { createTenantClient } from "@/src/core/lib/supabase/server";
-import { HourMeterFailure, RegisterHourMeterUseCase } from "../../application/usecases/hour-meter.usecases";
+import { HourMeterFailure, GetHourMetersUseCase, GetDailyOperationsKpiUseCase, RegisterHourMeterUseCase } from "../../application/usecases/hour-meter.usecases";
 import { DailyOperationsKpi, HourMeterRecord, MaintenanceThresholdConfiguration } from "../../domain/entities";
 import { RegisterHourMeterInput } from "../../domain/repositories/hour-meter.repository";
 import { SupabaseHourMeterRepository } from "../repositories/hour-meter.supabase.repository";
@@ -17,16 +17,31 @@ async function repository() {
 export async function readHourMeters(rigId?: string): Promise<HourMeterActionResult<HourMeterRecord[]>> {
   const repo = await repository();
   if (!repo) return { ok: false, error: "Tenant context is unavailable" };
+
   try {
     const scopeClient = await createTenantClient();
     if (!scopeClient) return { ok: false, error: "Tenant context is unavailable" };
-    if (!("rpc" in scopeClient)) return { ok: true, data: await repo.getAll(rigId) };
+
+    const useCase = new GetHourMetersUseCase(repo);
+
+    if (!("rpc" in scopeClient)) {
+      const result = await useCase.execute(rigId)
+      return result.isLeft()
+        ? { ok: false, error: result.value.message }
+        : { ok: true, data: result.value };
+    }
+
     const { data: scope, error: scopeError } = await scopeClient.rpc("rbac_user_rig_scope");
     if (scopeError || !scope?.assigned) return { ok: false, error: "Operational scope is unavailable." };
+
     const allowed = (scope.rigs ?? []) as Array<{ id: string }>;
     const selected = rigId ?? allowed[0]?.id;
-    if (!selected || !allowed.some((rig) => rig.id === selected)) return { ok: false, error: "The selected Rig is not authorized." };
-    return { ok: true, data: await repo.getAll(selected) };
+    if (!selected || !allowed.some((rig) => rig.id === selected)) {
+      return { ok: false, error: "The selected Rig is not authorized." };
+    }
+
+    const result = await useCase.execute(rigId);
+    return result.isLeft() ? { ok: false, error: result.value.message } : { ok: true, data: result.value };
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : "Unable to load hour meters." };
   }
@@ -45,11 +60,12 @@ export async function registerHourMeter(input: RegisterHourMeterInput): Promise<
 export async function readDailyOperationsKpi(assetId: string): Promise<HourMeterActionResult<DailyOperationsKpi>> {
   const repo = await repository();
   if (!repo) return { ok: false, error: "Tenant context is unavailable" };
-  try {
-    return { ok: true, data: await repo.getLast24Hours(assetId) };
-  } catch (error) {
-    return { ok: false, error: error instanceof Error ? error.message : "No fue posible cargar los indicadores." };
-  }
+
+  const result = await new GetDailyOperationsKpiUseCase( repo ).execute(assetId);
+
+  return result.isLeft()
+  ? { ok: false, error: result.value.message }
+  : { ok: true, data: result.value };
 }
 
 export async function readMaintenanceThresholds(principleId: string): Promise<HourMeterActionResult<MaintenanceThresholdConfiguration[]>> {
