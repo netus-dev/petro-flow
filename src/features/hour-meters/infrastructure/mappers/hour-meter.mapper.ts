@@ -23,8 +23,8 @@ export function toHourMeterDto(input: RegisterHourMeterInput, id: string): HourM
     maxThreshold: 5000,
     lastMaintenanceDate: null,
     lastMaintenanceReading: Math.round(input.currentReading * 0.9),
-    dieselAccumulatedGallons: input.dieselAccumulatedGallons,
-    dailyMwAccumulated: input.dailyMwAccumulated,
-    dailyMvarAccumulated: input.dailyMvarAccumulated,
+    dieselAccumulatedGallons: input.dieselAccumulatedGallons ?? null,
+    dailyMwAccumulated: input.dailyMwAccumulated ?? null,
+    dailyMvarAccumulated: input.dailyMvarAccumulated ?? null,
   };
 }

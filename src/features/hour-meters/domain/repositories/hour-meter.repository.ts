@@ -4,9 +4,9 @@ export interface RegisterHourMeterInput {
   assetId: string;
   capturedAt: string;
   currentReading: number;
-  dieselAccumulatedGallons: number;
-  dailyMwAccumulated: number;
-  dailyMvarAccumulated: number;
+  dieselAccumulatedGallons?: number | null;
+  dailyMwAccumulated?: number | null;
+  dailyMvarAccumulated?: number | null;
 }
 
 /** Provides hour-meter reads and manual registrations to the application layer. */

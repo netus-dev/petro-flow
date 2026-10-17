@@ -42,7 +42,7 @@ function mapAsset(asset: Omit<HourMeterAssetRow, "asset_operational_parameters_h
   } as HourMeterRow, {
      equipment: relationName(asset.ubications) || relationName(asset.functional_principles),
     platform: relationName(asset.locations),
-  }), rigId: asset.current_location_id, rigName: relationName(asset.locations), companyId: asset.company_id, functionalPrincipleId: asset.function_principle_id };
+  }), rigId: asset.current_location_id, rigName: relationName(asset.locations), companyId: asset.company_id, functionalPrincipleId: asset.function_principle_id, functionalPrincipleName: relationName(asset.functional_principles) };
 }
 
 /** Maps a persisted history row and optional asset labels into the domain model. */
@@ -105,8 +105,8 @@ export class SupabaseHourMeterRepository implements IHourMeterRepository {
     if (companyError || !companyId) throw companyError ?? new Error("Tenant context is unavailable");
     const { data, error } = await this.supabase.from("asset_operational_parameters_history").insert({
       company_id: companyId, asset_id: input.assetId, hours: input.currentReading, captured_at: input.capturedAt,
-      diesel_accumulated_gallons: input.dieselAccumulatedGallons, mw_accumulated: input.dailyMwAccumulated,
-      mvar_accumulated: input.dailyMvarAccumulated,
+      diesel_accumulated_gallons: input.dieselAccumulatedGallons ?? null, mw_accumulated: input.dailyMwAccumulated ?? null,
+      mvar_accumulated: input.dailyMvarAccumulated ?? null,
     }).select("*, assets!asset_operational_parameters_history_asset_id_fkey(functional_principles!assets_function_principle_same_company_fkey(name), locations!assets_current_location_id_fkey(name), ubications!assets_company_id_current_ubication_id_fkey(name))").single();
     if (error) throw error;
     const inserted = data as unknown as HourMeterRow & { assets: Pick<HourMeterAssetRow, "functional_principles" | "locations" | "ubications"> };

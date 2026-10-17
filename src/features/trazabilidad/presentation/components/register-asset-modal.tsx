@@ -12,6 +12,7 @@ import {
 } from "@/src/core/presentation/components/ui/dialog";
 import { Button } from "@/src/core/presentation/components/ui/button";
 import { Input } from "@/src/core/presentation/components/ui/input";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/src/core/presentation/components/ui/tooltip";
 import { Label } from "@/src/core/presentation/components/ui/label";
 import {
   Select,
@@ -40,23 +41,35 @@ import { createCatalogItem, readCatalogItems } from "@/src/features/catalogs/inf
 import { useEffect } from "react";
 import { useAuthStore } from "@/src/features/auth/presentation/store/auth-store";
 
+type CatalogItem = Record<string, string | number | boolean | null | undefined> & {
+  id: string;
+  name?: string;
+  is_active?: boolean;
+  brand_id?: string;
+};
+
+type AssetFormState = Record<string, string>;
+
+type AssetMutationPayload = Partial<Asset> & Record<string, string | undefined>;
+
 interface Props {
   mode?: "create" | "edit";
   assetToEdit?: Asset;
   onRegister?: (asset: Partial<Asset>) => Promise<void>;
   onEdit?: (id: string, asset: Partial<Asset>) => Promise<void>;
   trigger?: React.ReactNode;
+  triggerTooltip?: string;
 }
 
-export function RegisterAssetModal({ mode = "create", assetToEdit, onRegister, onEdit, trigger }: Props) {
+export function RegisterAssetModal({ mode = "create", assetToEdit, onRegister, onEdit, trigger, triggerTooltip }: Props) {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const [functionalPrinciples, setFunctionalPrinciples] = useState<any[]>([]);
-  const [locations, setLocations] = useState<any[]>([]);
-  const [ubications, setUbications] = useState<any[]>([]);
-  const [brands, setBrands] = useState<any[]>([]);
-  const [models, setModels] = useState<any[]>([]);
+  const [functionalPrinciples, setFunctionalPrinciples] = useState<CatalogItem[]>([]);
+  const [locations, setLocations] = useState<CatalogItem[]>([]);
+  const [ubications, setUbications] = useState<CatalogItem[]>([]);
+  const [brands, setBrands] = useState<CatalogItem[]>([]);
+  const [models, setModels] = useState<CatalogItem[]>([]);
 
   const company_id = useAuthStore( state => state.profile?.company?.id );
 
@@ -65,7 +78,7 @@ export function RegisterAssetModal({ mode = "create", assetToEdit, onRegister, o
   const [modelOpen, setModelOpen] = useState(false);
   const [modelSearch, setModelSearch] = useState("");
 
-  const initialFormState = mode === "edit" && assetToEdit ? {
+  const initialFormState: AssetFormState = mode === "edit" && assetToEdit ? {
     brand_id: assetToEdit.brand_id || "",
     model_id: assetToEdit.model_id || "",
     capacity: assetToEdit.capacity || "",
@@ -75,8 +88,8 @@ export function RegisterAssetModal({ mode = "create", assetToEdit, onRegister, o
     current_location_id: assetToEdit.current_location_id || "",
     current_ubication_id: assetToEdit.current_ubication_id || "",
     function_principle_id: assetToEdit.function_principle_id || "",
-    ...assetToEdit.properties?.reduce((acc: any, prop: any) => {
-      acc[prop.key] = prop.value;
+    ...assetToEdit.properties?.reduce<AssetFormState>((acc, prop) => {
+      acc[prop.key] = String(prop.value);
       return acc;
     }, {})
   } : {
@@ -91,7 +104,7 @@ export function RegisterAssetModal({ mode = "create", assetToEdit, onRegister, o
     function_principle_id: "",
   };
 
-  const [formData, setFormData] = useState<any>(initialFormState);
+  const [formData, setFormData] = useState<AssetFormState>(initialFormState);
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (nextOpen) {
@@ -114,15 +127,15 @@ export function RegisterAssetModal({ mode = "create", assetToEdit, onRegister, o
           if (!fps.ok || !locs.ok || !ubis.ok || !brs.ok || !mods.ok) {
             throw new Error("Unable to load catalog items");
           }
-          setFunctionalPrinciples(fps.data);
-          setLocations(locs.data);
-          setUbications(ubis.data);
-          setBrands(brs.data);
-          setModels(mods.data);
+          setFunctionalPrinciples(fps.data as CatalogItem[]);
+          setLocations(locs.data as CatalogItem[]);
+          setUbications(ubis.data as CatalogItem[]);
+          setBrands(brs.data as CatalogItem[]);
+          setModels(mods.data as CatalogItem[]);
         })
         .catch(console.error);
     }
-  }, [open]);
+  }, [company_id, open]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -137,12 +150,10 @@ export function RegisterAssetModal({ mode = "create", assetToEdit, onRegister, o
       let finalBrandId = formData.brand_id;
       let finalModelId = formData.model_id;
 
-      let isNewBrand = false;
       if (finalBrandId && !brands.find(b => b.id === finalBrandId)) {
         const newBrand = await createCatalogItem("brands", { name: finalBrandId, is_active: true });
         if (!newBrand.ok || !newBrand.data) throw new Error(newBrand.ok ? "Brand creation returned no data" : newBrand.error);
         finalBrandId = newBrand.data.id;
-        isNewBrand = true;
       }
 
       if (finalModelId && !models.find(m => m.id === finalModelId)) {
@@ -155,7 +166,7 @@ export function RegisterAssetModal({ mode = "create", assetToEdit, onRegister, o
         finalModelId = newModel.data.id;
       }
 
-      const payloadToSave = { 
+      const payloadToSave: AssetMutationPayload = { 
         ...formData, 
         brand_id: finalBrandId, 
         model_id: finalModelId,
@@ -163,9 +174,9 @@ export function RegisterAssetModal({ mode = "create", assetToEdit, onRegister, o
       };
 
       if (mode === "edit" && onEdit && assetToEdit) {
-        await onEdit(assetToEdit.id, payloadToSave as any);
+        await onEdit(assetToEdit.id, payloadToSave);
       } else if (onRegister) {
-        await onRegister(payloadToSave as any);
+        await onRegister(payloadToSave);
       }
       
       setOpen(false);
@@ -184,20 +195,29 @@ export function RegisterAssetModal({ mode = "create", assetToEdit, onRegister, o
     ? propertyKeys.filter((k) => selectedFnPrinciple[k])
     : [];
 
+  const triggerButton = trigger || (
+    <Button
+      variant="outline"
+      size="sm"
+      className="h-9 gap-2 border-border border-dashed font-mono uppercase text-[10px] tracking-wider"
+    >
+      <Plus className="size-3.5" />
+      Registrar Activo
+    </Button>
+  );
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-9 gap-2 border-border border-dashed font-mono uppercase text-[10px] tracking-wider"
-          >
-            <Plus className="size-3.5" />
-            Registrar Activo
-          </Button>
-        )}
-      </DialogTrigger>
+      {triggerTooltip ? (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DialogTrigger asChild>{triggerButton}</DialogTrigger>
+          </TooltipTrigger>
+          <TooltipContent>{triggerTooltip}</TooltipContent>
+        </Tooltip>
+      ) : (
+        <DialogTrigger asChild>{triggerButton}</DialogTrigger>
+      )}
       <DialogContent className="max-h-[calc(100vh-2rem)] overflow-hidden bg-card border-border sm:max-w-[900px]">
         <DialogHeader>
           <DialogTitle className="font-mono text-xl">
@@ -460,7 +480,7 @@ export function RegisterAssetModal({ mode = "create", assetToEdit, onRegister, o
                   activeProperties.map((key) => (
                     <div key={key} className="flex flex-col gap-2">
                       <Label htmlFor={key} className="text-xs uppercase tracking-widest text-muted-foreground">
-                        {selectedFnPrinciple[key]}
+                        {selectedFnPrinciple?.[key]}
                       </Label>
                       <Input
                         id={key}
