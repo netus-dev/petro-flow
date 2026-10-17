@@ -35,12 +35,13 @@ export async function readHourMeters(rigId?: string): Promise<HourMeterActionRes
     if (scopeError || !scope?.assigned) return { ok: false, error: "Operational scope is unavailable." };
 
     const allowed = (scope.rigs ?? []) as Array<{ id: string }>;
+    /** In case rigId is not provided, take the first available rig */
     const selected = rigId ?? allowed[0]?.id;
     if (!selected || !allowed.some((rig) => rig.id === selected)) {
       return { ok: false, error: "The selected Rig is not authorized." };
     }
 
-    const result = await useCase.execute(rigId);
+    const result = await useCase.execute(selected);
     return result.isLeft() ? { ok: false, error: result.value.message } : { ok: true, data: result.value };
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : "Unable to load hour meters." };
@@ -61,11 +62,11 @@ export async function readDailyOperationsKpi(assetId: string): Promise<HourMeter
   const repo = await repository();
   if (!repo) return { ok: false, error: "Tenant context is unavailable" };
 
-  const result = await new GetDailyOperationsKpiUseCase( repo ).execute(assetId);
+  const result = await new GetDailyOperationsKpiUseCase(repo).execute(assetId);
 
   return result.isLeft()
-  ? { ok: false, error: result.value.message }
-  : { ok: true, data: result.value };
+    ? { ok: false, error: result.value.message }
+    : { ok: true, data: result.value };
 }
 
 export async function readMaintenanceThresholds(principleId: string): Promise<HourMeterActionResult<MaintenanceThresholdConfiguration[]>> {
